@@ -22,6 +22,7 @@ model Tenant {
   warehouses  Warehouse[]
   cmsPages    CmsPage[]
   carts       Cart[]
+  reviews     Review[]
 }
 
 model User {
@@ -53,6 +54,7 @@ model Product {
   orderItems  OrderItem[]
   cartItems   CartItem[]
   stockMovements StockMovement[]
+  reviews     Review[]
 }
 
 model Category {
@@ -83,6 +85,7 @@ model Customer {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   orders    Order[]
   cart      Cart?
+  reviews   Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -243,4 +246,20 @@ enum MovementType {
   ADJUSTMENT
   TRANSFER
   RETURN
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int      // 1 to 5
+  comment     String?
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productId, customerId]) // One review per product per customer
 }

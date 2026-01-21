@@ -107,6 +107,57 @@ class ApiClient {
             body: { status },
         });
     }
+
+    // Cart
+    async getCart(customerId: string) {
+        return this.request<Cart>(`/cart/${customerId}`);
+    }
+
+    async addToCart(customerId: string, productId: string, quantity: number) {
+        return this.request<Cart>(`/cart/${customerId}/items`, {
+            method: 'POST',
+            body: { productId, quantity },
+        });
+    }
+
+    async removeFromCart(customerId: string, productId: string) {
+        return this.request<{ message: string; cart: Cart }>(`/cart/${customerId}/items/${productId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async checkout(customerId: string, data: CheckoutInput) {
+        return this.request<Order>(`/cart/${customerId}/checkout`, {
+            method: 'POST',
+            body: data,
+        });
+    }
+
+    // Warehouse (Admin)
+    async getWarehouses() {
+        return this.request<Warehouse[]>('/warehouses');
+    }
+
+    // Reviews
+    async createReview(data: CreateReviewInput) {
+        return this.request<Review>('/reviews', {
+            method: 'POST',
+            body: data,
+        });
+    }
+
+    async getProductReviews(productId: string) {
+        return this.request<Review[]>(`/reviews/product/${productId}`);
+    }
+
+    async getProductStats(productId: string) {
+        return this.request<{ averageRating: number; totalReviews: number }>(`/reviews/product/${productId}/stats`);
+    }
+
+    // CMS
+    async getPage(slug: string) {
+        return this.request<CmsPage>(`/cms/${slug}`);
+    }
 }
 
 // Types
@@ -155,6 +206,58 @@ export interface CreateOrderInput {
 }
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+export interface Cart {
+    id: string;
+    customerId: string;
+    items: CartItem[];
+    subtotal: number;
+    itemCount: number;
+}
+
+export interface CartItem {
+    id: string;
+    productId: string;
+    quantity: number;
+    itemTotal: number;
+    product: Product;
+}
+
+export interface CheckoutInput {
+    shippingAddress: string;
+    shippingCity: string;
+    shippingCountry: string;
+    paymentMethod: string;
+}
+
+export interface Warehouse {
+    id: string;
+    name: string;
+    code: string;
+    isDefault: boolean;
+}
+
+export interface Review {
+    id: string;
+    rating: number; // 1-5
+    comment?: string;
+    customerId: string;
+    customer?: { firstName: string; lastName: string };
+    createdAt: string;
+}
+
+export interface CreateReviewInput {
+    productId: string;
+    rating: number;
+    comment?: string;
+}
+
+export interface CmsPage {
+    id: string;
+    title: string;
+    slug: string;
+    content: Record<string, any>;
+}
 
 export const api = new ApiClient();
 export default api;

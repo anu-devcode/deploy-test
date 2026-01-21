@@ -9,6 +9,13 @@ import { AuthModule } from './auth';
 import { ProductsModule } from './products';
 import { OrdersModule } from './orders';
 import { IntegrationsModule } from './integrations';
+import { CustomersModule } from './customers';
+import { CartModule } from './cart';
+import { WarehouseModule } from './warehouse';
+import { PaymentsModule } from './payments';
+import { CmsModule } from './cms';
+import { ReviewsModule } from './reviews';
+// import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
 
 @Module({
   imports: [
@@ -20,6 +27,13 @@ import { IntegrationsModule } from './integrations';
     ProductsModule,
     OrdersModule,
     IntegrationsModule,
+    CustomersModule,
+    CartModule,
+    WarehouseModule,
+    PaymentsModule,
+    CmsModule,
+    ReviewsModule,
+    // EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -31,6 +45,8 @@ export class AppModule implements NestModule {
       .exclude(
         { path: 'tenants', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.GET },
+        { path: 'auth/register', method: RequestMethod.POST },
+        { path: 'auth/login', method: RequestMethod.POST },
       )
       .forRoutes('*');
   }

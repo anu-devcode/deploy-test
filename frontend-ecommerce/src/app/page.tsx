@@ -1,128 +1,159 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Header, Footer } from '@/components';
+import { Header, Footer, ProductCard } from '@/components';
+import api, { Product } from '@/lib/api';
 
 export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await api.getProducts();
+        setFeaturedProducts(data.slice(0, 4)); // Show first 4 products
+      } catch (error) {
+        console.error('Failed to fetch featured products', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative container mx-auto px-4 py-24 md:py-32">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-                Quality Crop Products
-                <span className="block text-emerald-200">From Farm to Table</span>
+        {/* Dynamic Hero Section */}
+        <section className="relative h-[600px] flex items-center bg-gray-900">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10"></div>
+            {/* Placeholder for dynamic CMS hero image */}
+            <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1625246333195-5848c4282ee8?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-60 animate-slow-zoom"></div>
+          </div>
+
+          <div className="container mx-auto px-4 relative z-20">
+            <div className="max-w-2xl text-white">
+              <span className="inline-block px-4 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded-full text-emerald-300 text-sm font-semibold mb-6 backdrop-blur-sm">
+                Premium Agricultural Marketplace
+              </span>
+              <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
+                Fresh Crops <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                  Global Reach
+                </span>
               </h1>
-              <p className="text-xl text-emerald-100 mb-8 max-w-2xl">
-                Your trusted platform for premium lentils, grains, legumes, and cereals.
-                We connect farmers directly with buyers for the freshest products.
+              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+                Connect directly with certified farmers and suppliers.
+                Experience seamless trading with our B2B specialized platform.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/products"
-                  className="px-8 py-4 bg-white text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50 transition-colors shadow-lg"
+                  className="px-8 py-4 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all hover:scale-105 shadow-lg shadow-emerald-900/50"
                 >
-                  Browse Products
+                  Explore Marketplace
                 </Link>
                 <Link
-                  href="/about"
-                  className="px-8 py-4 bg-white/10 backdrop-blur rounded-xl font-semibold hover:bg-white/20 transition-colors border border-white/20"
+                  href="/contact"
+                  className="px-8 py-4 bg-white/10 backdrop-blur text-white rounded-xl font-bold hover:bg-white/20 transition-all border border-white/10"
                 >
-                  Learn More
+                  Become a Supplier
                 </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-20 bg-white">
+        {/* Categories Section - Professional Cards */}
+        <section className="py-24 bg-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-              Why Choose BrolfEcommerce?
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🌾</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Premium Quality</h3>
-                <p className="text-gray-600">
-                  Hand-selected crops from verified farms, ensuring the highest quality products for your business.
-                </p>
-              </div>
-
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🚚</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Fast Delivery</h3>
-                <p className="text-gray-600">
-                  Reliable logistics network ensuring your orders reach you fresh and on time.
-                </p>
-              </div>
-
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">💰</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Best Prices</h3>
-                <p className="text-gray-600">
-                  Direct from source pricing with transparent bulk discounts for wholesale buyers.
-                </p>
-              </div>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Market Categories</h2>
+              <p className="text-gray-500 max-w-2xl mx-auto">Browse our comprehensive catalog of agricultural products sorted by category</p>
             </div>
-          </div>
-        </section>
 
-        {/* Categories Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-              Our Product Categories
-            </h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { name: 'Lentils', emoji: '🫘' },
-                { name: 'Grains', emoji: '🌾' },
-                { name: 'Legumes', emoji: '🥜' },
-                { name: 'Cereals', emoji: '🌽' },
+                { name: 'Grains & Cereals', image: '🌾', desc: 'Wheat, Barley, Maize, Rice' },
+                { name: 'Pulses & Legumes', image: '🫘', desc: 'Lentils, Beans, Peas, Chickpeas' },
+                { name: 'Oilseeds', image: '🌻', desc: 'Sesame, Sunflower, Soybean' },
+                { name: 'Spices & Herbs', image: '🌶️', desc: 'Pepper, Ginger, Turmeric' },
               ].map((category) => (
-                <Link
-                  key={category.name}
-                  href={`/products?category=${category.name.toLowerCase()}`}
-                  className="group bg-white rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100"
-                >
-                  <div className="text-5xl mb-4">{category.emoji}</div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                <div key={category.name} className="group cursor-pointer">
+                  <div className="relative overflow-hidden rounded-2xl aspect-[4/5] bg-gray-100 mb-4">
+                    <div className="absolute inset-0 bg-emerald-900/10 group-hover:bg-emerald-900/0 transition-colors z-10"></div>
+                    <div className="w-full h-full flex items-center justify-center text-8xl bg-gray-50 group-hover:scale-110 transition-transform duration-500">
+                      {category.image}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
                     {category.name}
                   </h3>
-                </Link>
+                  <p className="text-sm text-gray-500 mt-1">{category.desc}</p>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Start Trading?</h2>
-            <p className="text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of businesses already using BrolfEcommerce for their crop trading needs.
-            </p>
-            <Link
-              href="/register"
-              className="inline-block px-8 py-4 bg-white text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50 transition-colors shadow-lg"
-            >
-              Create Your Account
-            </Link>
+        {/* Featured Products - Dynamic Module */}
+        <section className="py-24 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Listings</h2>
+                <p className="text-gray-500">Top rated products for this week</p>
+              </div>
+              <Link href="/products" className="text-emerald-600 font-semibold hover:text-emerald-700 flex items-center gap-2">
+                View All Results <span>→</span>
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="flex gap-4 overflow-hidden">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-1/4 h-80 bg-gray-200 animate-pulse rounded-2xl"></div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {featuredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
+
+        {/* Stats Section - Trust Indicators */}
+        <section className="py-20 bg-emerald-900 text-white">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/10">
+              <div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">5K+</div>
+                <div className="text-sm text-emerald-100">Active Farmers</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">10K+</div>
+                <div className="text-sm text-emerald-100">Global Buyers</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">50K+</div>
+                <div className="text-sm text-emerald-100">Successful Trades</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-emerald-400 mb-2">24/7</div>
+                <div className="text-sm text-emerald-100">Expert Support</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <Footer />
