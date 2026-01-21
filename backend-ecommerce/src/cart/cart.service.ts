@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddToCartDto, UpdateCartItemDto, CheckoutDto } from './dto';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+const Decimal = Prisma.Decimal;
 
 @Injectable()
 export class CartService {

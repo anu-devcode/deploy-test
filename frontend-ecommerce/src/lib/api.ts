@@ -69,13 +69,34 @@ class ApiClient {
         });
     }
 
-    // Products
-    async getProducts() {
-        return this.request<Product[]>('/products');
+    // Storefront
+    async getStorefrontProducts(params: StorefrontParams = {}) {
+        const query = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined) query.append(key, String(value));
+        });
+        return this.request<{ products: Product[]; pagination: any }>(`/storefront/products?${query.toString()}`);
     }
 
     async getProduct(id: string) {
-        return this.request<Product>(`/products/${id}`);
+        return this.request<Product>(`/storefront/products/${id}`);
+    }
+
+    async getFeaturedProducts(limit = 8) {
+        return this.request<Product[]>(`/storefront/featured?limit=${limit}`);
+    }
+
+    async getProductSuggestions(id: string, limit = 4) {
+        return this.request<Product[]>(`/storefront/products/${id}/suggestions?limit=${limit}`);
+    }
+
+    async getCategories() {
+        return this.request<Category[]>(`/storefront/categories`);
+    }
+
+    // Legacy Admin Products
+    async getAdminProducts() {
+        return this.request<Product[]>('/products');
     }
 
     async createProduct(data: CreateProductInput) {
@@ -89,6 +110,7 @@ class ApiClient {
     async getOrders() {
         return this.request<Order[]>('/orders');
     }
+
 
     async getOrder(id: string) {
         return this.request<Order>(`/orders/${id}`);
@@ -166,12 +188,41 @@ export interface Product {
     name: string;
     description?: string;
     price: number;
+    compareAtPrice?: number;
     stock: number;
     sku?: string;
+    images?: string[];
+    tags?: string[];
+    isFeatured?: boolean;
+    categoryId?: string;
+    category?: Category;
+    avgRating?: number;
+    reviewCount?: number;
     tenantId: string;
     createdAt: string;
     updatedAt: string;
 }
+
+export interface Category {
+    id: string;
+    name: string;
+    slug: string;
+    parentId?: string;
+    children?: Category[];
+    _count?: { products: number };
+}
+
+export interface StorefrontParams {
+    categoryId?: string;
+    search?: string;
+    tags?: string;
+    featured?: boolean;
+    page?: number;
+    limit?: number;
+    sortBy?: 'price' | 'createdAt' | 'name';
+    sortOrder?: 'asc' | 'desc';
+}
+
 
 export interface CreateProductInput {
     name: string;

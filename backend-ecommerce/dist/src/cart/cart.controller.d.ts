@@ -1,0 +1,72 @@
+import { CartService } from './cart.service';
+import { AddToCartDto, UpdateCartItemDto, CheckoutDto } from './dto';
+export declare class CartController {
+    private readonly cartService;
+    constructor(cartService: CartService);
+    getCart(customerId: string, tenantId: string): Promise<any>;
+    addToCart(customerId: string, dto: AddToCartDto, tenantId: string): Promise<any>;
+    updateCartItem(customerId: string, productId: string, dto: UpdateCartItemDto, tenantId: string): Promise<any>;
+    removeFromCart(customerId: string, productId: string, tenantId: string): Promise<any>;
+    clearCart(customerId: string, tenantId: string): Promise<any>;
+    checkout(customerId: string, dto: CheckoutDto, tenantId: string): Promise<{
+        customer: {
+            tenantId: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+            phone: string | null;
+            address: string | null;
+            city: string | null;
+            country: string | null;
+        };
+        items: ({
+            product: {
+                tenantId: string;
+                name: string;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                price: import("@prisma/client-runtime-utils").Decimal;
+                compareAtPrice: import("@prisma/client-runtime-utils").Decimal | null;
+                stock: number;
+                sku: string | null;
+                images: string[];
+                tags: string[];
+                isPublished: boolean;
+                isFeatured: boolean;
+                categoryId: string | null;
+                warehouseId: string | null;
+            };
+        } & {
+            id: string;
+            price: import("@prisma/client-runtime-utils").Decimal;
+            productId: string;
+            orderId: string;
+            quantity: number;
+        })[];
+    } & {
+        tenantId: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        orderNumber: string | null;
+        total: import("@prisma/client-runtime-utils").Decimal;
+        subtotal: import("@prisma/client-runtime-utils").Decimal | null;
+        shippingTotal: import("@prisma/client-runtime-utils").Decimal | null;
+        status: import("@prisma/client").$Enums.OrderStatus;
+        paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+        paymentMethod: string | null;
+        paymentRef: string | null;
+        shippingMethod: string | null;
+        shippingAddress: string | null;
+        shippingCity: string | null;
+        shippingCountry: string | null;
+        trackingNumber: string | null;
+        notes: string | null;
+        customerId: string;
+    }>;
+}

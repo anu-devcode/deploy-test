@@ -30,21 +30,19 @@ export class ReviewsService {
             throw new ConflictException('You have already reviewed this product');
         }
 
-        // specific business rule: verify if customer bought the product?
-        // skipping for now to allow easier testing, but good to note.
-
         return this.prisma.review.create({
             data: {
                 ...dto,
                 customerId,
                 tenantId,
+                status: 'PENDING',
             },
         });
     }
 
     async findAll(productId: string, tenantId: string) {
         return this.prisma.review.findMany({
-            where: { productId, tenantId },
+            where: { productId, tenantId, status: 'APPROVED' },
             include: {
                 customer: {
                     select: { firstName: true, lastName: true },
@@ -56,7 +54,7 @@ export class ReviewsService {
 
     async getProductStats(productId: string, tenantId: string) {
         const reviews = await this.prisma.review.findMany({
-            where: { productId, tenantId },
+            where: { productId, tenantId, status: 'APPROVED' },
             select: { rating: true },
         });
 
@@ -86,7 +84,7 @@ export class ReviewsService {
 
         return this.prisma.review.update({
             where: { id },
-            data: dto,
+            data: { ...dto, status: 'PENDING' },
         });
     }
 
@@ -100,10 +98,63 @@ export class ReviewsService {
         }
 
         if (review.customerId !== customerId) {
-            // Allow admins to delete? For now strict ownership
             throw new ForbiddenException('You can only delete your own reviews');
         }
 
         return this.prisma.review.delete({ where: { id } });
     }
+
+    // Admin moderation methods
+    async getPendingReviews(tenantId: string) {
+        return this.prisma.review.findMany({
+            where: { tenantId, status: 'PENDING' },
+            include: {
+                customer: { select: { firstName: true, lastName: true, email: true } },
+                product: { select: { id: true, name: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+    }
+
+    async getAllReviewsAdmin(tenantId: string, status?: string) {
+        const where: any = { tenantId };
+        if (status) where.status = status;
+
+        return this.prisma.review.findMany({
+            where,
+            include: {
+                customer: { select: { firstName: true, lastName: true, email: true } },
+                product: { select: { id: true, name: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED', tenantId: string) {
+        const review = await this.prisma.review.findFirst({
+            where: { id, tenantId },
+        });
+
+        if (!review) {
+            throw new NotFoundException('Review not found');
+        }
+
+        return this.prisma.review.update({
+            where: { id },
+            data: { status },
+        });
+    }
+
+    async adminDeleteReview(id: string, tenantId: string) {
+        const review = await this.prisma.review.findFirst({
+            where: { id, tenantId },
+        });
+
+        if (!review) {
+            throw new NotFoundException('Review not found');
+        }
+
+        return this.prisma.review.delete({ where: { id } });
+    }
 }
+

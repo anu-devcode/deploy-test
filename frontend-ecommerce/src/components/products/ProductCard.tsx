@@ -11,7 +11,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <Link href={`/products/${product.id}`} className="block h-full">
             <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full">
                 <div className="aspect-square bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center relative overflow-hidden">
-                    <div className="text-6xl transform group-hover:scale-110 transition-transform duration-300">🌾</div>
+                    <div className="text-6xl transform group-hover:scale-110 transition-transform duration-300 will-change-transform">🌾</div>
 
                     {/* Quick Action Overlay (Optional) */}
                 </div>
@@ -34,10 +34,10 @@ export function ProductCard({ product }: ProductCardProps) {
                             </span>
 
                             <span className={`text-xs px-2 py-1 rounded-full ${product.stock > 10
-                                    ? 'bg-green-100 text-green-700'
-                                    : product.stock > 0
-                                        ? 'bg-yellow-100 text-yellow-700'
-                                        : 'bg-red-100 text-red-700'
+                                ? 'bg-green-100 text-green-700'
+                                : product.stock > 0
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-red-100 text-red-700'
                                 }`}>
                                 {product.stock > 0 ? `${product.stock} left` : 'Out of stock'}
                             </span>

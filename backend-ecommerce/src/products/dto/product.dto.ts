@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsBoolean, IsArray, Min } from 'class-validator';
 
 export class CreateProductDto {
     @IsNotEmpty()
@@ -16,11 +16,42 @@ export class CreateProductDto {
     @IsOptional()
     @IsNumber()
     @Min(0)
+    compareAtPrice?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
     stock?: number;
 
     @IsOptional()
     @IsString()
     sku?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    images?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    tags?: string[];
+
+    @IsOptional()
+    @IsBoolean()
+    isPublished?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
+
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
+
+    @IsOptional()
+    @IsString()
+    warehouseId?: string;
 }
 
 export class UpdateProductDto {
@@ -40,9 +71,41 @@ export class UpdateProductDto {
     @IsOptional()
     @IsNumber()
     @Min(0)
+    compareAtPrice?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
     stock?: number;
 
     @IsOptional()
     @IsString()
     sku?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    images?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    tags?: string[];
+
+    @IsOptional()
+    @IsBoolean()
+    isPublished?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
+
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
+
+    @IsOptional()
+    @IsString()
+    warehouseId?: string;
 }
+

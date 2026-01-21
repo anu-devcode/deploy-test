@@ -25,6 +25,41 @@ services:
     networks:
       - brolf_network
 
+  backend:
+    build:
+      context: ./backend-ecommerce
+      dockerfile: Dockerfile
+    container_name: brolf_backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-brolf_ecommerce}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkey}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - brolf_network
+
+  frontend:
+    build:
+      context: ./frontend-ecommerce
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+        NEXT_PUBLIC_TENANT_ID: default
+    container_name: brolf_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - brolf_network
+
 networks:
   brolf_network:
     driver: bridge

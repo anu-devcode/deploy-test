@@ -12,8 +12,8 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await api.getProducts();
-        setFeaturedProducts(data.slice(0, 4)); // Show first 4 products
+        const { products } = await api.getStorefrontProducts({ limit: 4, sortOrder: 'desc' });
+        setFeaturedProducts(products);
       } catch (error) {
         console.error('Failed to fetch featured products', error);
       } finally {
@@ -37,7 +37,7 @@ export default function Home() {
           </div>
 
           <div className="container mx-auto px-4 relative z-20">
-            <div className="max-w-2xl text-white">
+            <div className="max-w-2xl text-white animate-fade-in-up">
               <span className="inline-block px-4 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded-full text-emerald-300 text-sm font-semibold mb-6 backdrop-blur-sm">
                 Premium Agricultural Marketplace
               </span>
@@ -72,7 +72,7 @@ export default function Home() {
         {/* Categories Section - Professional Cards */}
         <section className="py-24 bg-white">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
+            <div className="text-center mb-16 animate-fade-in-up delay-100">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Market Categories</h2>
               <p className="text-gray-500 max-w-2xl mx-auto">Browse our comprehensive catalog of agricultural products sorted by category</p>
             </div>
