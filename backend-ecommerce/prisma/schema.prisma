@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  config      Json?    // Stores branding, taxes, workflow rules
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  products    Product[]
+  orders      Order[]
+  customers   Customer[]
+  warehouses  Warehouse[]
+  cmsPages    CmsPage[]
+  carts       Cart[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(STAFF)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal
+  stock       Int         @default(0)
+  sku         String?
+  categoryId  String?
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  warehouseId String?
+  warehouse   Warehouse?  @relation(fields: [warehouseId], references: [id])
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  stockMovements StockMovement[]
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([slug, parentId])
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  email     String
+  firstName String?
+  lastName  String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  orders    Order[]
+  cart      Cart?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, tenantId])
+}
+
+model Cart {
+  id         String     @id @default(uuid())
+  customerId String     @unique
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  tenantId   String
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  items      CartItem[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String?
+  total           Decimal
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?
+  paymentRef      String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingCountry String?
+  trackingNumber  String?
+  notes           String?
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  items           OrderItem[]
+  payments        Payment[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id])
+  amount        Decimal
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  providerRef   String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Warehouse {
+  id          String          @id @default(uuid())
+  name        String
+  code        String
+  address     String?
+  city        String?
+  country     String?
+  isDefault   Boolean         @default(false)
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  products    Product[]
+  movements   StockMovement[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([code, tenantId])
+}
+
+model StockMovement {
+  id          String        @id @default(uuid())
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  quantity    Int           // Positive for in, negative for out
+  type        MovementType
+  reference   String?       // Order ID, adjustment ID, etc.
+  notes       String?
+  createdAt   DateTime      @default(now())
+}
+
+model CmsPage {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String
+  content   Json     // Rich content blocks
+  published Boolean  @default(false)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, tenantId])
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  STAFF
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  TELEBIRR
+  CBE
+  MPESA
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  TRANSFER
+  RETURN
+}
