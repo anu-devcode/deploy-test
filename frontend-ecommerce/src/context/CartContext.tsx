@@ -1,93 +1,126 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api, { Cart, CartItem } from '@/lib/api';
-import { useAuth } from './AuthContext';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { seedProducts } from '@/lib/mock-data';
+import { readJson, writeJson } from '@/lib/storage';
+import type { Product } from '@/types';
+import { useTenant } from './TenantContext';
 
-interface CartContextType {
-    cart: Cart | null;
-    loading: boolean;
-    addToCart: (productId: string, quantity: number) => Promise<void>;
-    removeFromCart: (productId: string) => Promise<void>;
-    refreshCart: () => Promise<void>;
-}
+type CartItem = {
+  productId: string;
+  quantity: number;
+};
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+type EnrichedCartItem = CartItem & {
+  product: Product;
+  lineTotal: number;
+};
+
+type CartState = {
+  items: CartItem[];
+};
+
+type CartContextType = {
+  items: EnrichedCartItem[];
+  subtotal: number;
+  itemCount: number;
+  loading: boolean;
+  addToCart: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string) => void;
+  clearCart: () => void;
+};
+
+const CartContext = createContext<CartContextType | null>(null);
+
+const emptyState: CartState = { items: [] };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-    const [cart, setCart] = useState<Cart | null>(null);
-    const [loading, setLoading] = useState(false);
-    const { user, isAuthenticated } = useAuth();
+  const { tenant } = useTenant();
+  const [state, setState] = useState<CartState>(emptyState);
+  const [loading, setLoading] = useState(true);
 
-    // WARNING: In a real app we would get the customer ID from the auth user profile.
-    // For this demo, we'll assume the user ID is the customer ID or map it properly.
-    // Since our User model and Customer model are separate, we would normally
-    // fetch the 'Me' profile to get the linked Customer ID.
-    // For now, let's use a placeholder or derived ID.
-    const customerId = user ? 'TEMP_CUSTOMER_ID' : null; // TODO: Replace with real customer mapping
+  const storageKey = `cart:${tenant.id}`;
 
-    useEffect(() => {
-        if (isAuthenticated && customerId) {
-            refreshCart();
-        } else {
-            setCart(null);
-        }
-    }, [isAuthenticated, customerId]);
+  useEffect(() => {
+    // Load cart from localStorage when tenant changes
+    const saved = readJson<CartState>(storageKey, emptyState);
+    setState(saved);
+    setLoading(false);
+  }, [storageKey]);
 
-    const refreshCart = async () => {
-        if (!customerId) return;
-        setLoading(true);
-        try {
-            const data = await api.getCart(customerId);
-            setCart(data);
-        } catch (error) {
-            console.error('Failed to load cart:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const addToCart = async (productId: string, quantity: number) => {
-        if (!customerId) {
-            // TODO: Handle guest cart or redirect to login
-            alert("Please login to add items to cart");
-            return;
-        }
-
-        try {
-            const updatedCart = await api.addToCart(customerId, productId, quantity);
-            setCart(updatedCart);
-            // Optional: Show toast
-        } catch (error) {
-            console.error('Failed to add to cart:', error);
-            alert('Failed to add item to cart');
-        }
-    };
-
-    const removeFromCart = async (productId: string) => {
-        if (!customerId) return;
-        try {
-            // API currently returns { message, cart } but type def expects Cart.
-            // We should check the actual response structure in api.ts
-            // For now, we'll re-fetch or assume the hook updates.
-            await api.removeFromCart(customerId, productId);
-            refreshCart();
-        } catch (error) {
-            console.error('Failed to remove from cart:', error);
-        }
-    };
-
-    return (
-        <CartContext.Provider value={{ cart, loading, addToCart, removeFromCart, refreshCart }}>
-            {children}
-        </CartContext.Provider>
-    );
-}
-
-export function useCart() {
-    const context = useContext(CartContext);
-    if (context === undefined) {
-        throw new Error('useCart must be used within a CartProvider');
+  useEffect(() => {
+    if (!loading) {
+      writeJson(storageKey, state);
     }
-    return context;
+  }, [state, storageKey, loading]);
+
+  const items: EnrichedCartItem[] = useMemo(() => {
+    const productsForTenant = seedProducts.filter((p) => p.tenantId === tenant.id);
+    return state.items
+      .map((item) => {
+        const product = productsForTenant.find((p) => p.id === item.productId);
+        if (!product) return undefined;
+        return {
+          ...item,
+          product,
+          lineTotal: product.price * item.quantity,
+        };
+      })
+      .filter((x): x is EnrichedCartItem => Boolean(x));
+  }, [state.items, tenant.id]);
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.lineTotal, 0),
+    [items]
+  );
+
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
+
+  const addToCart = (productId: string, quantity: number) => {
+    setState((prev) => {
+      const existing = prev.items.find((i) => i.productId === productId);
+      if (!existing) {
+        return { items: [...prev.items, { productId, quantity }] };
+      }
+      return {
+        items: prev.items.map((i) =>
+          i.productId === productId ? { ...i, quantity: i.quantity + quantity } : i
+        ),
+      };
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setState((prev) => ({
+      items: prev.items.filter((i) => i.productId !== productId),
+    }));
+  };
+
+  const clearCart = () => setState(emptyState);
+
+  return (
+    <CartContext.Provider
+      value={{
+        items,
+        subtotal,
+        itemCount,
+        loading,
+        addToCart,
+        removeFromCart,
+        clearCart,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 }
+
+export function useCart(): CartContextType {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart must be used within CartProvider');
+  return ctx;
+}
+
