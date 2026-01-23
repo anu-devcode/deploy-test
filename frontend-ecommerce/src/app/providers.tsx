@@ -1,7 +1,17 @@
 'use client';
 
+import { AuthProvider, CartProvider, TenantProvider } from '@/context';
+import { DEFAULT_TENANT_SLUG } from '@/lib/mock-data';
+
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Keep global providers light; tenant-scoped providers live inside each tenant layout.
-  return <>{children}</>;
+    return (
+        <AuthProvider>
+            <TenantProvider tenantSlug={DEFAULT_TENANT_SLUG}>
+                <CartProvider>
+                    {children}
+                </CartProvider>
+            </TenantProvider>
+        </AuthProvider>
+    );
 }
 

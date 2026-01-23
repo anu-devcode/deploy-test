@@ -7,7 +7,7 @@ export default function AboutPage() {
         <>
 
             {/* Hero Section */}
-            <section className="relative h-[60vh] flex items-center justify-center overflow-hidden bg-emerald-900">
+            <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-emerald-900">
                 <div className="absolute inset-0 opacity-40">
                     <Image
                         src="/about-hero.png"

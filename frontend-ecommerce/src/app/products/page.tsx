@@ -1,70 +1,113 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Header, Footer, ProductCard } from '@/components';
-import api, { Product } from '@/lib/api';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { api, Product, Category } from '@/lib/api';
+import { ProductCard } from '@/components/products/ProductCard';
+import { ProductFilters } from '@/components/products/ProductFilters';
 
-export default function ProductsPage() {
+function ProductListingContent() {
+    const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [total, setTotal] = useState(0);
 
+    // Fetch data when URL params change
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
+            setLoading(true);
             try {
-                const data = await api.getProducts();
-                setProducts(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load products');
+                // Fetch categories once or if needed
+                const cats = await api.getCategories();
+                setCategories(cats);
+
+                // Build query params
+                const params: any = {
+                    page: Number(searchParams.get('page')) || 1,
+                    limit: 12,
+                    categoryId: searchParams.get('categoryId'),
+                    minPrice: searchParams.get('minPrice'),
+                    maxPrice: searchParams.get('maxPrice'),
+                    search: searchParams.get('search'),
+                    sortBy: searchParams.get('sortBy') || 'createdAt',
+                    sortOrder: searchParams.get('sortOrder') || 'desc',
+                };
+
+                const { products: fetchedProducts, pagination } = await api.getStorefrontProducts(params);
+                setProducts(fetchedProducts);
+                setTotal(pagination.total);
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProducts();
-    }, []);
+        fetchData();
+    }, [searchParams]);
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <Header />
+        <div className="min-h-screen bg-gray-50 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-baseline justify-between border-b border-gray-200 pb-6 mb-10">
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900">Shop</h1>
+                    <div className="flex items-center">
+                        <span className="text-gray-500 mr-2">Sort by:</span>
+                        <select
+                            className="border-none bg-transparent font-medium text-gray-700 focus:ring-0"
+                            value={searchParams.get('sortBy') || 'createdAt'}
+                            onChange={(e) => {
+                                // Simple sort change logic could go here
+                            }}
+                        >
+                            <option value="createdAt">Newest</option>
+                            <option value="price">Price</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+                </div>
 
-            <main className="flex-1 py-12">
-                <div className="container mx-auto px-4">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900">Our Products</h1>
-                        <p className="text-gray-600 mt-2">Browse our selection of premium crop products</p>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-4">
+                    {/* Filters */}
+                    <div className="lg:col-span-1">
+                        <ProductFilters categories={categories} />
                     </div>
 
-                    {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[...Array(8)].map((_, i) => (
-                                <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
-                                    <div className="aspect-square bg-gray-200 rounded-xl mb-4"></div>
-                                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : error ? (
-                        <div className="text-center py-12">
-                            <p className="text-red-600">{error}</p>
-                            <p className="text-gray-500 mt-2">Please ensure you have selected a tenant and are logged in.</p>
-                        </div>
-                    ) : products.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-600">No products available yet.</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {products.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </main>
+                    {/* Product Grid */}
+                    <div className="lg:col-span-3">
+                        {loading ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[1, 2, 3, 4, 5, 6].map((i) => (
+                                    <div key={i} className="h-96 bg-gray-200 rounded-2xl animate-pulse"></div>
+                                ))}
+                            </div>
+                        ) : products.length === 0 ? (
+                            <div className="text-center py-20">
+                                <span className="text-4xl block mb-4">🔍</span>
+                                <h3 className="text-lg font-medium text-gray-900">No products found</h3>
+                                <p className="text-gray-500">Try adjusting your filters or search terms.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {products.map((product) => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))}
+                            </div>
+                        )}
 
-            <Footer />
+                        {/* Pagination controls would go here */}
+                    </div>
+                </div>
+            </div>
         </div>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+            <ProductListingContent />
+        </Suspense>
     );
 }

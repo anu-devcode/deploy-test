@@ -51,6 +51,14 @@ export default function AdminLayout({
                     </Link>
 
                     <Link
+                        href="/admin/categories"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                        <span>🏷️</span>
+                        <span>Categories</span>
+                    </Link>
+
+                    <Link
                         href="/admin/orders"
                         className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
                     >
@@ -59,11 +67,35 @@ export default function AdminLayout({
                     </Link>
 
                     <Link
+                        href="/admin/deliveries"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                        <span>🚚</span>
+                        <span>Deliveries</span>
+                    </Link>
+
+                    <Link
+                        href="/admin/payments"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                        <span>💳</span>
+                        <span>Payments</span>
+                    </Link>
+
+                    <Link
                         href="/admin/customers"
                         className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
                     >
                         <span>👥</span>
                         <span>Customers</span>
+                    </Link>
+
+                    <Link
+                        href="/admin/reviews"
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                        <span>⭐</span>
+                        <span>Reviews</span>
                     </Link>
 
                     <Link

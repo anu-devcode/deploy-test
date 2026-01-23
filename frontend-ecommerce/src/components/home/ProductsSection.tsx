@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Tenant } from '@/types';
+import { Heart, Eye, Link as LinkIcon, ShoppingCart, Star } from 'lucide-react';
 
 interface ProductsSectionProps {
     filteredProducts: Product[];
@@ -110,21 +111,21 @@ export function ProductsSection({
 
                                     {/* Hover Actions */}
                                     <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:scale-110 transition-all">
-                                            <span className="text-xl">❤️</span>
+                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
+                                            <Heart className="w-5 h-5" />
                                         </button>
-                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:scale-110 transition-all">
-                                            <span className="text-xl">👁️</span>
+                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
+                                            <Eye className="w-5 h-5" />
                                         </button>
-                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:scale-110 transition-all">
-                                            <span className="text-xl">🔗</span>
+                                        <button className="w-11 h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
+                                            <LinkIcon className="w-5 h-5" />
                                         </button>
                                     </div>
 
                                     {/* Quick Add Button */}
                                     <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
-                                        <button className="w-full px-6 py-3 rounded-xl bg-white text-emerald-700 font-black text-sm hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
-                                            <span className="text-lg">🛒</span>
+                                        <button className="w-full px-6 py-3 rounded-xl bg-white text-emerald-950 font-black text-sm hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
+                                            <ShoppingCart className="w-4 h-4" />
                                             Quick Add to Cart
                                         </button>
                                     </div>

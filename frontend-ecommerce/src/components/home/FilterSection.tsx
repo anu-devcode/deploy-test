@@ -42,7 +42,7 @@ export function FilterSection({
                         <button
                             onClick={() => setSelectedCategory(null)}
                             className={`px-6 py-3 rounded-full font-bold transition-all duration-300 ${!selectedCategory
-                                ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-emerald-500 shadow-lg shadow-emerald-500/30 scale-105'
+                                ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
                                 : 'bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:scale-105'
                                 }`}
                         >
@@ -53,7 +53,7 @@ export function FilterSection({
                                 key={cat}
                                 onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
                                 className={`px-6 py-3 rounded-full font-bold transition-all duration-300 ${selectedCategory === cat
-                                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-emerald-500 shadow-lg shadow-emerald-500/30 scale-105'
+                                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
                                     : 'bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:scale-105'
                                     }`}
                             >

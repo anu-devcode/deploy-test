@@ -15,6 +15,10 @@ import { WarehouseModule } from './warehouse';
 import { PaymentsModule } from './payments';
 import { CmsModule } from './cms';
 import { ReviewsModule } from './reviews';
+import { DeliveryModule } from './delivery';
+import { AnalyticsModule } from './analytics';
+import { StorefrontModule } from './storefront';
+import { CategoriesModule } from './categories';
 // import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
 
 @Module({
@@ -33,6 +37,10 @@ import { ReviewsModule } from './reviews';
     PaymentsModule,
     CmsModule,
     ReviewsModule,
+    DeliveryModule,
+    AnalyticsModule,
+    StorefrontModule,
+    CategoriesModule,
     // EventsModule,
   ],
   controllers: [AppController],

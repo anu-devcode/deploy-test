@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -23,38 +22,45 @@ model Tenant {
   cmsPages    CmsPage[]
   carts       Cart[]
   reviews     Review[]
+  deliveries  Delivery[]
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role     @default(STAFF)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  role           Role     @default(STAFF)
+  isFirstLogin   Boolean  @default(true)
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Product {
-  id          String      @id @default(uuid())
-  name        String
-  description String?
-  price       Decimal
-  stock       Int         @default(0)
-  sku         String?
-  categoryId  String?
-  category    Category?   @relation(fields: [categoryId], references: [id])
-  warehouseId String?
-  warehouse   Warehouse?  @relation(fields: [warehouseId], references: [id])
-  tenantId    String
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
+  id             String      @id @default(uuid())
+  name           String
+  description    String?
+  price          Decimal
+  compareAtPrice Decimal?    // Original price for discount display
+  stock          Int         @default(0)
+  sku            String?
+  images         String[]    // Array of image URLs
+  tags           String[]    // For filtering and search
+  isPublished    Boolean     @default(false)
+  isFeatured     Boolean     @default(false)
+  categoryId     String?
+  category       Category?   @relation(fields: [categoryId], references: [id])
+  warehouseId    String?
+  warehouse      Warehouse?  @relation(fields: [warehouseId], references: [id])
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  orderItems     OrderItem[]
+  cartItems      CartItem[]
   stockMovements StockMovement[]
-  reviews     Review[]
+  reviews        Review[]
 }
 
 model Category {
@@ -120,10 +126,13 @@ model Order {
   id              String        @id @default(uuid())
   orderNumber     String?
   total           Decimal
+  subtotal        Decimal?
+  shippingTotal   Decimal?      // Shipping cost
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
   paymentMethod   String?
   paymentRef      String?
+  shippingMethod  String?       // e.g., EXPRESS, STANDARD
   shippingAddress String?
   shippingCity    String?
   shippingCountry String?
@@ -135,6 +144,7 @@ model Order {
   tenant          Tenant        @relation(fields: [tenantId], references: [id])
   items           OrderItem[]
   payments        Payment[]
+  delivery        Delivery?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -249,17 +259,50 @@ enum MovementType {
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  rating      Int      // 1 to 5
+  id          String       @id @default(uuid())
+  rating      Int          // 1 to 5
   comment     String?
+  status      ReviewStatus @default(PENDING)
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
   customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [id])
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  @@unique([productId, customerId]) // One review per product per customer
+  @@unique([productId, customerId])
+}
+
+model Delivery {
+  id              String         @id @default(uuid())
+  orderId         String         @unique
+  order           Order          @relation(fields: [orderId], references: [id])
+  status          DeliveryStatus @default(PENDING)
+  driverName      String?
+  driverPhone     String?
+  vehicleInfo     String?
+  estimatedTime   DateTime?
+  actualDelivery  DateTime?
+  notes           String?
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
 }
