@@ -55,10 +55,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state, storageKey, loading]);
 
   const items: EnrichedCartItem[] = useMemo(() => {
-    const productsForTenant = seedProducts.filter((p) => p.tenantId === tenant.id);
     return state.items
       .map((item) => {
-        const product = productsForTenant.find((p) => p.id === item.productId);
+        const product = seedProducts.find((p) => p.id === item.productId);
         if (!product) return undefined;
         return {
           ...item,
@@ -67,7 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
       })
       .filter((x): x is EnrichedCartItem => Boolean(x));
-  }, [state.items, tenant.id]);
+  }, [state.items]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.lineTotal, 0),

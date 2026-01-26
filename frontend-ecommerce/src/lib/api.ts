@@ -69,6 +69,20 @@ class ApiClient {
         });
     }
 
+    async googleLogin(idToken: string) {
+        return this.request<{ access_token: string }>('/auth/google', {
+            method: 'POST',
+            body: { idToken },
+        });
+    }
+
+    async telegramLogin(userData: any) {
+        return this.request<{ access_token: string }>('/auth/telegram', {
+            method: 'POST',
+            body: userData,
+        });
+    }
+
     // Storefront
     async getStorefrontProducts(params: StorefrontParams = {}) {
         const query = new URLSearchParams();

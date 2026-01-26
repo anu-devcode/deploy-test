@@ -50,12 +50,12 @@ export default function ContactPage() {
             <section className="max-w-[1400px] mx-auto px-6 lg:px-12 -mt-24 relative z-20">
                 <div className="grid md:grid-cols-3 gap-8">
                     {[
-                        { icon: '📍', title: 'Our Office', content: 'Brolf Tech Building, Addis Ababa, Ethiopia', action: 'View on Maps' },
-                        { icon: '📞', title: 'Phone Support', content: '+251 912 345 678', action: 'Call Now' },
-                        { icon: '📧', title: 'Email Us', content: 'hello@addisharvest.com', action: 'Send Email' },
+                        { icon: '📍', title: 'Our Office', content: 'Tsega Building, Bole Road, Addis Ababa', action: 'View on Maps' },
+                        { icon: '📞', title: 'Phone Support', content: '+251 987 654 321', action: 'Call Now' },
+                        { icon: '📧', title: 'Email Us', content: 'contact@tsegatrading.com', action: 'Send Email' },
                     ].map((card) => (
                         <div key={card.title} className="bg-white rounded-[2rem] p-10 shadow-2xl shadow-emerald-900/10 border border-emerald-50 hover:-translate-y-2 transition-transform group text-center">
-                            <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center text-4xl mb-6 mx-auto group-hover:scale-110 group-hover:bg-emerald-100 transition-all duration-300">
+                            <div className="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center text-4xl mb-6 mx-auto group-hover:scale-110 group-hover:bg-emerald-600 transition-all duration-300">
                                 {card.icon}
                             </div>
                             <h3 className="text-2xl font-black text-slate-900 mb-3">{card.title}</h3>
@@ -140,7 +140,7 @@ export default function ContactPage() {
                                 <div>
                                     <h3 className="text-3xl font-black text-white mb-6">Connect with Us</h3>
                                     <p className="text-emerald-100/70 text-lg font-medium leading-relaxed mb-8">
-                                        Whether you are a local shop looking for wholesale opportunities or an international buyer interested in Ethiopia's premium crops, our dedicated team is here to assist you.
+                                        Whether you are a local partner looking for sourcing opportunities or an international buyer interested in Tsega's premium harvests, our dedicated team is here to assist you.
                                     </p>
                                 </div>
 

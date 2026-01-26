@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Tenant } from '@/types';
 import { Heart, Eye, Link as LinkIcon, ShoppingCart, Star } from 'lucide-react';
+import { useCart } from '@/context';
 
 interface ProductsSectionProps {
     filteredProducts: Product[];
@@ -24,6 +25,8 @@ export function ProductsSection({
     setSelectedIndustry,
     formatPrice
 }: ProductsSectionProps) {
+    const { addToCart } = useCart();
+
     return (
         <section id="products" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-20 lg:py-28">
             <div className="text-center mb-16">
@@ -124,7 +127,10 @@ export function ProductsSection({
 
                                     {/* Quick Add Button */}
                                     <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
-                                        <button className="w-full px-6 py-3 rounded-xl bg-white text-emerald-950 font-black text-sm hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2">
+                                        <button 
+                                            onClick={() => addToCart(product.id, 1)}
+                                            className="w-full px-6 py-3 rounded-xl bg-white text-emerald-950 font-black text-sm hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2"
+                                        >
                                             <ShoppingCart className="w-4 h-4" />
                                             Quick Add to Cart
                                         </button>

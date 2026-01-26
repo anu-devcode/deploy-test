@@ -55,7 +55,7 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                         src="/harvest-hero.png"
                         alt="Harvest Base"
                         fill
-                        className="object-cover opacity-20 blur-[1px] animate-[slow-pan_40s_linear_infinite_alternate]"
+                        className="object-cover opacity-100 blur-[1px] animate-[slow-pan_40s_linear_infinite_alternate]"
                         priority
                     />
                 </div>
@@ -132,9 +132,9 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                         </div>
 
                         <div className="inline-flex items-center gap-6 px-8 py-3 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl group hover:border-emerald-500/30 transition-colors duration-500">
-                            <span className="text-[11px] font-black text-emerald-400 tracking-[0.6em] uppercase">Est. 2010</span>
+                            <span className="text-[11px] font-black text-emerald-400 tracking-[0.6em] uppercase">Est. 2004</span>
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[11px] font-black text-white/80 tracking-[0.4em] uppercase group-hover:text-white transition-colors">Addis Elite Trade Group</span>
+                            <span className="text-[11px] font-black text-white/80 tracking-[0.4em] uppercase group-hover:text-white transition-colors">Tsega Trading Group</span>
                         </div>
                     </div>
 
@@ -179,77 +179,60 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                         </p>
                     </div>
 
-                    {/* High-Octane Action Hub */}
-                    <div className="flex flex-col lg:flex-row items-center justify-center gap-10 pt-8 animate-[fade-in-up_1.2s_ease-out_0.8s_both]">
-                        <button
-                            onClick={() => document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="group relative px-20 py-8 rounded-[2.5rem] bg-emerald-500 text-slate-950 font-black text-2xl shadow-[0_20px_80px_-15px_rgba(16,185,129,0.6)] overflow-hidden transition-all duration-700 hover:scale-[1.05] hover:shadow-[0_40px_100px_-20px_rgba(16,185,129,0.8)] active:scale-95"
-                        >
-                            <span className="relative z-10 flex items-center gap-4 uppercase tracking-tighter">
-                                Enter The Gateway
-                                <ArrowRight className="w-8 h-8 group-hover:translate-x-4 transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)" />
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-[200%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                        </button>
+                    {/* CTA Section */}
+                    <div className="relative z-30 pt-8 animate-[fade-in-up_1.2s_ease-out_0.9s_both]">
+                        <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
 
-                        <div className="flex p-2 rounded-[3rem] bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-3xl hover:border-white/20 transition-all duration-500">
-                            <Link
-                                href="/login"
-                                className="px-12 py-6 rounded-[2.5rem] text-white font-black text-lg hover:bg-white/5 transition-all duration-300 flex items-center gap-4 group"
-                            >
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-500">
-                                    <LogIn className="w-5 h-5" />
-                                </div>
-                                Access Portal
-                            </Link>
+                            {/* Join Us */}
                             <Link
                                 href="/register"
-                                className="px-12 py-6 rounded-[2.5rem] bg-white text-slate-950 font-black text-lg hover:bg-emerald-50 transition-all duration-500 shadow-xl hover:scale-105 active:scale-95"
+                                className="group relative px-12 py-6 rounded-[2.2rem] bg-white text-slate-950 font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 overflow-hidden"
                             >
-                                Partner With Us
+                                <span className="relative z-10 flex items-center gap-3">
+                                    <UserPlus className="w-6 h-6" />
+                                    Join Us
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-200 to-transparent -translate-x-[200%] group-hover:animate-[shimmer_1.5s_infinite]" />
                             </Link>
+
+                            {/* Work With Us */}
+                            <Link
+                                href="/partners"
+                                className="group px-12 py-6 rounded-[2.2rem] border border-white/20 text-white font-black text-lg backdrop-blur-xl hover:border-emerald-500/40 hover:bg-white/5 transition-all duration-500 flex items-center gap-3"
+                            >
+                                <Sparkles className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+                                Work With Us
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                            </Link>
+
                         </div>
+
+                        <p className="mt-20 text-sm text-emerald-100/60 font-medium">
+                            Farmers • Exporters • Innovators • Global Partners
+                        </p>
                     </div>
 
                     {/* Performance Quadrant (Stats) */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 lg:gap-8 pt-12 animate-[fade-in-up_1.2s_ease-out_1s_both]">
-                        {[
-                            { label: "Market Volume", val: "$420M+", icon: <TrendingUp className="w-5 h-5" />, color: "emerald" },
-                            { label: "Elite Growers", val: "2,840+", icon: <Award className="w-5 h-5" />, color: "green" },
-                            { label: "Nations Served", val: "62 Plus", icon: <Globe className="w-5 h-5" />, color: "emerald" },
-                            { label: "Quality Grade", val: "Supreme A+", icon: <Zap className="w-5 h-5" />, color: "amber" }
-                        ].map((stat, i) => (
-                            <div key={i} className="group relative overflow-hidden bg-white/[0.03] border border-white/10 p-10 rounded-[2.5rem] backdrop-blur-2xl hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all duration-700 text-left">
-                                <div className="absolute top-0 right-0 p-6 opacity-[0.05] group-hover:opacity-[0.2] transition-opacity duration-700">
-                                    {stat.icon}
-                                </div>
-                                <div className={`w-14 h-14 rounded-2xl mb-8 flex items-center justify-center text-${stat.color}-400 bg-${stat.color}-400/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-inner`}>
-                                    {stat.icon}
-                                </div>
-                                <div className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.5em] mb-3">{stat.label}</div>
-                                <div className="text-3xl font-black text-white tracking-tight">{stat.val}</div>
-                                {/* Advanced Progress Bar */}
-                                <div className="mt-6 h-[1px] w-full bg-white/10 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-lime-400 w-0 group-hover:w-full transition-all duration-1500 cubic-bezier(0.19, 1, 0.22, 1)"></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+
                 </div>
             </div>
+            {/* Join / Work With Us */}
+
+
 
             {/* Cinematic Scroll indicator */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 group cursor-pointer"
+            {/* <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 group cursor-pointer"
                 onClick={() => document.getElementById('impact')?.scrollIntoView({ behavior: 'smooth' })}>
                 <div className="text-[9px] font-black uppercase tracking-[1em] text-emerald-500/60 group-hover:text-emerald-400 transition-colors mb-2">Explore Excellence</div>
                 <div className="relative w-8 h-12 rounded-full border-2 border-white/10 flex items-start justify-center p-2 group-hover:border-emerald-500/50 transition-colors">
                     <div className="w-1 h-3 bg-emerald-500 rounded-full animate-[scroll-indicator_2s_infinite]"></div>
                 </div>
-            </div>
+            </div> */}
 
-            {/* The Signature Liquid Wave (Bottom Seal) */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-[#010908] pointer-events-none"
-                style={{ maskImage: 'linear-gradient(to top, black, transparent)' }}></div>
+            {/* The Signature Liquid Wave Divider (Consistent with About Page - Bolder) */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-slate-50 [mask-image:url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTQ0MCAzMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMSIgZD0iTTAsOTZMMzAsMTEyQzYwLDEyOCwxMjAsMTYwLDE4MCwxNjBDMjQwLDE2MCwzMDAsMTI4LDM2MCwxMTJDNDIwLDk2LDQ4MCw5Niw1NDAsMTI4QzYwMCwxNjAsNjYwLDE5Miw3MjAsMTkyQzc4MCwxOTIsODQwLDE2MCw5MDAsMTM4LjdDOTYwLDExNywxMDIwLDEwNywxMDgwLDExMkMxMTQwLDExNywxMjAwLDEzOSwxMjYwLDE2MEMxMzIwLDE4MSwxMzgwLDE5MiwxNDEwLDE5N0wxNDQwLDIwMkwxNDQwLDMyMEwxNDEwLDMyMEMxMzgwLDMyMCwxMzIwLDMyMCwxMjYwLDMyMEMxMjAwLDMyMCwxMTQwLDMyMCwxMDgwLDMyMEMxMDIwLDMyMCw5NjAsMzIwLDkwMCwzMjBDODQwLDMyMCw3ODAsMzIwLDcyMCwzMjBDNjYwLDMyMCw2MDAsMzIwLDU0MCwzMjBDNDgwLDMyMCw0MjAsMzIwLDM2MCwzMjBDMzAwLDMyMCwyNDAsMzIwLDE4MCwzMjBDMTIwLDMyMCw2MCwzMjAsMzAsMzIwTDAsMzIwWiI+PC9wYXRoPjwvc3ZnPg==')] bg-repeat-x z-20" />
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-slate-50/20 [mask-image:url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTQ0MCAzMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMSIgZD0iTTAsOTZMMzAsMTEyQzYwLDEyOCwxMjAsMTYwLDE4MCwxNjBDMjQwLDE2MCwzMDAsMTI4LDM2MCwxMTJDNDIwLDk2LDQ4MCw5Niw1NDAsMTI4QzYwMCwxNjAsNjYwLDE5Miw3MjAsMTkyQzc4MCwxOTIsODQwLDE2MCw5MDAsMTM4LjdDOTYwLDExNywxMDIwLDEwNywxMDgwLDExMkMxMTQwLDExNywxMjAwLDEzOSwxMjYwLDE2MEMxMzIwLDE4MSwxMzgwLDE5MiwxNDEwLDE5N0wxNDQwLDIwMkwxNDQwLDMyMEwxNDEwLDMyMEMxMzgwLDMyMCwxMzIwLDMyMCwxMjYwLDMyMEMxMjAwLDMyMCwxMTQwLDMyMCwxMDgwLDMyMEMxMDIwLDMyMCw5NjAsMzIwLDkwMCwzMjBDODQwLDMyMCw3ODAsMzIwLDcyMCwzMjBDNjYwLDMyMCw2MDAsMzIwLDU0MCwzMjBDNDgwLDMyMCw0MjAsMzIwLDM2MCwzMjBDMzAwLDMyMCwyNDAsMzIwLDE4MCwzMjBDMTIwLDMyMCw2MCwzMjAsMzAsMzIwTDAsMzIwWiI+PC9wYXRoPjwvc3ZnPg==')] bg-repeat-x z-10 translate-y-4 opacity-30" />
+
 
             {/* Custom Animations CSS */}
             <style jsx>{`
@@ -298,6 +281,14 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                 @keyframes fade-in-up {
                     from { opacity: 0; transform: translateY(30px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes wave-move {
+                    0% { transform: translateX(0); }
+                    50% { transform: translateX(-25%); }
+                    100% { transform: translateX(0); }
+                }
+                .animate-wave {
+                    animation: wave-move 20s ease-in-out infinite;
                 }
             `}</style>
         </section>

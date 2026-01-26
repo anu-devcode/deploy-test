@@ -61,7 +61,7 @@ export function Footer() {
                             </div>
                         </Link>
                         <p className="text-slate-300 leading-relaxed font-medium">
-                            Your trusted platform for premium agricultural products. From farm to table, we deliver excellence across Ethiopia.
+                            Your elite gateway to Ethiopia's finest agricultural treasures. We bridge the gap between local producers and the global market with integrity.
                         </p>
                         <div className="flex gap-3">
                             {socials.map((social) => (
@@ -80,6 +80,7 @@ export function Footer() {
                             <li><Link href="/about" className="text-slate-300 hover:text-white hover:translate-x-1 inline-block transition-all duration-200 font-medium">About Us</Link></li>
                             <li><Link href="/contact" className="text-slate-300 hover:text-white hover:translate-x-1 inline-block transition-all duration-200 font-medium">Contact Us</Link></li>
                             <li><Link href="/careers" className="text-slate-300 hover:text-white hover:translate-x-1 inline-block transition-all duration-200 font-medium">Careers</Link></li>
+                            <li><Link href="/partners" className="text-slate-300 hover:text-white hover:translate-x-1 inline-block transition-all duration-200 font-medium">Partnerships</Link></li>
                             <li><Link href="/blog" className="text-slate-300 hover:text-white hover:translate-x-1 inline-block transition-all duration-200 font-medium">Blog</Link></li>
                         </ul>
                     </div>
@@ -119,7 +120,7 @@ export function Footer() {
                 <div className="pt-8 border-t border-white/10">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <p className="text-slate-400 font-medium text-center md:text-left text-sm">
-                            © {new Date().getFullYear()} <span className="font-bold text-white">Brolf Ecommerce</span> | <a href="http://brolf.tech" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400">Brolf Tech</a>. All rights reserved. Made with 💚 in Ethiopia
+                            © {new Date().getFullYear()} <span className="font-bold text-white">Tsega Trading Group</span> | <a href="http://brolf.tech" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400">Brolf Tech</a>. All rights reserved. Made with 💚 in Addis Ababa
                         </p>
                         <div className="flex flex-wrap gap-6 justify-center">
                             {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((item) => (

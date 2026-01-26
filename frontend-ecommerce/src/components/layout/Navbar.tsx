@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Search, ShoppingCart, Menu, X, ArrowRight } from 'lucide-react';
+import { useCart } from '@/context';
 
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { itemCount } = useCart();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -34,17 +36,17 @@ export function Navbar() {
                 }`}>
                 <div className="flex items-center justify-between">
                     {/* Master Logo Logic */}
-                    <Link href="/" className="group flex items-center gap-6 hover:opacity-100 transition-all duration-500">
+                    <Link href="/" className="group mx-6 flex items-center gap-4 hover:opacity-100 transition-all duration-500">
                         <div className="relative">
                             <div className="absolute -inset-4 bg-emerald-500/30 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700 opacity-0 group-hover:opacity-100"></div>
-                            <div className="relative w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-700 rounded-[1.8rem] flex items-center justify-center text-white font-black text-4xl shadow-2xl group-hover:-rotate-12 transition-transform duration-700 border-2 border-white/20">
+                            <div className={`relative w-0 h-0 bg-gradient-to-br from-emerald-600 to-green-700 rounded-[1.8rem] flex items-center justify-center text-green-800 font-black text-8xl shadow-3xl group-hover:-rotate-[-30deg] transition-transform duration-700 border-2 border-white/20 ${isScrolled ? 'text-green-800' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]'}`}>
                                 አ
                             </div>
                         </div>
-                        <div className="flex flex-col -space-y-2">
+                        <div className="flex flex-col p-2 pt-0 -space-y-2">
                             <span className={`text-[3.5rem] font-black tracking-tighter uppercase transition-all duration-700 ${isScrolled ? 'text-green-800' : 'text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]'
                                 }`}>ዲስ</span>
-                            <span className={`text-[12px] font-black tracking-[0.5em] uppercase transition-all duration-700 ${isScrolled ? 'text-emerald-600' : 'text-emerald-300'
+                            <span className={`text-[14px] inset-0 font-black tracking-[0.5em] uppercase transition-all duration-700 ${isScrolled ? 'text-emerald-600' : 'text-emerald-300'
                                 }`}>Harvest</span>
                         </div>
                     </Link>
@@ -86,7 +88,7 @@ export function Navbar() {
                             <span className="hidden lg:inline">Cart</span>
                             <span className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${isScrolled ? 'bg-amber-500 text-slate-950 border-white' : 'bg-emerald-500 text-white border-[#01110e]'
                                 }`}>
-                                0
+                                {itemCount}
                             </span>
                         </Link>
 
@@ -106,7 +108,7 @@ export function Navbar() {
 
             {/* Mobile Experience Upgrade */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-50 lg:hidden animate-in fade-in duration-700">
+                <div className="fixed inset-0 w-10  z-50 lg:hidden animate-in fade-in duration-700">
                     <div className="absolute inset-0 bg-[#01110e]/95 backdrop-blur-3xl" onClick={() => setIsMobileMenuOpen(false)} />
                     <nav className="relative h-full flex flex-col items-center justify-center gap-12 p-8">
                         <div className="absolute top-12 left-12">
