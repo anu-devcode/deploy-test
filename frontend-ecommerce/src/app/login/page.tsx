@@ -7,8 +7,9 @@ import { LogIn, Mail, Lock, ArrowRight, ShieldCheck, Sparkles, Globe } from 'luc
 import api from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
+import { Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const registered = searchParams.get('registered');
@@ -281,5 +282,17 @@ export default function LoginPage() {
                 }
             `}</style>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#010908] flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }

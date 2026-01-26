@@ -146,7 +146,16 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                         <h2 className="text-2xl font-bold text-gray-900 mb-8">You May Also Like</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {relatedProducts.map((p) => (
-                                <ProductCard key={p.id} product={p} />
+                                <ProductCard
+                                    key={p.id}
+                                    product={{
+                                        ...p,
+                                        description: p.description || '',
+                                        sku: p.sku || '',
+                                        category: p.category?.name || 'Uncategorized',
+                                        status: (p.status || 'unknown') as any
+                                    }}
+                                />
                             ))}
                         </div>
                     </div>

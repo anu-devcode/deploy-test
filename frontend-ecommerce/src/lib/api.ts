@@ -213,6 +213,7 @@ export interface Product {
     avgRating?: number;
     reviewCount?: number;
     tenantId: string;
+    status?: string;
     createdAt: string;
     updatedAt: string;
 }
