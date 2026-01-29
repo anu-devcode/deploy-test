@@ -1,20 +1,25 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api from '@/lib/api';
+import api, { Permission } from '@/lib/api';
 
 interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
     tenantId: string | null;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<any>;
     logout: () => void;
     setTenant: (tenantId: string) => void;
+    setIsAuthenticated: (val: boolean) => void;
+    setUser: (user: User | null) => void;
 }
 
 interface User {
+    id: string;
     email: string;
     role: string;
+    permissions: Permission[];
+    requiresPasswordChange: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,7 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticated(true);
             setTenantId(storedTenantId);
             if (storedUser) {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser({
+                    ...parsedUser,
+                    permissions: parsedUser.permissions || []
+                });
             }
         }
     }, []);
@@ -57,12 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await api.login(email, password);
         localStorage.setItem('token', response.access_token);
         api.setToken(response.access_token);
-        setIsAuthenticated(true);
-        // Decode JWT to get user info (simplified)
+
+        // Decode JWT to get user info (using window.atob for mock)
         const payload = JSON.parse(atob(response.access_token.split('.')[1]));
-        const userData = { email: payload.email, role: payload.role };
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        const userData: User = {
+            id: payload.sub,
+            email: payload.email,
+            role: payload.role,
+            permissions: payload.permissions || [],
+            requiresPasswordChange: payload.requiresPasswordChange || false
+        };
+
+        if (!userData.requiresPasswordChange) {
+            setIsAuthenticated(true);
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+        }
+
+        return userData; // Return to handle "Requires Change" redirect in UI
     };
 
     const logout = () => {
@@ -79,7 +100,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, user, tenantId, login, logout, setTenant }}>
+        <AuthContext.Provider value={{
+            isAuthenticated,
+            user,
+            tenantId,
+            login,
+            logout,
+            setTenant,
+            setIsAuthenticated,
+            setUser
+        }}>
             {children}
         </AuthContext.Provider>
     );

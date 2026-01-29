@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
 import {
@@ -40,19 +40,28 @@ export default function AdminLayout({
     const pathname = usePathname();
 
 
-
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const notificationRef = useRef<HTMLDivElement>(null);
     const accountRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        // Skip check for login page to avoid redirect loops
+        if (pathname === '/admin/login') return;
+
         if (!isAuthenticated) {
-            router.push('/login');
+            router.push('/admin/login');
             return;
         }
+
+        if (user?.requiresPasswordChange) {
+            router.push('/admin/login');
+            return;
+        }
+
         fetchNotifications();
 
         // Close dropdowns on outside click
@@ -66,7 +75,7 @@ export default function AdminLayout({
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, pathname, router, user]);
 
     const fetchNotifications = async () => {
         try {
@@ -86,40 +95,61 @@ export default function AdminLayout({
         setIsNotificationOpen(false);
     };
 
-    if (!isAuthenticated) {
-        return null;
-    }
-
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    const hasPermission = (permission: string) => {
+        if (!user || !user.permissions) return false;
+        if (user.permissions.includes('ALL')) return true;
+        return user.permissions.includes(permission as any);
+    };
 
     const navGroups = [
         {
             label: 'Sales & Fulfilment',
             items: [
-                { label: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
-                { label: 'Deliveries', icon: Truck, href: '/admin/deliveries' },
-                { label: 'Payments', icon: CreditCard, href: '/admin/payments' },
-            ]
+                { label: 'Orders', icon: ShoppingBag, href: '/admin/orders', permission: 'VIEW_ORDERS' },
+                { label: 'Deliveries', icon: Truck, href: '/admin/deliveries', permission: 'VIEW_ORDERS' },
+                { label: 'Payments', icon: CreditCard, href: '/admin/payments', permission: 'VIEW_PAYMENTS' },
+            ].filter(item => hasPermission(item.permission))
         },
         {
             label: 'Categories & Content',
             items: [
-                { label: 'Products', icon: Package, href: '/admin/products' },
-                { label: 'Inventory', icon: Layers, href: '/admin/inventory' },
-                { label: 'Categories', icon: FolderTree, href: '/admin/categories' },
-                { label: 'Reviews', icon: Star, href: '/admin/reviews' },
-            ]
+                { label: 'Products', icon: Package, href: '/admin/products', permission: 'MANAGE_PRODUCTS' },
+                { label: 'Inventory', icon: Layers, href: '/admin/inventory', permission: 'VIEW_INVENTORY' },
+                { label: 'Categories', icon: FolderTree, href: '/admin/categories', permission: 'MANAGE_PRODUCTS' },
+                { label: 'Reviews', icon: Star, href: '/admin/reviews', permission: 'MANAGE_PRODUCTS' },
+            ].filter(item => hasPermission(item.permission))
         },
         {
             label: 'Relationship & Mgmt',
             items: [
-                { label: 'Customers', icon: Users, href: '/admin/customers' },
-                { label: 'Automations', icon: Zap, href: '/admin/automations' },
-                ...(user?.role === 'ADMIN' ? [{ label: 'Staff', icon: UserCog, href: '/admin/staff' }] : []),
-                { label: 'Settings', icon: Settings, href: '/admin/settings' },
-            ]
+                { label: 'Customers', icon: Users, href: '/admin/customers', permission: 'VIEW_ORDERS' },
+                { label: 'Automations', icon: Zap, href: '/admin/automations', permission: 'ALL' },
+                { label: 'Staff', icon: UserCog, href: '/admin/staff', permission: 'MANAGE_STAFF' },
+                { label: 'Settings', icon: Settings, href: '/admin/settings', permission: 'ALL' },
+            ].filter(item => hasPermission(item.permission))
         }
     ];
+
+    // --- RENDER LOGIC ---
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => setIsMounted(true), []);
+
+    if (!isMounted) {
+        return <div className="min-h-screen bg-[#F8FAFC]" />;
+    }
+
+    // 1. Prioritize Login Page (Isolated Layout)
+    const isLoginPath = pathname?.includes('/admin/login');
+    if (isLoginPath) {
+        return <div className="min-h-screen bg-[#F8FAFC]">{children}</div>;
+    }
+
+    // 2. Handle Unauthorized / Reset Required (Redirect State)
+    if (!isAuthenticated || user?.requiresPasswordChange) {
+        return <div className="min-h-screen bg-[#F8FAFC]" />;
+    }
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex font-sans">

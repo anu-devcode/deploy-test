@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                                 <div className="relative w-40 h-40">
                                     <svg className="w-full h-full transform -rotate-90">
                                         <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
-                                        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * (100 - stats.abandonmentRate)) / 100} className="text-rose-500" strokeLinecap="round" />
+                                        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * (100 - (stats.abandonmentRate || 0))) / 100} className="text-rose-500" strokeLinecap="round" />
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <p className="text-3xl font-black text-slate-900">{stats.abandonmentRate}%</p>
