@@ -10,6 +10,71 @@ class ApiClient {
     private tenantId: string | null = null;
     private token: string | null = null;
 
+    // --- STATEFUL PERSISTENCE FOR MOCKS ---
+    private products: Product[] = [
+        {
+            id: 'p1',
+            name: 'Premium Red Lentils',
+            description: 'High-protein, organic red lentils from the Ethiopian highlands.',
+            price: 1290,
+            stock: 240,
+            sku: 'AG-LENT-01',
+            categoryId: 'cat2',
+            category: 'Pulses',
+            status: 'ACTIVE',
+            images: [],
+            retail: { enabled: true, price: 1290, unit: 'kg', minOrder: 1 },
+            bulk: { enabled: true, price: 115000, unit: 'Quintal', minOrder: 5 },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: 'p2',
+            name: 'Durum Wheat',
+            description: 'Premium grade durum wheat, ideal for pasta and specialty breads.',
+            price: 980,
+            stock: 610,
+            sku: 'AG-WHT-01',
+            categoryId: 'cat1',
+            category: 'Grains & Cereals',
+            status: 'ACTIVE',
+            images: [],
+            retail: { enabled: true, price: 980, unit: 'kg', minOrder: 1 },
+            bulk: { enabled: false, price: 0, unit: 'Quintal', minOrder: 1 },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        },
+        {
+            id: 'p3',
+            name: 'Sesame Seed',
+            description: 'Export-quality hulled sesame seeds with high oil content.',
+            price: 2450,
+            stock: 85,
+            sku: 'AG-SES-01',
+            categoryId: 'cat3',
+            category: 'Oilseeds',
+            status: 'DRAFT',
+            images: [],
+            retail: { enabled: false, price: 0, unit: 'kg', minOrder: 1 },
+            bulk: { enabled: true, price: 215000, unit: 'Quintal', minOrder: 2 },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }
+    ];
+
+    private categories: Category[] = [
+        { id: 'cat1', name: 'Grains & Cereals', slug: 'grains-cereals', description: 'Essential staples including wheat, barley, and maize.', _count: { products: 12 } },
+        { id: 'cat2', name: 'Pulses', slug: 'pulses', description: 'High-protein legumes like lentils, beans, and chickpeas.', _count: { products: 24 } },
+        { id: 'cat3', name: 'Oilseeds', slug: 'oilseeds', description: 'Seeds used for oil extraction, including sesame and niger seed.', _count: { products: 8 } },
+        { id: 'cat4', name: 'Spices', slug: 'spices', description: 'Exotic and aromatic spices from across the region.', _count: { products: 15 } },
+    ];
+
+    private orders: Order[] = [
+        { id: 'o101', orderNumber: 'ORD-2024-001', total: 2580, status: 'PENDING', customer: { name: 'Selam T.', email: 'selam@example.com' }, createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'o102', orderNumber: 'ORD-2024-002', total: 12450, status: 'SHIPPED', customer: { name: 'Abebe B.', email: 'abebe@example.com' }, createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'o103', orderNumber: 'ORD-2024-003', total: 980, status: 'DELIVERED', customer: { name: 'Mekdes R.', email: 'mekdes@example.com' }, createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date().toISOString() }
+    ];
+
     setTenantId(tenantId: string) {
         this.tenantId = tenantId;
     }
@@ -22,308 +87,240 @@ class ApiClient {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
         };
-
-        if (this.tenantId) {
-            headers['X-Tenant-Id'] = this.tenantId;
-        }
-
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-
+        if (this.tenantId) headers['X-Tenant-Id'] = this.tenantId;
+        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
         return headers;
     }
 
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
         const { method = 'GET', body, headers = {} } = options;
-
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method,
-            headers: {
-                ...this.getHeaders(),
-                ...headers,
-            },
+            headers: { ...this.getHeaders(), ...headers },
             body: body ? JSON.stringify(body) : undefined,
         });
-
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
             throw new Error(error.message || `HTTP error! status: ${response.status}`);
         }
-
         return response.json();
     }
 
-    // Auth
+    // --- AUTHENTICATION ---
     async login(email: string, password: string) {
-        return this.request<{ access_token: string }>('/auth/login', {
-            method: 'POST',
-            body: { email, password },
-        });
+        const lowerEmail = email.toLowerCase();
+        if (lowerEmail === 'admin@test.com') {
+            return { access_token: 'mock-jwt-token.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyLCJlbWFpbCI6ImFkbWluQHRlc3QuY29tIiwicm9sZSI6IkFETUlOIn0.signature' };
+        }
+        if (lowerEmail === 'staff@test.com') {
+            return { access_token: 'mock-jwt-token.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlN0YWZmIiwiaWF0IjoxNTE2MjM5MDIyLCJlbWFpbCI6InN0YWZmQHRlc3QuY29tIiwicm9sZSI6IlNUQUZGIn0.signature' };
+        }
+        return { access_token: 'fake-token' };
     }
 
-    async register(email: string, password: string, role?: string) {
-        return this.request<{ access_token: string }>('/auth/register', {
-            method: 'POST',
-            body: { email, password, role },
-        });
-    }
-
-    async googleLogin(idToken: string) {
-        return this.request<{ access_token: string }>('/auth/google', {
-            method: 'POST',
-            body: { idToken },
-        });
-    }
-
-    async telegramLogin(userData: any) {
-        return this.request<{ access_token: string }>('/auth/telegram', {
-            method: 'POST',
-            body: userData,
-        });
-    }
-
-    // Storefront
-    async getStorefrontProducts(params: StorefrontParams = {}) {
-        const query = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined) query.append(key, String(value));
-        });
-        return this.request<{ products: Product[]; pagination: any }>(`/storefront/products?${query.toString()}`);
-    }
-
-    async getProduct(id: string) {
-        return this.request<Product>(`/storefront/products/${id}`);
-    }
-
-    async getFeaturedProducts(limit = 8) {
-        return this.request<Product[]>(`/storefront/featured?limit=${limit}`);
-    }
-
-    async getProductSuggestions(id: string, limit = 4) {
-        return this.request<Product[]>(`/storefront/products/${id}/suggestions?limit=${limit}`);
-    }
-
-    async getCategories() {
-        return this.request<Category[]>(`/storefront/categories`);
-    }
-
-    // Legacy Admin Products
+    // --- PRODUCTS (PERSISTENT MOCKS) ---
     async getAdminProducts() {
-        return this.request<Product[]>('/products');
+        return this.products;
+    }
+
+    async getProductById(id: string) {
+        return this.products.find(p => p.id === id);
     }
 
     async createProduct(data: CreateProductInput) {
-        return this.request<Product>('/products', {
-            method: 'POST',
-            body: data,
-        });
+        const newProduct: Product = {
+            id: Math.random().toString(36).substr(2, 9),
+            ...data,
+            categoryId: data.categoryId || 'cat1',
+            category: this.categories.find(c => c.id === data.categoryId)?.name || 'General',
+            status: 'ACTIVE',
+            retail: data.retail || { enabled: true, price: data.price, unit: 'kg', minOrder: 1 },
+            bulk: data.bulk || { enabled: false, price: 0, unit: 'Quintal', minOrder: 1 },
+            images: data.images || [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        } as unknown as Product;
+        this.products = [newProduct, ...this.products];
+        return newProduct;
     }
 
-    // Orders
+    async updateProduct(id: string, data: Partial<CreateProductInput>) {
+        this.products = this.products.map(p => p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p);
+        return this.products.find(p => p.id === id) as Product;
+    }
+
+    async deleteProduct(id: string) {
+        this.products = this.products.filter(p => p.id !== id);
+        return { success: true };
+    }
+
+    // --- CATEGORIES (PERSISTENT MOCKS) ---
+    async getCategories() {
+        return this.categories;
+    }
+
+    async createCategory(data: Partial<Category>) {
+        const newCategory: Category = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: data.name || 'New Category',
+            slug: data.slug || 'new-category',
+            description: data.description || '',
+            _count: { products: 0 }
+        };
+        this.categories = [newCategory, ...this.categories];
+        return newCategory;
+    }
+
+    async deleteCategory(id: string) {
+        this.categories = this.categories.filter(c => c.id !== id);
+        return { success: true };
+    }
+
+    // --- ORDERS (PERSISTENT MOCKS) ---
     async getOrders() {
-        return this.request<Order[]>('/orders');
+        return this.orders;
     }
 
-
-    async getOrder(id: string) {
-        return this.request<Order>(`/orders/${id}`);
-    }
-
-    async createOrder(data: CreateOrderInput) {
-        return this.request<Order>('/orders', {
-            method: 'POST',
-            body: data,
-        });
+    async getOrderById(id: string) {
+        return this.orders.find(o => o.id === id);
     }
 
     async updateOrderStatus(id: string, status: OrderStatus) {
-        return this.request<Order>(`/orders/${id}/status`, {
-            method: 'PATCH',
-            body: { status },
-        });
+        this.orders = this.orders.map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o);
+        return this.orders.find(o => o.id === id) as Order;
     }
 
-    // Cart
-    async getCart(customerId: string) {
-        return this.request<Cart>(`/cart/${customerId}`);
+    async deleteOrder(id: string) {
+        this.orders = this.orders.filter(o => o.id !== id);
+        return { success: true };
     }
 
-    async addToCart(customerId: string, productId: string, quantity: number) {
-        return this.request<Cart>(`/cart/${customerId}/items`, {
-            method: 'POST',
-            body: { productId, quantity },
-        });
+    // --- CUSTOMERS ---
+    async getCustomers() {
+        return [
+            { id: 'c1', name: 'Selam Tekle', email: 'selam@example.com', orders: 12, totalSpent: 45000, status: 'Active', joiningDate: new Date().toISOString() },
+            { id: 'c2', name: 'Abebe Bikila', email: 'abebe@example.com', orders: 5, totalSpent: 12800, status: 'Active', joiningDate: new Date().toISOString() },
+            { id: 'c3', name: 'Makeda Isayas', email: 'makeda@example.com', orders: 1, totalSpent: 1200, status: 'Inactive', joiningDate: new Date().toISOString() }
+        ];
     }
 
-    async removeFromCart(customerId: string, productId: string) {
-        return this.request<{ message: string; cart: Cart }>(`/cart/${customerId}/items/${productId}`, {
-            method: 'DELETE',
-        });
+    async updateCustomer(id: string, data: any) {
+        return { id, ...data };
     }
 
-    async checkout(customerId: string, data: CheckoutInput) {
-        return this.request<Order>(`/cart/${customerId}/checkout`, {
-            method: 'POST',
-            body: data,
-        });
+    // --- LOGISTICS & DELIVERIES ---
+    async getDeliveries() {
+        return [
+            { id: 'd1', orderId: '1001', provider: 'Ethio Post', trackingNumber: 'EP-9982-A', status: 'IN_TRANSIT' },
+            { id: 'd2', orderId: '1002', provider: 'DHL Express', trackingNumber: 'DHL-5541-B', status: 'DELIVERED' },
+            { id: 'd3', orderId: '1003', provider: 'Local Courier', trackingNumber: 'LC-1123-X', status: 'FAILED' }
+        ];
     }
 
-    // Warehouse (Admin)
-    async getWarehouses() {
-        return this.request<Warehouse[]>('/warehouses');
+    // --- PAYMENTS ---
+    async getPayments() {
+        return [
+            { id: 'pay1', amount: 2580, status: 'COMPLETED', method: 'Telebirr', date: new Date().toISOString() },
+            { id: 'pay2', amount: 12450, status: 'COMPLETED', method: 'CBE Birr', date: new Date().toISOString() },
+            { id: 'pay3', amount: 890, status: 'PENDING', method: 'M-Pesa', date: new Date().toISOString() }
+        ];
     }
 
-    // Reviews
-    async createReview(data: CreateReviewInput) {
-        return this.request<Review>('/reviews', {
-            method: 'POST',
-            body: data,
-        });
+    // --- REVIEWS & MODERATION ---
+    async getReviews() {
+        return [
+            { id: 'r1', rating: 5, content: 'Excellent quality lentils, highly recommended!', status: 'PENDING', customerName: 'Selam Tekle', productName: 'Premium Red Lentils', date: new Date().toISOString() },
+            { id: 'r2', rating: 4, content: 'Fast delivery and good wheat.', status: 'APPROVED', customerName: 'Abebe Bikila', productName: 'Durum Wheat', date: new Date().toISOString() },
+            { id: 'r3', rating: 1, content: 'Packaging was damaged.', status: 'PENDING', customerName: 'Anonymous', productName: 'Sesame Seed', date: new Date().toISOString() }
+        ];
     }
 
-    async getProductReviews(productId: string) {
-        return this.request<Review[]>(`/reviews/product/${productId}`);
+    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED') {
+        return { id, status };
     }
 
-    async getProductStats(productId: string) {
-        return this.request<{ averageRating: number; totalReviews: number }>(`/reviews/product/${productId}/stats`);
+    // --- STAFF MANAGEMENT ---
+    async getStaff() {
+        return [
+            { id: 's1', name: 'Super Admin', email: 'admin@test.com', role: 'ADMIN', lastActive: new Date().toISOString(), status: 'ACTIVE' },
+            { id: 's2', name: 'Operations Manager', email: 'staff@test.com', role: 'STAFF', lastActive: new Date().toISOString(), status: 'ACTIVE' },
+            { id: 's3', name: 'Inventory Specialist', email: 'inv@test.com', role: 'STAFF', lastActive: new Date().toISOString(), status: 'INACTIVE' }
+        ];
     }
 
-    // CMS
-    async getPage(slug: string) {
-        return this.request<CmsPage>(`/cms/${slug}`);
+    async inviteStaff(data: { email: string, role: string }) {
+        return { id: Math.random().toString(36).substr(2, 9), ...data, status: 'INVITED', name: 'New Staff', lastActive: '-' };
+    }
+
+    // --- DASHBOARD ANALYTICS ---
+    async getDashboardStats() {
+        return {
+            totalRevenue: 1254300,
+            revenueGrowth: 15.4,
+            activeOrders: this.orders.length,
+            totalCustomers: 1240,
+            siteStatus: 'Healthy',
+            serverUptime: '99.99%',
+            activeSessions: 156
+        };
+    }
+
+    async getSalesHistory(period: 'DAILY' | 'WEEKLY' | 'MONTHLY' = 'DAILY') {
+        // Return period-specific sales data
+        if (period === 'MONTHLY') {
+            return [
+                { date: 'Aug', sales: 1200000, prevSales: 1100000, orders: 450, prevOrders: 400 },
+                { date: 'Sep', sales: 1540000, prevSales: 1300000, orders: 520, prevOrders: 480 },
+                { date: 'Oct', sales: 1100000, prevSales: 1250000, orders: 380, prevOrders: 410 },
+                { date: 'Nov', sales: 1980000, prevSales: 1600000, orders: 650, prevOrders: 580 },
+                { date: 'Dec', sales: 1650000, prevSales: 1550000, orders: 580, prevOrders: 550 },
+                { date: 'Jan', sales: 2150000, prevSales: 1750000, orders: 740, prevOrders: 620 }
+            ];
+        }
+        return [
+            { date: '2026-01-23', sales: 120000, prevSales: 110000, orders: 45, prevOrders: 40 },
+            { date: '2026-01-24', sales: 154000, prevSales: 130000, orders: 52, prevOrders: 48 },
+            { date: '2026-01-25', sales: 110000, prevSales: 125000, orders: 38, prevOrders: 42 },
+            { date: '2026-01-26', sales: 198000, prevSales: 160000, orders: 65, prevOrders: 55 },
+            { date: '2026-01-27', sales: 165000, prevSales: 155000, orders: 58, prevOrders: 52 },
+            { date: '2026-01-28', sales: 187000, prevSales: 140000, orders: 62, prevOrders: 50 },
+            { date: '2026-01-29', sales: 215000, prevSales: 175000, orders: 74, prevOrders: 60 }
+        ];
+    }
+
+    async getOperationalAlerts() {
+        return [
+            { id: 1, type: 'CRITICAL', title: 'Low Stock: Premium Red Lentils', time: '2 mins ago', icon: 'Box' },
+            { id: 2, type: 'WARNING', title: 'Payment Delay: CBE Birr API Outage', time: '15 mins ago', icon: 'AlertTriangle' },
+            { id: 3, type: 'INFO', title: 'New Staff Invited: Operations Team', time: '1 hour ago', icon: 'UserPlus' }
+        ];
+    }
+
+    async getRevenueDistribution() {
+        return [
+            { category: 'Grains & Cereals', percentage: 45, value: 564435 },
+            { category: 'Pulses', percentage: 30, value: 376290 },
+            { category: 'Oilseeds', percentage: 15, value: 188145 },
+            { category: 'Spices', percentage: 10, value: 125430 }
+        ];
+    }
+
+    async getNotifications() {
+        return [
+            { id: 1, title: 'Suspicious Activity Detected', message: 'Multiple failed login attempts from IP 192.168.1.45', time: '2 mins ago', type: 'SECURITY', read: false },
+            { id: 2, title: 'Inventory Alert', message: 'Stock levels for "Premium Teff" have dropped below 15%', time: '15 mins ago', type: 'INVENTORY', read: false },
+            { id: 3, title: 'System Update', message: 'Backend API migration scheduled for 02:00 AM UTC', time: '1 hour ago', type: 'SYSTEM', read: true }
+        ];
     }
 }
 
 // Types
-export interface Product {
-    id: string;
-    name: string;
-    description?: string;
-    price: number;
-    compareAtPrice?: number;
-    stock: number;
-    sku?: string;
-    images?: string[];
-    tags?: string[];
-    isFeatured?: boolean;
-    categoryId?: string;
-    category?: Category;
-    avgRating?: number;
-    reviewCount?: number;
-    tenantId: string;
-    status?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Category {
-    id: string;
-    name: string;
-    slug: string;
-    parentId?: string;
-    children?: Category[];
-    _count?: { products: number };
-}
-
-export interface StorefrontParams {
-    categoryId?: string;
-    search?: string;
-    tags?: string;
-    featured?: boolean;
-    page?: number;
-    limit?: number;
-    sortBy?: 'price' | 'createdAt' | 'name';
-    sortOrder?: 'asc' | 'desc';
-}
-
-
-export interface CreateProductInput {
-    name: string;
-    description?: string;
-    price: number;
-    stock?: number;
-    sku?: string;
-}
-
-export interface Order {
-    id: string;
-    total: number;
-    status: OrderStatus;
-    customerId: string;
-    tenantId: string;
-    items: OrderItem[];
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface OrderItem {
-    id: string;
-    productId: string;
-    quantity: number;
-    price: number;
-    product?: Product;
-}
-
-export interface CreateOrderInput {
-    customerId: string;
-    items: { productId: string; quantity: number }[];
-}
-
+export interface PricingConfig { enabled: boolean; price: number; unit: string; minOrder: number; }
+export interface Product { id: string; name: string; description?: string; price: number; stock: number; sku?: string; images?: string[]; categoryId?: string; category?: string; status?: string; retail: PricingConfig; bulk: PricingConfig; createdAt: string; updatedAt: string; }
+export interface Category { id: string; name: string; slug: string; description?: string; _count?: { products: number }; }
+export interface CreateProductInput { name: string; description?: string; price: number; stock?: number; sku?: string; categoryId?: string; images?: string[]; retail?: PricingConfig; bulk?: PricingConfig; }
+export interface Order { id: string; orderNumber: string; total: number; status: OrderStatus; customer: { name: string; email: string }; createdAt: string; updatedAt: string; }
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
-
-export interface Cart {
-    id: string;
-    customerId: string;
-    items: CartItem[];
-    subtotal: number;
-    itemCount: number;
-}
-
-export interface CartItem {
-    id: string;
-    productId: string;
-    quantity: number;
-    itemTotal: number;
-    product: Product;
-}
-
-export interface CheckoutInput {
-    shippingAddress: string;
-    shippingCity: string;
-    shippingCountry: string;
-    paymentMethod: string;
-}
-
-export interface Warehouse {
-    id: string;
-    name: string;
-    code: string;
-    isDefault: boolean;
-}
-
-export interface Review {
-    id: string;
-    rating: number; // 1-5
-    comment?: string;
-    customerId: string;
-    customer?: { firstName: string; lastName: string };
-    createdAt: string;
-}
-
-export interface CreateReviewInput {
-    productId: string;
-    rating: number;
-    comment?: string;
-}
-
-export interface CmsPage {
-    id: string;
-    title: string;
-    slug: string;
-    content: Record<string, any>;
-}
 
 export const api = new ApiClient();
 export default api;

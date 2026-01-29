@@ -1,127 +1,200 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface Category {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-    children: Category[];
-    _count?: { products: number };
-}
+import api from '@/lib/api';
+import {
+    FolderTree,
+    Plus,
+    Search,
+    MoreVertical,
+    Edit2,
+    Trash2,
+    ChevronRight,
+    Box,
+    Layers,
+    Tag
+} from 'lucide-react';
 
 export default function CategoriesPage() {
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showCreate, setShowCreate] = useState(false);
-    const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' });
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ name: '', slug: '', description: '' });
 
     useEffect(() => {
-        setCategories([]);
-        setLoading(false);
+        fetchCategories();
     }, []);
 
-    const handleCreate = async () => {
-        // API call to create category
-        console.log('Creating category:', newCategory);
-        setShowCreate(false);
-        setNewCategory({ name: '', slug: '', description: '' });
+    const fetchCategories = async () => {
+        try {
+            const data = await api.getCategories();
+            setCategories(data);
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleNameChange = (name: string) => {
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        setFormData({ ...formData, name, slug });
+    };
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            setLoading(true);
+            const newCat = await api.createCategory(formData);
+            setCategories([newCat, ...categories]);
+            setShowForm(false);
+            setFormData({ name: '', slug: '', description: '' });
+        } catch (error) {
+            console.error('Failed to create category:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this category?')) return;
+        try {
+            setLoading(true);
+            await api.deleteCategory(id);
+            setCategories(categories.filter(c => c.id !== id));
+        } catch (error) {
+            console.error('Failed to delete category:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
+                    <p className="text-sm text-slate-500">Organize your products into logical groups for better structural control.</p>
+                </div>
                 <button
-                    onClick={() => setShowCreate(true)}
-                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
+                    onClick={() => setShowForm(!showForm)}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                 >
-                    + Add Category
+                    {showForm ? 'Cancel' : <><Plus className="w-4 h-4" /> Add Category</>}
                 </button>
             </div>
 
-            {showCreate && (
-                <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">New Category</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Category Name"
-                            value={newCategory.name}
-                            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Slug (e.g., electronics)"
-                            value={newCategory.slug}
-                            onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
-                            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        />
-                    </div>
-                    <textarea
-                        placeholder="Description (optional)"
-                        value={newCategory.description}
-                        onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                        className="w-full mt-4 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        rows={2}
-                    />
-                    <div className="flex gap-2 mt-4">
-                        <button
-                            onClick={handleCreate}
-                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700"
-                        >
-                            Create
-                        </button>
-                        <button
-                            onClick={() => setShowCreate(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+            {showForm && (
+                <div className="bg-white rounded-2xl border border-emerald-100 shadow-xl shadow-emerald-500/5 p-8 animate-in slide-in-from-top-4 duration-300">
+                    <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">Display Name</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Organic Pulses"
+                                value={formData.name}
+                                onChange={(e) => handleNameChange(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">URL Slug</label>
+                            <div className="relative">
+                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={formData.slug}
+                                    readOnly
+                                    className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm italic text-slate-500 cursor-not-allowed"
+                                />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-sm font-bold text-slate-700">Brief Description</label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                                rows={2}
+                            />
+                        </div>
+                        <div className="md:col-span-2 flex gap-3">
+                            <button
+                                type="submit"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20"
+                            >
+                                Save Category
+                            </button>
+                        </div>
+                    </form>
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="p-12 text-center text-gray-500">Loading...</div>
-                ) : categories.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        <span className="text-4xl block mb-4">🏷️</span>
-                        <p>No categories yet</p>
-                        <p className="text-sm mt-1">Create categories to organize your products</p>
-                    </div>
-                ) : (
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Name</th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slug</th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Products</th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
+            {/* Categories Table */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-100">
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Classification</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Path / Slug</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory</th>
+                                <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {categories.map((category) => (
-                                <tr key={category.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium">{category.name}</td>
-                                    <td className="px-6 py-4 text-gray-500 font-mono text-sm">{category.slug}</td>
-                                    <td className="px-6 py-4">{category._count?.products || 0}</td>
+                        <tbody className="divide-y divide-slate-50">
+                            {loading ? (
+                                Array(3).fill(0).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td colSpan={4} className="px-6 py-4 h-16 bg-slate-50/20"></td>
+                                    </tr>
+                                ))
+                            ) : categories.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-20 text-center text-slate-400">No categories defined yet</td>
+                                </tr>
+                            ) : categories.map((cat) => (
+                                <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-6 py-4">
-                                        <button className="text-emerald-600 hover:text-emerald-800 text-sm font-medium mr-4">
-                                            Edit
-                                        </button>
-                                        <button className="text-red-600 hover:text-red-800 text-sm font-medium">
-                                            Delete
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                                                <Layers className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-slate-900">{cat.name}</p>
+                                                <p className="text-[10px] text-slate-400 max-w-[200px] truncate">{cat.description || 'No description provided'}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                                        /{cat.slug}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <Box className="w-3.5 h-3.5 text-slate-400" />
+                                            <p className="text-sm text-slate-600 font-medium">{cat.productsCount || 0} Products</p>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="p-2 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-all">
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(cat.id)}
+                                                className="p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                )}
+                </div>
             </div>
         </div>
     );

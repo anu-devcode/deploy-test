@@ -6,11 +6,13 @@ import Image from 'next/image';
 import { LogIn, Mail, Lock, ArrowRight, ShieldCheck, Sparkles, Globe } from 'lucide-react';
 import api from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context';
 import Script from 'next/script';
 import { Suspense } from 'react';
 
 function LoginContent() {
     const router = useRouter();
+    const { login } = useAuth();
     const searchParams = useSearchParams();
     const registered = searchParams.get('registered');
 
@@ -27,9 +29,8 @@ function LoginContent() {
         setLoading(true);
 
         try {
-            const response = await api.login(formData.email, formData.password);
-            localStorage.setItem('token', response.access_token);
-            router.push('/');
+            await login(formData.email, formData.password);
+            router.push('/admin'); // Redirect to admin by default if testing admin
         } catch (err: any) {
             setError(err.message || 'Login failed. Please check your credentials.');
         } finally {

@@ -1,120 +1,171 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface Review {
-    id: string;
-    rating: number;
-    comment?: string;
-    status: string;
-    customer: {
-        firstName?: string;
-        lastName?: string;
-        email: string;
-    };
-    product: {
-        id: string;
-        name: string;
-    };
-    createdAt: string;
-}
-
-const statusColors: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-};
+import api from '@/lib/api';
+import {
+    Star,
+    CheckCircle2,
+    XCircle,
+    MessageSquare,
+    User,
+    Package,
+    Clock,
+    Filter,
+    ShieldCheck,
+    AlertCircle,
+    MoreVertical
+} from 'lucide-react';
 
 export default function ReviewsPage() {
-    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('PENDING');
+    const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
 
     useEffect(() => {
-        setReviews([]);
-        setLoading(false);
-    }, [filter]);
+        fetchReviews();
+    }, []);
 
-    const handleModerate = async (reviewId: string, status: 'APPROVED' | 'REJECTED') => {
-        // API call to moderate review
-        console.log(`Moderating review ${reviewId} to ${status}`);
+    const fetchReviews = async () => {
+        try {
+            const data = await api.getReviews();
+            setReviews(data);
+        } catch (error) {
+            console.error('Failed to fetch reviews:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    const handleModerate = async (reviewId: string, status: 'APPROVED' | 'REJECTED') => {
+        try {
+            setLoading(true);
+            // Simulation
+            setReviews(reviews.map(r => r.id === reviewId ? { ...r, status } : r));
+        } catch (error) {
+            console.error('Failed to moderate review:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredReviews = reviews.filter(r => r.status === activeTab);
+
+    const stats = [
+        { label: 'Pending Moderation', value: reviews.filter(r => r.status === 'PENDING').length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Avg. Rating', value: '4.8/5', icon: Star, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { label: 'Trusted Score', value: '98%', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    ];
+
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Reviews</h1>
-                <div className="flex gap-2">
-                    {['PENDING', 'APPROVED', 'REJECTED'].map((status) => (
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Review Moderation</h1>
+                    <p className="text-sm text-slate-500">Manage customer feedback and ensure community standards.</p>
+                </div>
+                <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+                    {(['PENDING', 'APPROVED', 'REJECTED'] as const).map((tab) => (
                         <button
-                            key={status}
-                            onClick={() => setFilter(status)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === status
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === tab
+                                ? 'bg-white text-indigo-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            {status}
+                            {tab.charAt(0) + tab.slice(1).toLowerCase()}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {stats.map((stat, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${stat.bg}`}>
+                            <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
+                            <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
                 {loading ? (
-                    <div className="p-12 text-center text-gray-500">Loading...</div>
-                ) : reviews.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        <span className="text-4xl block mb-4">⭐</span>
-                        <p>No {filter.toLowerCase()} reviews</p>
+                    Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="h-40 bg-slate-50 rounded-2xl animate-pulse"></div>
+                    ))
+                ) : filteredReviews.length === 0 ? (
+                    <div className="bg-white p-20 rounded-2xl border border-slate-100 text-center flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
+                            <MessageSquare className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <p className="text-lg font-bold text-slate-900">No {activeTab.toLowerCase()} reviews</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
-                        {reviews.map((review) => (
-                            <div key={review.id} className="p-6">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-4 mb-2">
-                                            <div className="flex">
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <span key={star} className={star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}>
-                                                        ★
-                                                    </span>
+                    filteredReviews.map((review) => (
+                        <div key={review.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-slate-200 transition-all group">
+                            <div className="flex items-start justify-between">
+                                <div className="flex gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
+                                        {review.customerName.charAt(0)}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-bold text-slate-900">{review.customerName}</p>
+                                            <span className="text-slate-300">•</span>
+                                            <div className="flex items-center">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
                                                 ))}
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[review.status]}`}>
-                                                {review.status}
-                                            </span>
                                         </div>
-                                        <p className="text-gray-700 mb-2">{review.comment || 'No comment'}</p>
-                                        <div className="text-sm text-gray-500">
-                                            <span>{review.customer.firstName} {review.customer.lastName}</span>
-                                            <span className="mx-2">•</span>
-                                            <span>{review.product.name}</span>
-                                            <span className="mx-2">•</span>
-                                            <span>{new Date(review.createdAt).toLocaleDateString()}</span>
+                                        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                                            <Package className="w-3 h-3" />
+                                            {review.productName}
+                                            <span className="text-slate-300">•</span>
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(review.date).toLocaleDateString()}
                                         </div>
+                                        <p className="text-sm text-slate-700 mt-3 leading-relaxed max-w-2xl">
+                                            {review.content}
+                                        </p>
                                     </div>
-                                    {review.status === 'PENDING' && (
-                                        <div className="flex gap-2">
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {review.status === 'PENDING' ? (
+                                        <>
                                             <button
                                                 onClick={() => handleModerate(review.id, 'APPROVED')}
-                                                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-all border border-emerald-100"
                                             >
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
                                                 Approve
                                             </button>
                                             <button
                                                 onClick={() => handleModerate(review.id, 'REJECTED')}
-                                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold hover:bg-rose-100 transition-all border border-rose-100"
                                             >
+                                                <XCircle className="w-3.5 h-3.5" />
                                                 Reject
                                             </button>
-                                        </div>
+                                        </>
+                                    ) : (
+                                        <button className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+                                            <MoreVertical className="w-4 h-4" />
+                                        </button>
                                     )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))
                 )}
             </div>
         </div>
