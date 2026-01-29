@@ -18,6 +18,7 @@ class ApiClient {
             description: 'High-protein, organic red lentils from the Ethiopian highlands.',
             price: 1290,
             stock: 240,
+            inventory: { available: 200, reserved: 30, damaged: 10 },
             sku: 'AG-LENT-01',
             categoryId: 'cat2',
             category: 'Pulses',
@@ -34,6 +35,7 @@ class ApiClient {
             description: 'Premium grade durum wheat, ideal for pasta and specialty breads.',
             price: 980,
             stock: 610,
+            inventory: { available: 580, reserved: 20, damaged: 10 },
             sku: 'AG-WHT-01',
             categoryId: 'cat1',
             category: 'Grains & Cereals',
@@ -50,6 +52,7 @@ class ApiClient {
             description: 'Export-quality hulled sesame seeds with high oil content.',
             price: 2450,
             stock: 85,
+            inventory: { available: 70, reserved: 15, damaged: 0 },
             sku: 'AG-SES-01',
             categoryId: 'cat3',
             category: 'Oilseeds',
@@ -75,6 +78,44 @@ class ApiClient {
         { id: 'o103', orderNumber: 'ORD-2024-003', total: 980, status: 'DELIVERED', customer: { name: 'Mekdes R.', email: 'mekdes@example.com' }, createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date().toISOString() }
     ];
 
+    private auditLogs: InventoryAuditLog[] = [
+        { id: 'l1', productId: 'p1', action: 'STOCK_IN', quantity: 50, type: 'ADDITION', user: 'Admin', reason: 'Monthly Restock', createdAt: new Date(Date.now() - 172800000).toISOString() },
+        { id: 'l2', productId: 'p2', action: 'STOCK_OUT', quantity: 10, type: 'REDUCTION', user: 'Staff', reason: 'Damaged during transit', createdAt: new Date(Date.now() - 86400000).toISOString() },
+        { id: 'l3', productId: 'p1', action: 'ADJUSTMENT', quantity: -2, type: 'REDUCTION', user: 'Admin', reason: 'Inventory Correction', createdAt: new Date(Date.now() - 3600000).toISOString() },
+    ];
+
+    private batches: StockBatch[] = [
+        { id: 'b1', productId: 'p1', batchNumber: 'BAT-2024-001', quantity: 150, grade: 'Premium', expiryDate: '2025-12-01', receivedDate: '2024-01-10' },
+        { id: 'b2', productId: 'p1', batchNumber: 'BAT-2024-002', quantity: 50, grade: 'Grade A', expiryDate: '2025-06-01', receivedDate: '2024-01-15' },
+    ];
+
+    private automationRules: AutomationRule[] = [
+        {
+            id: 'rule1',
+            name: 'Auto-Confirm Large Orders',
+            trigger: 'ORDER_CREATED',
+            condition: 'order.total > 5000',
+            action: 'UPDATE_STATUS',
+            actionValue: 'CONFIRMED',
+            enabled: true,
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: 'rule2',
+            name: 'Notify Staff on Low Stock',
+            trigger: 'STOCK_LOW',
+            condition: 'product.stock < 50',
+            action: 'NOTIFY_STAFF',
+            actionValue: 'Staff Channel',
+            enabled: true,
+            createdAt: new Date().toISOString()
+        }
+    ];
+
+    private automationLogs: AutomationLog[] = [
+        { id: 'log1', ruleId: 'rule1', ruleName: 'Auto-Confirm Large Orders', trigger: 'ORDER_CREATED', entityId: 'o102', action: 'UPDATE_STATUS', status: 'SUCCESS', details: 'Order ORD-2024-002 automatically confirmed.', createdAt: new Date(Date.now() - 86400000).toISOString() },
+    ];
+
     setTenantId(tenantId: string) {
         this.tenantId = tenantId;
     }
@@ -84,9 +125,7 @@ class ApiClient {
     }
 
     private getHeaders(): Record<string, string> {
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-        };
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (this.tenantId) headers['X-Tenant-Id'] = this.tenantId;
         if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
         return headers;
@@ -118,13 +157,25 @@ class ApiClient {
         return { access_token: 'fake-token' };
     }
 
-    // --- PRODUCTS (PERSISTENT MOCKS) ---
+    // --- PRODUCTS & INVENTORY ---
     async getAdminProducts() {
         return this.products;
     }
 
     async getProductById(id: string) {
         return this.products.find(p => p.id === id);
+    }
+
+    async updateProduct(id: string, data: Partial<CreateProductInput>) {
+        this.products = this.products.map(p => p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p);
+        const product = this.products.find(p => p.id === id) as Product;
+
+        // Trigger for Stock Low
+        if (product && product.stock < 50) {
+            this.runAutomation('STOCK_LOW', product);
+        }
+
+        return product;
     }
 
     async createProduct(data: CreateProductInput) {
@@ -134,6 +185,8 @@ class ApiClient {
             categoryId: data.categoryId || 'cat1',
             category: this.categories.find(c => c.id === data.categoryId)?.name || 'General',
             status: 'ACTIVE',
+            stock: data.stock || 0,
+            inventory: { available: data.stock || 0, reserved: 0, damaged: 0 },
             retail: data.retail || { enabled: true, price: data.price, unit: 'kg', minOrder: 1 },
             bulk: data.bulk || { enabled: false, price: 0, unit: 'Quintal', minOrder: 1 },
             images: data.images || [],
@@ -144,121 +197,189 @@ class ApiClient {
         return newProduct;
     }
 
-    async updateProduct(id: string, data: Partial<CreateProductInput>) {
-        this.products = this.products.map(p => p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p);
-        return this.products.find(p => p.id === id) as Product;
-    }
-
     async deleteProduct(id: string) {
         this.products = this.products.filter(p => p.id !== id);
         return { success: true };
     }
 
-    // --- CATEGORIES (PERSISTENT MOCKS) ---
+    // --- CATEGORIES ---
     async getCategories() {
         return this.categories;
     }
 
-    async createCategory(data: Partial<Category>) {
-        const newCategory: Category = {
+    // --- STOCK MOVEMENTS & AUDIT ---
+    async getStockAuditLogs() {
+        return this.auditLogs;
+    }
+
+    async getProductBatches(productId: string) {
+        return this.batches.filter(b => b.productId === productId);
+    }
+
+    async processStockMovement(data: { productId: string, action: 'STOCK_IN' | 'STOCK_OUT' | 'ADJUSTMENT', quantity: number, reason: string, batchNumber?: string, grade?: string }) {
+        const product = this.products.find(p => p.id === data.productId);
+        if (!product) throw new Error('Product not found');
+
+        const quantity = data.quantity;
+        if (data.action === 'STOCK_IN') {
+            product.stock += quantity;
+            product.inventory.available += quantity;
+            if (data.batchNumber) {
+                this.batches.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    productId: data.productId,
+                    batchNumber: data.batchNumber,
+                    quantity: quantity,
+                    grade: data.grade || 'Standard',
+                    receivedDate: new Date().toISOString()
+                });
+            }
+        } else if (data.action === 'STOCK_OUT') {
+            if (product.inventory.available < quantity) throw new Error('Insufficient available stock');
+            product.stock -= quantity;
+            product.inventory.available -= quantity;
+        } else {
+            product.stock += quantity; // adjustment can be negative
+            product.inventory.available += quantity;
+        }
+
+        const newLog: InventoryAuditLog = {
             id: Math.random().toString(36).substr(2, 9),
-            name: data.name || 'New Category',
-            slug: data.slug || 'new-category',
-            description: data.description || '',
-            _count: { products: 0 }
+            productId: data.productId,
+            action: data.action,
+            quantity: Math.abs(quantity),
+            type: quantity >= 0 ? 'ADDITION' : 'REDUCTION',
+            user: 'Admin',
+            reason: data.reason,
+            createdAt: new Date().toISOString()
         };
-        this.categories = [newCategory, ...this.categories];
-        return newCategory;
+        this.auditLogs = [newLog, ...this.auditLogs];
+        product.updatedAt = new Date().toISOString();
+
+        // Trigger for Stock Low
+        if (product.stock < 50) {
+            this.runAutomation('STOCK_LOW', product);
+        }
+
+        return { success: true, product };
     }
 
-    async deleteCategory(id: string) {
-        this.categories = this.categories.filter(c => c.id !== id);
-        return { success: true };
-    }
-
-    // --- ORDERS (PERSISTENT MOCKS) ---
-    async getOrders() {
-        return this.orders;
-    }
-
-    async getOrderById(id: string) {
-        return this.orders.find(o => o.id === id);
-    }
-
+    // --- ORDERS ---
+    async getOrders() { return this.orders; }
     async updateOrderStatus(id: string, status: OrderStatus) {
         this.orders = this.orders.map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o);
-        return this.orders.find(o => o.id === id) as Order;
-    }
+        const order = this.orders.find(o => o.id === id) as Order;
 
+        // Check for specific transitions
+        if (status === 'CONFIRMED') {
+            // Potential triggers
+        }
+
+        return order;
+    }
+    async createOrder(data: { customerId?: string, items: any[], total: number }) {
+        const newOrder: Order = {
+            id: Math.random().toString(36).substr(2, 9),
+            orderNumber: `ORD-2026-${this.orders.length + 101}`,
+            total: data.total,
+            status: 'PENDING',
+            customer: { name: 'Automated Test', email: 'test@example.com' },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        this.orders = [newOrder, ...this.orders];
+
+        // Trigger for Order Created
+        this.runAutomation('ORDER_CREATED', newOrder);
+
+        return newOrder;
+    }
     async deleteOrder(id: string) {
         this.orders = this.orders.filter(o => o.id !== id);
         return { success: true };
     }
 
-    // --- CUSTOMERS ---
-    async getCustomers() {
-        return [
-            { id: 'c1', name: 'Selam Tekle', email: 'selam@example.com', orders: 12, totalSpent: 45000, status: 'Active', joiningDate: new Date().toISOString() },
-            { id: 'c2', name: 'Abebe Bikila', email: 'abebe@example.com', orders: 5, totalSpent: 12800, status: 'Active', joiningDate: new Date().toISOString() },
-            { id: 'c3', name: 'Makeda Isayas', email: 'makeda@example.com', orders: 1, totalSpent: 1200, status: 'Inactive', joiningDate: new Date().toISOString() }
-        ];
+    // --- AUTOMATION ENGINE ---
+    async getAutomationRules() { return this.automationRules; }
+    async createAutomationRule(rule: Partial<AutomationRule>) {
+        const newRule: AutomationRule = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: rule.name || 'Untitled Rule',
+            trigger: rule.trigger || 'ORDER_CREATED',
+            condition: rule.condition || '',
+            action: rule.action || 'NOTIFY_STAFF',
+            actionValue: rule.actionValue || '',
+            enabled: true,
+            createdAt: new Date().toISOString()
+        };
+        this.automationRules = [newRule, ...this.automationRules];
+        return newRule;
+    }
+    async updateAutomationRule(id: string, rule: Partial<AutomationRule>) {
+        this.automationRules = this.automationRules.map(r => r.id === id ? { ...r, ...rule } : r);
+        return this.automationRules.find(r => r.id === id);
+    }
+    async deleteAutomationRule(id: string) {
+        this.automationRules = this.automationRules.filter(r => r.id !== id);
+        return { success: true };
+    }
+    async getAutomationLogs() { return this.automationLogs; }
+
+    private runAutomation(trigger: AutomationTrigger, entity: any) {
+        const rules = this.automationRules.filter(r => r.trigger === trigger && r.enabled);
+        rules.forEach(rule => {
+            let matches = false;
+            try {
+                // Simple condition parser simulation
+                if (!rule.condition) {
+                    matches = true;
+                } else {
+                    if (trigger === 'ORDER_CREATED' && rule.condition.includes('order.total')) {
+                        const threshold = parseInt(rule.condition.split('>')[1].trim());
+                        if (entity.total > threshold) matches = true;
+                    } else if (trigger === 'STOCK_LOW' && rule.condition.includes('product.stock')) {
+                        const threshold = parseInt(rule.condition.split('<')[1].trim());
+                        if (entity.stock < threshold) matches = true;
+                    }
+                }
+            } catch (e) { console.error('Automation condition error', e); }
+
+            if (matches) {
+                // Perform action
+                if (rule.action === 'UPDATE_STATUS' && trigger === 'ORDER_CREATED') {
+                    this.updateOrderStatus(entity.id, rule.actionValue as OrderStatus);
+                }
+
+                // Log execution
+                this.automationLogs.unshift({
+                    id: Math.random().toString(36).substr(2, 9),
+                    ruleId: rule.id,
+                    ruleName: rule.name,
+                    trigger: rule.trigger,
+                    entityId: entity.id,
+                    action: rule.action,
+                    status: 'SUCCESS',
+                    details: `Rule "${rule.name}" triggered for ${entity.orderNumber || entity.name}.`,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        });
     }
 
-    async updateCustomer(id: string, data: any) {
-        return { id, ...data };
-    }
-
-    // --- LOGISTICS & DELIVERIES ---
-    async getDeliveries() {
-        return [
-            { id: 'd1', orderId: '1001', provider: 'Ethio Post', trackingNumber: 'EP-9982-A', status: 'IN_TRANSIT' },
-            { id: 'd2', orderId: '1002', provider: 'DHL Express', trackingNumber: 'DHL-5541-B', status: 'DELIVERED' },
-            { id: 'd3', orderId: '1003', provider: 'Local Courier', trackingNumber: 'LC-1123-X', status: 'FAILED' }
-        ];
-    }
-
-    // --- PAYMENTS ---
-    async getPayments() {
-        return [
-            { id: 'pay1', amount: 2580, status: 'COMPLETED', method: 'Telebirr', date: new Date().toISOString() },
-            { id: 'pay2', amount: 12450, status: 'COMPLETED', method: 'CBE Birr', date: new Date().toISOString() },
-            { id: 'pay3', amount: 890, status: 'PENDING', method: 'M-Pesa', date: new Date().toISOString() }
-        ];
-    }
-
-    // --- REVIEWS & MODERATION ---
-    async getReviews() {
-        return [
-            { id: 'r1', rating: 5, content: 'Excellent quality lentils, highly recommended!', status: 'PENDING', customerName: 'Selam Tekle', productName: 'Premium Red Lentils', date: new Date().toISOString() },
-            { id: 'r2', rating: 4, content: 'Fast delivery and good wheat.', status: 'APPROVED', customerName: 'Abebe Bikila', productName: 'Durum Wheat', date: new Date().toISOString() },
-            { id: 'r3', rating: 1, content: 'Packaging was damaged.', status: 'PENDING', customerName: 'Anonymous', productName: 'Sesame Seed', date: new Date().toISOString() }
-        ];
-    }
-
-    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED') {
-        return { id, status };
-    }
-
-    // --- STAFF MANAGEMENT ---
-    async getStaff() {
-        return [
-            { id: 's1', name: 'Super Admin', email: 'admin@test.com', role: 'ADMIN', lastActive: new Date().toISOString(), status: 'ACTIVE' },
-            { id: 's2', name: 'Operations Manager', email: 'staff@test.com', role: 'STAFF', lastActive: new Date().toISOString(), status: 'ACTIVE' },
-            { id: 's3', name: 'Inventory Specialist', email: 'inv@test.com', role: 'STAFF', lastActive: new Date().toISOString(), status: 'INACTIVE' }
-        ];
-    }
-
-    async inviteStaff(data: { email: string, role: string }) {
-        return { id: Math.random().toString(36).substr(2, 9), ...data, status: 'INVITED', name: 'New Staff', lastActive: '-' };
-    }
-
-    // --- DASHBOARD ANALYTICS ---
+    // --- ANALYTICS & DASHBOARD ---
     async getDashboardStats() {
         return {
             totalRevenue: 1254300,
             revenueGrowth: 15.4,
             activeOrders: this.orders.length,
+            orderGrowth: 8.2,
             totalCustomers: 1240,
+            customerGrowth: 24.5,
+            newRegistrations: 42,
+            avgOrderValue: 2986,
+            aovGrowth: 5.1,
+            abandonmentRate: 32.4,
+            conversionRate: 6.8,
             siteStatus: 'Healthy',
             serverUptime: '99.99%',
             activeSessions: 156
@@ -266,57 +387,79 @@ class ApiClient {
     }
 
     async getSalesHistory(period: 'DAILY' | 'WEEKLY' | 'MONTHLY' = 'DAILY') {
-        // Return period-specific sales data
-        if (period === 'MONTHLY') {
-            return [
-                { date: 'Aug', sales: 1200000, prevSales: 1100000, orders: 450, prevOrders: 400 },
-                { date: 'Sep', sales: 1540000, prevSales: 1300000, orders: 520, prevOrders: 480 },
-                { date: 'Oct', sales: 1100000, prevSales: 1250000, orders: 380, prevOrders: 410 },
-                { date: 'Nov', sales: 1980000, prevSales: 1600000, orders: 650, prevOrders: 580 },
-                { date: 'Dec', sales: 1650000, prevSales: 1550000, orders: 580, prevOrders: 550 },
-                { date: 'Jan', sales: 2150000, prevSales: 1750000, orders: 740, prevOrders: 620 }
-            ];
-        }
         return [
             { date: '2026-01-23', sales: 120000, prevSales: 110000, orders: 45, prevOrders: 40 },
-            { date: '2026-01-24', sales: 154000, prevSales: 130000, orders: 52, prevOrders: 48 },
-            { date: '2026-01-25', sales: 110000, prevSales: 125000, orders: 38, prevOrders: 42 },
-            { date: '2026-01-26', sales: 198000, prevSales: 160000, orders: 65, prevOrders: 55 },
-            { date: '2026-01-27', sales: 165000, prevSales: 155000, orders: 58, prevOrders: 52 },
-            { date: '2026-01-28', sales: 187000, prevSales: 140000, orders: 62, prevOrders: 50 },
             { date: '2026-01-29', sales: 215000, prevSales: 175000, orders: 74, prevOrders: 60 }
         ];
     }
 
-    async getOperationalAlerts() {
-        return [
-            { id: 1, type: 'CRITICAL', title: 'Low Stock: Premium Red Lentils', time: '2 mins ago', icon: 'Box' },
-            { id: 2, type: 'WARNING', title: 'Payment Delay: CBE Birr API Outage', time: '15 mins ago', icon: 'AlertTriangle' },
-            { id: 3, type: 'INFO', title: 'New Staff Invited: Operations Team', time: '1 hour ago', icon: 'UserPlus' }
-        ];
+    async getTopSellingProducts() {
+        return [{ id: 'p1', name: 'Premium Red Lentils', sales: 450, revenue: 580500, status: 'In Stock' }];
     }
 
-    async getRevenueDistribution() {
-        return [
-            { category: 'Grains & Cereals', percentage: 45, value: 564435 },
-            { category: 'Pulses', percentage: 30, value: 376290 },
-            { category: 'Oilseeds', percentage: 15, value: 188145 },
-            { category: 'Spices', percentage: 10, value: 125430 }
-        ];
+    async getCartMetrics() {
+        return { abandonedCarts: 145, recoveredCarts: 42, recoveryRate: 28.9, lostRevenue: 245000 };
+    }
+
+    async getOperationalAlerts() {
+        return [{ id: 1, type: 'CRITICAL', title: 'Low Stock: Premium Red Lentils', time: '2 mins ago', icon: 'Box' }];
     }
 
     async getNotifications() {
-        return [
-            { id: 1, title: 'Suspicious Activity Detected', message: 'Multiple failed login attempts from IP 192.168.1.45', time: '2 mins ago', type: 'SECURITY', read: false },
-            { id: 2, title: 'Inventory Alert', message: 'Stock levels for "Premium Teff" have dropped below 15%', time: '15 mins ago', type: 'INVENTORY', read: false },
-            { id: 3, title: 'System Update', message: 'Backend API migration scheduled for 02:00 AM UTC', time: '1 hour ago', type: 'SYSTEM', read: true }
-        ];
+        return [{ id: 1, title: 'Suspicious Activity Detected', message: 'Failed login attempts', time: '2 mins ago', type: 'SECURITY', read: false }];
     }
 }
 
 // Types
 export interface PricingConfig { enabled: boolean; price: number; unit: string; minOrder: number; }
-export interface Product { id: string; name: string; description?: string; price: number; stock: number; sku?: string; images?: string[]; categoryId?: string; category?: string; status?: string; retail: PricingConfig; bulk: PricingConfig; createdAt: string; updatedAt: string; }
+export interface StockBatch { id: string; productId: string; batchNumber: string; quantity: number; grade: string; expiryDate?: string; receivedDate: string; }
+export interface InventoryState { available: number; reserved: number; damaged: number; }
+export interface InventoryAuditLog { id: string; productId: string; action: 'STOCK_IN' | 'STOCK_OUT' | 'ADJUSTMENT'; quantity: number; type: 'ADDITION' | 'REDUCTION'; user: string; reason: string; createdAt: string; }
+
+export interface AutomationRule {
+    id: string;
+    name: string;
+    trigger: AutomationTrigger;
+    condition: string;
+    action: AutomationAction;
+    actionValue: string;
+    enabled: boolean;
+    createdAt: string;
+}
+
+export type AutomationTrigger = 'ORDER_CREATED' | 'PAYMENT_RECEIVED' | 'STOCK_LOW' | 'CUSTOMER_REGISTERED';
+export type AutomationAction = 'UPDATE_STATUS' | 'NOTIFY_STAFF' | 'SEND_EMAIL' | 'GENERATE_INVOICE';
+
+export interface AutomationLog {
+    id: string;
+    ruleId: string;
+    ruleName: string;
+    trigger: AutomationTrigger;
+    entityId: string;
+    action: AutomationAction;
+    status: 'SUCCESS' | 'FAILED';
+    details: string;
+    createdAt: string;
+}
+
+export interface Product {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    stock: number;
+    inventory: InventoryState;
+    sku?: string;
+    images?: string[];
+    categoryId?: string;
+    category?: string;
+    status?: string;
+    retail: PricingConfig;
+    bulk: PricingConfig;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface Category { id: string; name: string; slug: string; description?: string; _count?: { products: number }; }
 export interface CreateProductInput { name: string; description?: string; price: number; stock?: number; sku?: string; categoryId?: string; images?: string[]; retail?: PricingConfig; bulk?: PricingConfig; }
 export interface Order { id: string; orderNumber: string; total: number; status: OrderStatus; customer: { name: string; email: string }; createdAt: string; updatedAt: string; }

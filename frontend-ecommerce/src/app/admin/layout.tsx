@@ -25,7 +25,9 @@ import {
     AlertCircle,
     Info,
     ShieldAlert,
-    User
+    User,
+    Layers,
+    Zap
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -100,6 +102,7 @@ export default function AdminLayout({
             label: 'Categories & Content',
             items: [
                 { label: 'Products', icon: Package, href: '/admin/products' },
+                { label: 'Inventory', icon: Layers, href: '/admin/inventory' },
                 { label: 'Categories', icon: FolderTree, href: '/admin/categories' },
                 { label: 'Reviews', icon: Star, href: '/admin/reviews' },
             ]
@@ -108,6 +111,7 @@ export default function AdminLayout({
             label: 'Relationship & Mgmt',
             items: [
                 { label: 'Customers', icon: Users, href: '/admin/customers' },
+                { label: 'Automations', icon: Zap, href: '/admin/automations' },
                 ...(user?.role === 'ADMIN' ? [{ label: 'Staff', icon: UserCog, href: '/admin/staff' }] : []),
                 { label: 'Settings', icon: Settings, href: '/admin/settings' },
             ]
