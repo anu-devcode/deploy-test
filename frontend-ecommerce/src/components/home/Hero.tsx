@@ -89,7 +89,7 @@ export function Hero({ allProducts, tenants }: HeroProps) {
 
             {/* Kinetic Floating Elements (Micro-interactions) */}
             <div className="absolute inset-0 z-10 pointer-events-none">
-                {[...Array(20)].map((_, i) => (
+                {isLoaded && [...Array(20)].map((_, i) => (
                     <div
                         key={i}
                         className="absolute bg-emerald-400/20 rounded-full blur-[2px]"
@@ -107,11 +107,11 @@ export function Hero({ allProducts, tenants }: HeroProps) {
 
             {/* The Content Engine */}
             <div className={`relative z-30 max-w-[1500px] mx-auto px-6 text-center transition-all duration-1000 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <div className="space-y-16">
+                <div className="space-y-8 md:space-y-16">
 
                     {/* The Royal Seal (Branding Identity) */}
-                    <div className="flex flex-col items-center gap-8 animate-[fade-in-down_1.2s_ease-out]">
-                        <div className="relative group cursor-pointer">
+                    <div className="flex flex-col items-center gap-4 md:gap-8 animate-[fade-in-down_1.2s_ease-out]">
+                        <div className="relative group cursor-pointer scale-75 md:scale-100">
                             {/* Recursive Orbiting Rings */}
                             <div className="absolute -inset-24 border border-emerald-500/5 rounded-full animate-[spin-slow_25s_linear_infinite]"></div>
                             <div className="absolute -inset-16 border border-emerald-400/10 rounded-full animate-[spin-reverse_15s_linear_infinite]"></div>
@@ -121,36 +121,29 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                             <div className="absolute -inset-14 bg-emerald-500/20 rounded-full blur-[60px] group-hover:bg-emerald-500/30 transition-all duration-1000"></div>
 
                             {/* Main Emblem Box */}
-                            <div className="relative w-40 h-40 rounded-[3rem] p-[2px] bg-gradient-to-br from-white/30 via-white/5 to-white/10 backdrop-blur-3xl shadow-3xl transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-1000">
-                                <div className="w-full h-full bg-gradient-to-br from-[#064e3b] via-[#022c22] to-[#010908] rounded-[2.8rem] flex items-center justify-center text-white font-black text-8xl border border-white/10 relative overflow-hidden group">
-                                    <span className="relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-all duration-700 group-hover:scale-110">አ</span>
-                                    {/* Inner Light Sweep */}
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-emerald-400/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
-                                    <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-emerald-500/10 to-transparent"></div>
-                                </div>
-                            </div>
+
                         </div>
 
-                        <div className="inline-flex items-center gap-6 px-8 py-3 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl group hover:border-emerald-500/30 transition-colors duration-500">
-                            <span className="text-[11px] font-black text-emerald-400 tracking-[0.6em] uppercase">Est. 2004</span>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[11px] font-black text-white/80 tracking-[0.4em] uppercase group-hover:text-white transition-colors">Tsega Trading Group</span>
+                        <div className="inline-flex items-center mt-30 gap-3 md:gap-6 px-4 md:px-8 py-2 md:py-3 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-2xl shadow-2xl group hover:border-emerald-500/30 transition-colors duration-500">
+                            <span className="text-[9px] md:text-[11px] font-black text-emerald-400 tracking-[0.4em] md:tracking-[0.6em] uppercase">Est. 2004</span>
+                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] md:text-[11px] font-black text-white/80 tracking-[0.3em] md:tracking-[0.4em] uppercase group-hover:text-white transition-colors">Tsega Trading Group</span>
                         </div>
                     </div>
 
                     {/* The Typography Masterpiece (Elite Status) */}
-                    <div className="space-y-4">
+                    <div className="space-y-2 md:space-y-4">
                         <h1 className="flex flex-col items-center select-none perspective-1000">
                             <div className="relative">
                                 {/* Ghost Shadow Layer - Enhanced for Depth */}
-                                <span className="text-[14rem] lg:text-[22rem] font-black tracking-[-0.08em] text-white leading-none opacity-[0.02] absolute -top-16 left-1/2 -translate-x-1/2 blur-3xl pointer-events-none">
+                                <span className="text-[6rem] sm:text-[10rem] md:text-[14rem] lg:text-[22rem] font-black tracking-[-0.08em] text-white leading-none opacity-[0.02] absolute -top-8 md:-top-16 left-1/2 -translate-x-1/2 blur-2xl md:blur-3xl pointer-events-none whitespace-nowrap">
                                     አዲስ
                                 </span>
                                 {/* Main Display Layer */}
                                 <span
-                                    className="text-[11rem] lg:text-[18rem] font-black tracking-[-0.06em] text-white leading-none drop-shadow-[0_40px_80px_rgba(0,0,0,0.9)] relative z-10 block"
+                                    className="text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[18rem] font-black tracking-[-0.06em] text-white leading-none drop-shadow-[0_40px_80px_rgba(0,0,0,0.9)] relative z-10 block whitespace-nowrap"
                                     style={{
-                                        transform: `translate3d(${mousePos.x * 0.1}px, ${mousePos.y * 0.1}px, 0) rotateX(${mousePos.y * -0.05}deg) rotateY(${mousePos.x * 0.05}deg)`,
+                                        transform: typeof window !== 'undefined' && window.innerWidth > 768 ? `translate3d(${mousePos.x * 0.1}px, ${mousePos.y * 0.1}px, 0) rotateX(${mousePos.y * -0.05}deg) rotateY(${mousePos.x * 0.05}deg)` : 'none',
                                         transition: 'transform 0.1s ease-out'
                                     }}
                                 >
@@ -158,8 +151,8 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                                 </span>
                             </div>
 
-                            <div className="relative z-20 group -mt-12 lg:-mt-24">
-                                <span className="text-6xl lg:text-[11rem] font-black italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-[#10b981] via-[#d9f99d] to-[#10b981] animate-[gradient-shift_10s_linear_infinite] tracking-tight block overflow-visible py-6 drop-shadow-[0_0_30px_rgba(16,185,129,0.4)] relative">
+                            <div className="relative z-20 group -mt-4 sm:-mt-8 md:-mt-12 lg:-mt-24">
+                                <span className="text-4xl sm:text-6xl md:text-[8rem] lg:text-[11rem] font-black italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-[#10b981] via-[#d9f99d] to-[#10b981] animate-[gradient-shift_10s_linear_infinite] tracking-tight block overflow-visible py-4 md:py-6 drop-shadow-[0_0_30px_rgba(16,185,129,0.4)] relative">
                                     Harvest
                                     {/* Sweeping Highlight */}
                                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[100%] animate-[sweep_4s_ease-in-out_infinite] mix-blend-overlay"></span>
@@ -169,27 +162,27 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                             </div>
                         </h1>
 
-                        <p className="text-xl lg:text-3xl text-emerald-50/60 font-medium max-w-4xl mx-auto leading-relaxed animate-[fade-in-up_1.2s_ease-out_0.5s_both]">
+                        <p className="text-base sm:text-lg lg:text-3xl text-emerald-50/60 font-medium max-w-4xl mx-auto leading-relaxed animate-[fade-in-up_1.2s_ease-out_0.5s_both] px-4">
                             Engineering the <span className="text-white font-black italic border-b-2 border-emerald-500/30">Next Frontiers</span> of
-                            <span className="text-white font-black mx-3 relative inline-block group px-2 text-emerald-50">
+                            <span className="text-white font-black mx-1 md:mx-3 relative inline-block group px-2 text-emerald-50">
                                 <span className="relative z-10 transition-colors group-hover:text-emerald-400">Elite Global Export</span>
-                                <span className="absolute bottom-1 left-0 w-full h-4 bg-emerald-500/10 -skew-x-12 transform scale-x-110 group-hover:bg-emerald-500/20 transition-all duration-700"></span>
+                                <span className="absolute bottom-1 left-0 w-full h-2 md:h-4 bg-emerald-500/10 -skew-x-12 transform scale-x-110 group-hover:bg-emerald-500/20 transition-all duration-700"></span>
                             </span>
                             Legacy standards, direct from the source.
                         </p>
                     </div>
 
                     {/* CTA Section */}
-                    <div className="relative z-30 pt-8 animate-[fade-in-up_1.2s_ease-out_0.9s_both]">
-                        <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
+                    <div className="relative z-30 pt-4 md:pt-8 animate-[fade-in-up_1.2s_ease-out_0.9s_both]">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
 
                             {/* Join Us */}
                             <Link
                                 href="/register"
-                                className="group relative px-12 py-6 rounded-[2.2rem] bg-white text-slate-950 font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 overflow-hidden"
+                                className="group relative w-full sm:w-auto px-10 md:px-12 py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] bg-white text-slate-950 font-black text-base md:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 overflow-hidden"
                             >
-                                <span className="relative z-10 flex items-center gap-3">
-                                    <UserPlus className="w-6 h-6" />
+                                <span className="relative z-10 flex items-center justify-center gap-3">
+                                    <UserPlus className="w-5 h-5 md:w-6 md:h-6" />
                                     Join Us
                                 </span>
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-200 to-transparent -translate-x-[200%] group-hover:animate-[shimmer_1.5s_infinite]" />
@@ -198,16 +191,16 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                             {/* Work With Us */}
                             <Link
                                 href="/partners"
-                                className="group px-12 py-6 rounded-[2.2rem] border border-white/20 text-white font-black text-lg backdrop-blur-xl hover:border-emerald-500/40 hover:bg-white/5 transition-all duration-500 flex items-center gap-3"
+                                className="group w-full sm:w-auto px-10 md:px-12 py-4 md:py-6 rounded-[1.5rem] md:rounded-[2.2rem] border border-white/20 text-white font-black text-base md:text-lg backdrop-blur-xl hover:border-emerald-500/40 hover:bg-white/5 transition-all duration-500 flex items-center justify-center gap-3"
                             >
-                                <Sparkles className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+                                <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
                                 Work With Us
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                                <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-2 transition-transform" />
                             </Link>
 
                         </div>
 
-                        <p className="mt-20 text-sm text-emerald-100/60 font-medium">
+                        <p className="mt-10 md:mt-20 text-[10px] md:text-sm text-emerald-100/60 font-medium">
                             Farmers • Exporters • Innovators • Global Partners
                         </p>
                     </div>

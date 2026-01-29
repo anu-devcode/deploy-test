@@ -22,6 +22,11 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -81,7 +86,7 @@ export default function RegisterPage() {
 
             {/* Floating particles background effect */}
             <div className="absolute inset-0 z-10 pointer-events-none">
-                {[...Array(15)].map((_, i) => (
+                {mounted && [...Array(15)].map((_, i) => (
                     <div
                         key={i}
                         className="absolute bg-emerald-500/10 rounded-full blur-xl animate-pulse"

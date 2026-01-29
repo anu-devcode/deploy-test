@@ -42,6 +42,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = async (email: string, password: string) => {
+        // "For now" admin bypass
+        if (email === 'admin@brolf.tech' && password === '1234567') {
+            const mockToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(JSON.stringify({ email, role: 'ADMIN', sub: 'demo-admin-id' }))}.signature`;
+            localStorage.setItem('token', mockToken);
+            api.setToken(mockToken);
+            setIsAuthenticated(true);
+            const userData = { email, role: 'ADMIN' };
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            return;
+        }
+
         const response = await api.login(email, password);
         localStorage.setItem('token', response.access_token);
         api.setToken(response.access_token);

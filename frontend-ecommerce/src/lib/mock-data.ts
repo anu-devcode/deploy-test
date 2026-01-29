@@ -12,16 +12,16 @@ export const tenants: Tenant[] = [
   },
   {
     id: "t_mfg_001",
-    slug: "forge-manufacturing",
-    name: "Forge Manufacturing",
-    industry: "manufacturing",
+    slug: "Agriculture",
+    name: "Agriculture",
+    industry: "agriculture",
     theme: { primaryColor: "#2563eb", secondaryColor: "#7c3aed", logoText: "Forge" },
   },
   {
     id: "t_ret_001",
-    slug: "northwind-wholesale",
-    name: "Northwind Wholesale",
-    industry: "retail",
+    slug: "agriculture",
+    name: "Agriculture",
+    industry: "agriculture",
     theme: { primaryColor: "#f97316", secondaryColor: "#ef4444", logoText: "Northwind" },
   },
 ];
@@ -78,7 +78,7 @@ export const seedProducts: Product[] = [
     imageUrl: "/sesame.png",
   },
 
-  // Manufacturing
+  // Manufacturing / Agriculture Transition
   {
     id: "p_mfg_001",
     tenantId: "t_mfg_001",
@@ -89,7 +89,7 @@ export const seedProducts: Product[] = [
     category: "Drive Systems",
     status: "active",
     imageToken: "⚙️",
-    imageUrl: "/hero-products.png",
+    imageUrl: "/lentils.png",
   },
   {
     id: "p_mfg_002",
@@ -101,7 +101,7 @@ export const seedProducts: Product[] = [
     category: "Hydraulics",
     status: "active",
     imageToken: "🧰",
-    imageUrl: "/hero-products.png",
+    imageUrl: "/lentils.png",
   },
   {
     id: "p_mfg_003",
@@ -113,7 +113,7 @@ export const seedProducts: Product[] = [
     category: "PPE",
     status: "active",
     imageToken: "🧤",
-    imageUrl: "/hero-products.png",
+    imageUrl: "/lentils.png",
   },
 
   // Retail / Wholesale
@@ -139,7 +139,7 @@ export const seedProducts: Product[] = [
     category: "Home & Hardware",
     status: "active",
     imageToken: "💡",
-    imageUrl: "/about-hero.png",
+    imageUrl: "/lentils.png",
   },
   {
     id: "p_ret_003",
@@ -151,7 +151,7 @@ export const seedProducts: Product[] = [
     category: "Household",
     status: "active",
     imageToken: "🧻",
-    imageUrl: "/about-hero.png",
+    imageUrl: "/lentils.png",
   },
 ];
 
@@ -161,12 +161,12 @@ export const seedInventory: InventoryItem[] = [
   { id: "i_ag_002", tenantId: "t_ag_001", productId: "p_ag_002", warehouseId: "w_ag_2", onHand: 600, reserved: 40, reorderPoint: 120 },
   { id: "i_ag_003", tenantId: "t_ag_001", productId: "p_ag_003", warehouseId: "w_ag_1", onHand: 90, reserved: 5, reorderPoint: 30 },
 
-  // Manufacturing
+  // Manufacturing / Agriculture
   { id: "i_mfg_001", tenantId: "t_mfg_001", productId: "p_mfg_001", warehouseId: "w_mfg_1", onHand: 8, reserved: 1, reorderPoint: 3 },
   { id: "i_mfg_002", tenantId: "t_mfg_001", productId: "p_mfg_002", warehouseId: "w_mfg_2", onHand: 75, reserved: 6, reorderPoint: 20 },
   { id: "i_mfg_003", tenantId: "t_mfg_001", productId: "p_mfg_003", warehouseId: "w_mfg_2", onHand: 340, reserved: 18, reorderPoint: 80 },
 
-  // Retail
+  // Retail / Agriculture
   { id: "i_ret_001", tenantId: "t_ret_001", productId: "p_ret_001", warehouseId: "w_ret_1", onHand: 120, reserved: 10, reorderPoint: 40 },
   { id: "i_ret_002", tenantId: "t_ret_001", productId: "p_ret_002", warehouseId: "w_ret_2", onHand: 210, reserved: 22, reorderPoint: 60 },
   { id: "i_ret_003", tenantId: "t_ret_001", productId: "p_ret_003", warehouseId: "w_ret_1", onHand: 95, reserved: 7, reorderPoint: 25 },
@@ -207,4 +207,3 @@ export const seedOrders: Order[] = [
     ],
   },
 ];
-

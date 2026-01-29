@@ -29,29 +29,29 @@ export function Testimonials() {
     ];
 
     return (
-        <section className="relative py-24 lg:py-32 overflow-hidden bg-slate-50">
+        <section className="relative py-16 lg:py-32 overflow-hidden bg-slate-50">
             {/* Background Decorative Elements */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-200/20 rounded-full blur-[120px] -mr-64 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-lime-200/20 rounded-full blur-[120px] -ml-64 -mb-32"></div>
 
             <div className="relative max-w-[1400px] mx-auto px-6 lg:px-12">
                 {/* Header */}
-                <div className="text-center max-w-3xl mx-auto mb-20">
-                    <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-emerald-100/50 border border-emerald-200 text-emerald-800 font-black text-[10px] tracking-[0.2em] uppercase mb-6">
+                <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20">
+                    <div className="inline-flex items-center gap-2 px-4 md:px-5 py-2 rounded-full bg-emerald-100/50 border border-emerald-200 text-emerald-800 font-black text-[9px] md:text-[10px] tracking-[0.2em] uppercase mb-4 md:mb-6">
                         <Star className="w-3 h-3 fill-emerald-600 text-emerald-600" />
                         TESTIMONIALS
                         <Star className="w-3 h-3 fill-emerald-600 text-emerald-600" />
                     </div>
-                    <h2 className="text-5xl lg:text-6xl font-black text-slate-900 mb-6 leading-tight">
+                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-4 md:mb-6 leading-tight">
                         Voice of Our <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">Global</span> Community
                     </h2>
-                    <p className="text-xl text-slate-500 font-medium leading-relaxed">
+                    <p className="text-base md:text-xl text-slate-500 font-medium leading-relaxed px-4">
                         Join thousands of satisfied customers who trust Addis Harvest for their premium agricultural needs. Quality excellence, verified by the world.
                     </p>
                 </div>
 
                 {/* Testimonials Grid */}
-                <div className="grid lg:grid-cols-3 gap-8 relative">
+                <div className="grid lg:grid-cols-3 gap-6 md:gap-8 relative">
                     {/* Decorative central quote icon */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] select-none pointer-events-none hidden lg:block">
                         <Quote className="w-[400px] h-[400px]" />
@@ -60,7 +60,7 @@ export function Testimonials() {
                     {testimonials.map((t, i) => (
                         <div
                             key={t.name}
-                            className={`group relative bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-emerald-900/5 border border-slate-100 hover:border-emerald-200 transition-all duration-500 hover:-translate-y-4`}
+                            className={`group relative bg-white rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-emerald-900/5 border border-slate-100 hover:border-emerald-200 transition-all duration-500 md:hover:-translate-y-4`}
                         >
                             {/* Card Glow Effect */}
                             <div className="absolute inset-x-10 -bottom-2 h-4 bg-emerald-600/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

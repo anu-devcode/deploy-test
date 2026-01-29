@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { seedProducts, tenants } from "@/lib/mock-data";
-import { FilterSection, FeaturedCategories, Testimonials, ProductsSection, HowItWorks, BrandShowcase, HarvestStory } from "@/components/home";
+import { FilterSection, Testimonials, ProductsSection, HowItWorks, BrandShowcase, HarvestStory } from "@/components/home";
 import type { Product } from "@/types";
 import { Hero } from '@/components/home/Hero';
 
@@ -59,13 +59,6 @@ export default function Home() {
                 setSelectedCategory={setSelectedCategory}
                 categories={categories}
             />
-
-            <div id="categories">
-                <FeaturedCategories
-                    categories={categories}
-                    setSelectedCategory={setSelectedCategory}
-                />
-            </div>
 
             <ProductsSection
                 filteredProducts={filteredProducts}
