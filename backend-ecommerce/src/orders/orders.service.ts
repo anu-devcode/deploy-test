@@ -2,11 +2,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
 import { OrderStatus, Prisma } from '@prisma/client';
+import { AutomationService } from '../automation/automation.service';
 const Decimal = Prisma.Decimal;
 
 @Injectable()
 export class OrdersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private automationService: AutomationService
+    ) { }
 
     async create(dto: CreateOrderDto, tenantId: string) {
         // Fetch products and validate
@@ -36,7 +40,7 @@ export class OrdersService {
             };
         });
 
-        return this.prisma.order.create({
+        const order = await this.prisma.order.create({
             data: {
                 customerId: dto.customerId,
                 tenantId,
@@ -53,6 +57,11 @@ export class OrdersService {
                 },
             },
         });
+
+        // Trigger Automation
+        await this.automationService.trigger('ORDER_CREATED', order, tenantId);
+
+        return order;
     }
 
     async findAll(tenantId: string) {

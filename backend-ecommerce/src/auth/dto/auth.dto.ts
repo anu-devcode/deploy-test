@@ -21,3 +21,17 @@ export class LoginDto {
     @IsNotEmpty()
     password: string;
 }
+
+export class RequestResetDto {
+    @IsEmail()
+    email: string;
+}
+
+export class ResetPasswordDto {
+    @IsNotEmpty()
+    token: string;
+
+    @IsNotEmpty()
+    @MinLength(6)
+    password: string;
+}

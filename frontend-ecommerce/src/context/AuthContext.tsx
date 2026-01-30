@@ -41,11 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticated(true);
             setTenantId(storedTenantId);
             if (storedUser) {
-                const parsedUser = JSON.parse(storedUser);
-                setUser({
-                    ...parsedUser,
-                    permissions: parsedUser.permissions || []
-                });
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    setUser({
+                        id: parsedUser.id || 'unknown',
+                        email: parsedUser.email || '',
+                        role: parsedUser.role || 'STAFF',
+                        permissions: parsedUser.permissions || [],
+                        requiresPasswordChange: parsedUser.requiresPasswordChange || false
+                    });
+                } catch (e) {
+                    console.error('Failed to parse stored user', e);
+                    localStorage.removeItem('user');
+                }
             }
         }
     }, []);
@@ -57,7 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('token', mockToken);
             api.setToken(mockToken);
             setIsAuthenticated(true);
-            const userData = { email, role: 'ADMIN' };
+            const userData: User = {
+                id: 'demo-admin-id',
+                email,
+                role: 'ADMIN',
+                permissions: ['ALL'],
+                requiresPasswordChange: false
+            };
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
             return;

@@ -13,6 +13,8 @@ export class AnalyticsService {
             pendingOrders,
             totalRevenue,
             lowStockProducts,
+            cartPulse,
+            inventoryVelocity,
         ] = await Promise.all([
             this.prisma.product.count({ where: { tenantId } }),
             this.prisma.order.count({ where: { tenantId } }),
@@ -23,6 +25,13 @@ export class AnalyticsService {
                 _sum: { total: true },
             }),
             this.prisma.product.count({ where: { tenantId, stock: { lte: 10 } } }),
+            this.prisma.cartItem.count({ where: { cart: { tenantId } } }),
+            this.prisma.stockMovement.count({
+                where: {
+                    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+                    product: { tenantId }
+                }
+            }),
         ]);
 
         return {
@@ -32,6 +41,8 @@ export class AnalyticsService {
             pendingOrders,
             totalRevenue: totalRevenue._sum.total || 0,
             lowStockProducts,
+            cartPulse,
+            inventoryVelocity,
         };
     }
 

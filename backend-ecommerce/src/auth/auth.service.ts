@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, ResetPasswordDto } from './dto';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -45,6 +46,57 @@ export class AuthService {
         }
 
         return this.generateToken(user.id, user.email, user.role, tenantId);
+    }
+
+    async requestPasswordReset(email: string, tenantId: string) {
+        const user = await this.prisma.user.findFirst({
+            where: { email, tenantId }
+        });
+
+        if (!user) {
+            // Silently fail or throw to avoid email enumeration
+            throw new NotFoundException('User not found');
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+
+        await this.prisma.passwordResetToken.create({
+            data: {
+                token,
+                userId: user.id,
+                expiresAt
+            }
+        });
+
+        // In a real app, send email here. For now, returning token for simulation/testing.
+        return { message: 'Reset token generated', token };
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const resetToken = await this.prisma.passwordResetToken.findUnique({
+            where: { token: dto.token },
+            include: { user: true }
+        });
+
+        if (!resetToken || resetToken.expiresAt < new Date()) {
+            throw new BadRequestException('Invalid or expired token');
+        }
+
+        const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: resetToken.userId },
+                data: { password: hashedPassword, isFirstLogin: false }
+            }),
+            this.prisma.passwordResetToken.delete({
+                where: { id: resetToken.id }
+            })
+        ]);
+
+        return { message: 'Password successfully reset' };
     }
 
     private generateToken(userId: string, email: string, role: string, tenantId: string) {

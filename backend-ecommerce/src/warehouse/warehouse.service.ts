@@ -126,7 +126,7 @@ export class WarehouseService {
                     productId: dto.productId,
                     warehouseId,
                     quantity: dto.quantity,
-                    type: MovementType.ADJUSTMENT,
+                    type: dto.type || MovementType.ADJUSTMENT,
                     notes: dto.notes,
                 },
             });

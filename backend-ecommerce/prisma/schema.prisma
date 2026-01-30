@@ -23,6 +23,7 @@ model Tenant {
   carts       Cart[]
   reviews     Review[]
   deliveries  Delivery[]
+  automationRules AutomationRule[]
 }
 
 model User {
@@ -33,6 +34,8 @@ model User {
   isFirstLogin   Boolean  @default(true)
   tenantId       String
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  permissions    UserPermission[]
+  passwordResetTokens PasswordResetToken[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -41,7 +44,7 @@ model Product {
   id             String      @id @default(uuid())
   name           String
   description    String?
-  price          Decimal
+  price          Decimal     // Base reference price
   compareAtPrice Decimal?    // Original price for discount display
   stock          Int         @default(0)
   sku            String?
@@ -49,6 +52,18 @@ model Product {
   tags           String[]    // For filtering and search
   isPublished    Boolean     @default(false)
   isFeatured     Boolean     @default(false)
+  
+  // Dual Pricing Configuration
+  retailEnabled  Boolean     @default(true)
+  retailPrice    Decimal?
+  retailUnit     String?     @default("kg")
+  retailMinOrder Int?        @default(1)
+  
+  bulkEnabled    Boolean     @default(false)
+  bulkPrice      Decimal?
+  bulkUnit       String?     @default("Quintal")
+  bulkMinOrder   Int?        @default(5)
+
   categoryId     String?
   category       Category?   @relation(fields: [categoryId], references: [id])
   warehouseId    String?
@@ -216,6 +231,54 @@ model CmsPage {
   updatedAt DateTime @updatedAt
 
   @@unique([slug, tenantId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "orders.view", "inventory.manage"
+  description String?
+  users       UserPermission[]
+}
+
+model UserPermission {
+  userId       String
+  permissionId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+}
+
+model AutomationRule {
+  id          String   @id @default(uuid())
+  name        String
+  trigger     String   // e.g., "ORDER_CREATED", "PAYMENT_REFUNDED"
+  condition   Json?    // e.g., { "minAmount": 5000 }
+  action      String   // e.g., "NOTIFY_ADMIN", "AUTO_CONFIRM"
+  isActive    Boolean  @default(true)
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  logs        AutomationLog[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AutomationLog {
+  id        String   @id @default(uuid())
+  ruleId    String
+  rule      AutomationRule @relation(fields: [ruleId], references: [id])
+  status    String   // "SUCCESS", "FAILED"
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 enum Role {

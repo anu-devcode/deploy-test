@@ -19,6 +19,8 @@ import { DeliveryModule } from './delivery';
 import { AnalyticsModule } from './analytics';
 import { StorefrontModule } from './storefront';
 import { CategoriesModule } from './categories';
+import { AutomationModule } from './automation/automation.module';
+import { StaffModule } from './staff/staff.module';
 // import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
 
 @Module({
@@ -41,6 +43,8 @@ import { CategoriesModule } from './categories';
     AnalyticsModule,
     StorefrontModule,
     CategoriesModule,
+    AutomationModule,
+    StaffModule,
     // EventsModule,
   ],
   controllers: [AppController],

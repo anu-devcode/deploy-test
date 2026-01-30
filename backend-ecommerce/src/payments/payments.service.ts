@@ -2,10 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { InitializePaymentDto, ConfirmPaymentDto } from './dto';
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
+import { AutomationService } from '../automation/automation.service';
 
 @Injectable()
 export class PaymentsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private automationService: AutomationService
+    ) { }
 
     async initialize(dto: InitializePaymentDto, tenantId: string) {
         const order = await this.prisma.order.findFirst({
@@ -69,6 +73,9 @@ export class PaymentsService {
                 paymentStatus: PaymentStatus.COMPLETED,
             },
         });
+
+        // Trigger Automation
+        await this.automationService.trigger('PAYMENT_RECEIVED', updatedPayment, tenantId);
 
         return updatedPayment;
     }

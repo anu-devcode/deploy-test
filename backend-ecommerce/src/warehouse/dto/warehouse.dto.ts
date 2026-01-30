@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsBoolean, IsNumber, IsEnum } from 'class-validator';
+import { MovementType } from '@prisma/client';
 
 export class CreateWarehouseDto {
     @IsNotEmpty()
@@ -53,7 +54,13 @@ export class StockAdjustmentDto {
     @IsString()
     productId: string;
 
+    @IsNotEmpty()
+    @IsNumber()
     quantity: number; // positive or negative
+
+    @IsOptional()
+    @IsEnum(MovementType)
+    type?: MovementType;
 
     @IsOptional()
     @IsString()

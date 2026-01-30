@@ -52,6 +52,43 @@ export class CreateProductDto {
     @IsOptional()
     @IsString()
     warehouseId?: string;
+
+    // Dual Pricing
+    @IsOptional()
+    @IsBoolean()
+    retailEnabled?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    retailPrice?: number;
+
+    @IsOptional()
+    @IsString()
+    retailUnit?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    retailMinOrder?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    bulkEnabled?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    bulkPrice?: number;
+
+    @IsOptional()
+    @IsString()
+    bulkUnit?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    bulkMinOrder?: number;
 }
 
 export class UpdateProductDto {
@@ -107,5 +144,42 @@ export class UpdateProductDto {
     @IsOptional()
     @IsString()
     warehouseId?: string;
+
+    // Dual Pricing
+    @IsOptional()
+    @IsBoolean()
+    retailEnabled?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    retailPrice?: number;
+
+    @IsOptional()
+    @IsString()
+    retailUnit?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    retailMinOrder?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    bulkEnabled?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    bulkPrice?: number;
+
+    @IsOptional()
+    @IsString()
+    bulkUnit?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    bulkMinOrder?: number;
 }
 
