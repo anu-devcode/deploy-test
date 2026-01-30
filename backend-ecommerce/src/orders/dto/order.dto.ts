@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsArray, ValidateNested, IsUUID, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsArray, ValidateNested, IsUUID, Min, IsOptional, IsEmail, IsString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class OrderItemDto {
@@ -11,8 +11,39 @@ class OrderItemDto {
 }
 
 export class CreateOrderDto {
+    // For member checkout
+    @IsOptional()
     @IsUUID()
-    customerId: string;
+    customerId?: string;
+
+    // For guest checkout
+    @IsOptional()
+    @IsBoolean()
+    isGuest?: boolean;
+
+    @IsOptional()
+    @IsEmail()
+    guestEmail?: string;
+
+    @IsOptional()
+    @IsString()
+    guestName?: string;
+
+    @IsOptional()
+    @IsString()
+    guestPhone?: string;
+
+    @IsOptional()
+    @IsString()
+    shippingAddress?: string;
+
+    @IsOptional()
+    @IsString()
+    shippingCity?: string;
+
+    @IsOptional()
+    @IsString()
+    paymentMethod?: string;
 
     @IsArray()
     @ValidateNested({ each: true })

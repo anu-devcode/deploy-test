@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import {
     Users,
@@ -14,13 +14,19 @@ import {
     ChevronRight,
     ArrowUpRight,
     UserPlus,
-    CreditCard
+    CreditCard,
+    Shield,
+    Tag
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Customer } from '@/lib/api';
 
 export default function CustomersPage() {
-    const [customers, setCustomers] = useState<any[]>([]);
+    const { user: currentUser } = useAuth();
+    const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
 
     useEffect(() => {
         fetchCustomers();
@@ -119,52 +125,91 @@ export default function CustomersPage() {
                                     </tr>
                                 ))
                             ) : customers.map((customer) => (
-                                <tr key={customer.id} className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
-                                                {customer.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-900">{customer.name}</p>
-                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                                    <Mail className="w-3 h-3" /> {customer.email}
+                                <React.Fragment key={customer.id}>
+                                    <tr
+                                        onClick={() => setExpandedCustomer(expandedCustomer === customer.id ? null : customer.id)}
+                                        className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200 uppercase">
+                                                    {customer.firstName?.charAt(0) || customer.email.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-slate-900">{customer.firstName} {customer.lastName}</p>
+                                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                        <Mail className="w-3 h-3" /> {customer.email}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
-                                                <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
-                                                {customer.orders} Orders
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+                                                    <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
+                                                    {customer._count?.orders || 0} Orders
+                                                </div>
+                                                <p className="text-[10px] text-slate-400">Joined {new Date(customer.createdAt).toLocaleDateString()}</p>
                                             </div>
-                                            <p className="text-[10px] text-slate-400">Joined {new Date(customer.joiningDate).toLocaleDateString()}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm font-bold text-slate-900">ETB {customer.totalSpent.toLocaleString()}</p>
-                                        <div className="w-20 h-1 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
-                                            <div
-                                                className="h-full bg-emerald-500"
-                                                style={{ width: `${Math.min((customer.totalSpent / 50000) * 100, 100)}%` }}
-                                            ></div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${customer.status === 'Active'
-                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                            : 'bg-slate-100 text-slate-600 border border-slate-200'
-                                            }`}>
-                                            {customer.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                                            <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-bold text-slate-900">ETB 0</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                Active
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button className={`p-2 rounded-lg transition-all ${expandedCustomer === customer.id ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}>
+                                                <ChevronRight className={`w-4 h-4 transition-transform ${expandedCustomer === customer.id ? 'rotate-90' : ''}`} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {expandedCustomer === customer.id && (
+                                        <tr className="bg-slate-50/30">
+                                            <td colSpan={5} className="px-6 py-4 border-t border-slate-100">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-2">
+                                                    <div>
+                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Contact Information</h4>
+                                                        <div className="space-y-2 text-sm text-slate-600">
+                                                            <p><span className="font-medium text-slate-900">Phone:</span> {customer.phone || 'N/A'}</p>
+                                                            <p><span className="font-medium text-slate-900">Address:</span> {customer.address}, {customer.city}, {customer.country}</p>
+                                                        </div>
+                                                    </div>
+                                                    {currentUser?.role === 'ADMIN' && (
+                                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                                <Shield className="w-4 h-4 text-indigo-600" />
+                                                                <h4 className="text-xs font-bold text-slate-900 uppercase">Admin Intel</h4>
+                                                            </div>
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Internal Notes</p>
+                                                                    <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
+                                                                        "{customer.adminNotes || 'No internal notes added yet.'}"
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 text-indigo-700">Flags & Status</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {customer.flags && customer.flags.length > 0 ? customer.flags.map(flag => (
+                                                                            <span key={flag} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-bold border border-indigo-100">
+                                                                                <Tag className="w-3 h-3" /> {flag}
+                                                                            </span>
+                                                                        )) : (
+                                                                            <span className="text-xs text-slate-400 italic">No flags assigned</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
                             ))}
                         </tbody>
                     </table>

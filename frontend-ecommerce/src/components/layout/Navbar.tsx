@@ -8,7 +8,7 @@ import { useCart } from '@/context';
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { itemCount } = useCart();
+    const { itemCount, toggleCart } = useCart();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -68,7 +68,6 @@ export function Navbar() {
                         ))}
                     </nav>
 
-                    {/* Action Hub */}
                     <div className="flex items-center gap-2 sm:gap-6 md:gap-10">
                         <button className={`relative p-2 md:p-4 rounded-full transition-all duration-700 group ${isScrolled
                             ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
@@ -78,8 +77,8 @@ export function Navbar() {
                             <span className="absolute inset-0 rounded-full border border-current opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-700"></span>
                         </button>
 
-                        <Link
-                            href="/cart"
+                        <button
+                            onClick={toggleCart}
                             className={`relative flex items-center justify-center w-10 h-10 md:w-14 md:h-14 lg:w-40 lg:h-14 rounded-full font-black text-[11px] tracking-[0.3em] uppercase transition-all duration-700 active:scale-90 ${isScrolled
                                 ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/30'
                                 : 'bg-white text-slate-950 shadow-2xl hover:bg-emerald-50'
@@ -91,7 +90,7 @@ export function Navbar() {
                                 }`}>
                                 {itemCount}
                             </span>
-                        </Link>
+                        </button>
 
                         {/* Mobile Logic */}
                         <button

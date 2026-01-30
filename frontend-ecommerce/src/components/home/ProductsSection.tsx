@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Tenant } from '@/types';
-import { Heart, Eye, Link as LinkIcon, ShoppingCart, Star } from 'lucide-react';
+import { Heart, Eye, Link as LinkIcon, ShoppingCart, Star, Plus, Minus } from 'lucide-react';
 import { useCart } from '@/context';
 
 interface ProductsSectionProps {
@@ -25,7 +25,7 @@ export function ProductsSection({
     setSelectedIndustry,
     formatPrice
 }: ProductsSectionProps) {
-    const { addToCart } = useCart();
+    const { addToCart, updateQuantity, items } = useCart();
 
     return (
         <section id="products" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 md:py-20 lg:py-28">
@@ -117,9 +117,12 @@ export function ProductsSection({
                                         <button className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
                                             <Heart className="w-4 h-4 md:w-5 md:h-5" />
                                         </button>
-                                        <button className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
+                                        <Link
+                                            href={`/${tenant?.slug}/product/${product.id}`}
+                                            className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110"
+                                        >
                                             <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                                        </button>
+                                        </Link>
                                     </div>
 
                                     {/* Quick Add Button */}
@@ -139,7 +142,7 @@ export function ProductsSection({
                                     {/* Category & Rating */}
                                     <div className="flex items-center justify-between">
                                         <span className="px-3 py-1 rounded-full bg-emerald-50 text-[10px] md:text-xs font-bold text-emerald-700 uppercase tracking-wide">
-                                            {product.category}
+                                            {typeof product.category === 'string' ? product.category : product.category?.name}
                                         </span>
                                         <div className="flex items-center gap-1">
                                             <span className="text-amber-400 text-xs md:text-sm">⭐</span>
@@ -149,7 +152,7 @@ export function ProductsSection({
 
                                     {/* Product Name */}
                                     <h3 className="text-xl md:text-2xl font-black text-slate-900 line-clamp-1 md:line-clamp-2 group-hover:text-emerald-600 transition-colors leading-tight">
-                                        {product.name}
+                                        {String(product.name)}
                                     </h3>
 
                                     {/* Description */}
@@ -163,7 +166,7 @@ export function ProductsSection({
                                             className="w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-xs font-black text-white shadow-lg"
                                             style={{ backgroundColor: tenant?.theme.primaryColor }}
                                         >
-                                            {tenant?.theme.logoText[0]}
+                                            {tenant?.theme.logoText?.[0]}
                                         </div>
                                         <span className="text-[10px] md:text-xs font-bold text-slate-500">
                                             by {tenant?.name}
@@ -178,15 +181,45 @@ export function ProductsSection({
                                                 {formatPrice(product.price)}
                                             </p>
                                         </div>
-                                        <Link
-                                            href={`/${tenant?.slug}/product/${product.id}`}
-                                            className="w-full sm:w-auto px-5 md:px-6 text-white py-3 rounded-lg md:rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 font-bold text-xs md:text-sm hover:shadow-xl hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            Details
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </Link>
+
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const cartItem = (items || []).find(i => i.productId === product.id);
+                                                if (cartItem) {
+                                                    return (
+                                                        <div className="flex items-center gap-1 bg-emerald-50 rounded-xl p-1 border border-emerald-100">
+                                                            <button
+                                                                onClick={(e) => { e.preventDefault(); updateQuantity(product.id, cartItem.quantity - 1); }}
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white transition-all"
+                                                            >
+                                                                <Minus className="w-3 h-3" />
+                                                            </button>
+                                                            <span className="w-6 text-center text-xs font-black text-emerald-900">{cartItem.quantity}</span>
+                                                            <button
+                                                                onClick={(e) => { e.preventDefault(); updateQuantity(product.id, cartItem.quantity + 1); }}
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white transition-all"
+                                                            >
+                                                                <Plus className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); addToCart(product.id, 1); }}
+                                                        className="px-5 py-3 rounded-xl bg-slate-900 text-white font-black text-xs hover:bg-black transition-all shadow-lg"
+                                                    >
+                                                        Add to Cart
+                                                    </button>
+                                                );
+                                            })()}
+                                            <Link
+                                                href={`/${tenant?.slug}/product/${product.id}`}
+                                                className="p-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

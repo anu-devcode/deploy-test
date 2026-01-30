@@ -504,7 +504,7 @@ export default function AdminProductsPage() {
                                                 <div className="flex items-center gap-3 mt-2">
                                                     <span className="text-[9px] font-black text-slate-400 font-mono uppercase bg-slate-100 px-1.5 py-0.5 rounded tracking-tighter shadow-sm">{p.sku || 'NO-SKU'}</span>
                                                     <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-black uppercase">
-                                                        <Layers className="w-3 h-3" /> {(p as any).category || 'General'}
+                                                        <Layers className="w-3 h-3" /> {typeof (p as any).category === 'object' ? (p as any).category?.name : (p as any).category || 'General'}
                                                     </span>
                                                 </div>
                                             </div>

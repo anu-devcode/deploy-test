@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto';
-import { TenantId } from '../common/decorators';
+import { TenantId, CurrentUser } from '../common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('customers')
@@ -15,8 +15,8 @@ export class CustomersController {
     }
 
     @Get()
-    findAll(@TenantId() tenantId: string) {
-        return this.customersService.findAll(tenantId);
+    findAll(@TenantId() tenantId: string, @CurrentUser() user: any) {
+        return this.customersService.findAll(tenantId, user.role);
     }
 
     @Get('stats')
@@ -25,8 +25,8 @@ export class CustomersController {
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.customersService.findOne(id, tenantId);
+    findOne(@Param('id') id: string, @TenantId() tenantId: string, @CurrentUser() user: any) {
+        return this.customersService.findOne(id, tenantId, user.role);
     }
 
     @Patch(':id')

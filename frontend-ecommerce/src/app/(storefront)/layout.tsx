@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { SideCart } from "@/components/cart/SideCart";
 
 export default function StorefrontLayout({
     children,
@@ -7,12 +8,13 @@ export default function StorefrontLayout({
     children: React.ReactNode;
 }) {
     return (
-        <>
+        <div className="relative">
             <Navbar />
+            <SideCart />
             <main className="min-h-screen">
                 {children}
             </main>
             <Footer />
-        </>
+        </div>
     );
 }

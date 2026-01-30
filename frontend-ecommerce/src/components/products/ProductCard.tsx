@@ -18,6 +18,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="text-7xl transform group-hover:scale-125 group-hover:rotate-6 transition-all duration-500 relative z-10">
             {product.imageToken ?? '📦'}
           </div>
+          {/* Promotion Badge */}
+          {product.compareAtPrice && (
+            <div className="absolute top-4 left-4 z-20 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg">
+              Save {Math.round(((Number(product.compareAtPrice) - Number(product.price)) / Number(product.compareAtPrice)) * 100)}%
+            </div>
+          )}
           {/* Shine effect on hover */}
           <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         </div>

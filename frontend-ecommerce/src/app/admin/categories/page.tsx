@@ -181,7 +181,7 @@ export default function CategoriesPage() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             <Box className="w-3.5 h-3.5 text-slate-400" />
-                                            <p className="text-sm text-slate-600 font-medium">{cat.productsCount || (cat as any)._count?.products || 0} Products</p>
+                                            <p className="text-sm text-slate-600 font-medium">{cat._count?.products || 0} Products</p>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">

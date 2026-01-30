@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { api, Product } from '@/lib/api';
 import { AddToCartButton } from '@/components/products/AddToCartButton';
@@ -8,7 +8,8 @@ import { ProductGallery } from '@/components/products/ProductGallery';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductReviews } from '@/components/products/ProductReviews';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+    const params = use(paramsPromise);
     const [product, setProduct] = useState<Product | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -79,7 +80,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                         href={`/products?categoryId=${product.category.id}`}
                                         className="text-emerald-600 font-medium text-sm mb-2 inline-block hover:underline"
                                     >
-                                        {product.category.name}
+                                        {typeof product.category === 'object' ? product.category.name : product.category}
                                     </Link>
                                 )}
                                 <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
@@ -154,7 +155,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                         sku: p.sku || '',
                                         category: p.category?.name || 'Uncategorized',
                                         status: (p.status || 'unknown') as any
-                                    }}
+                                    } as any}
                                 />
                             ))}
                         </div>

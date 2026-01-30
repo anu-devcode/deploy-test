@@ -4,7 +4,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma';
 import { CommonModule, TenantMiddleware } from './common';
-import { TenantsModule } from './tenants';
+// TenantsModule disabled - reserved for future multi-tenant ERP
+// import { TenantsModule } from './tenants';
 import { AuthModule } from './auth';
 import { ProductsModule } from './products';
 import { OrdersModule } from './orders';
@@ -20,6 +21,7 @@ import { AnalyticsModule } from './analytics';
 import { StorefrontModule } from './storefront';
 import { CategoriesModule } from './categories';
 import { AutomationModule } from './automation/automation.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { StaffModule } from './staff/staff.module';
 // import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
 
@@ -28,7 +30,7 @@ import { StaffModule } from './staff/staff.module';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     CommonModule,
-    TenantsModule,
+    // TenantsModule, // Disabled for Adis Harvest single-tenant development
     AuthModule,
     ProductsModule,
     OrdersModule,
@@ -44,6 +46,7 @@ import { StaffModule } from './staff/staff.module';
     StorefrontModule,
     CategoriesModule,
     AutomationModule,
+    PromotionsModule,
     StaffModule,
     // EventsModule,
   ],

@@ -6,6 +6,8 @@ import { FilterSection, Testimonials, ProductsSection, HowItWorks, BrandShowcase
 import type { Product } from "@/types";
 import { Hero } from '@/components/home/Hero';
 
+import { PromotionBanner } from '@/components/storefront/PromotionBanner';
+
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function Home() {
 
     return (
         <div className="bg-slate-50 transition-colors duration-500">
+            <PromotionBanner />
             <Hero
                 allProducts={allProducts}
                 tenants={tenants}

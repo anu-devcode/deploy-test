@@ -27,6 +27,14 @@ export class CreateCustomerDto {
     @IsOptional()
     @IsString()
     country?: string;
+
+    @IsOptional()
+    @IsString()
+    adminNotes?: string;
+
+    @IsOptional()
+    @IsString({ each: true })
+    flags?: string[];
 }
 
 export class UpdateCustomerDto {
@@ -57,4 +65,12 @@ export class UpdateCustomerDto {
     @IsOptional()
     @IsString()
     country?: string;
+
+    @IsOptional()
+    @IsString()
+    adminNotes?: string;
+
+    @IsOptional()
+    @IsString({ each: true })
+    flags?: string[];
 }

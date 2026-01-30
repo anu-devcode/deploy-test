@@ -24,8 +24,8 @@ export class CustomersService {
         });
     }
 
-    async findAll(tenantId: string) {
-        return this.prisma.customer.findMany({
+    async findAll(tenantId: string, role: string) {
+        const customers = await this.prisma.customer.findMany({
             where: { tenantId },
             include: {
                 orders: {
@@ -44,9 +44,11 @@ export class CustomersService {
             },
             orderBy: { createdAt: 'desc' },
         });
+
+        return customers.map(c => this.sanitizeCustomer(c, role));
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string, tenantId: string, role: string) {
         const customer = await this.prisma.customer.findFirst({
             where: { id, tenantId },
             include: {
@@ -72,7 +74,7 @@ export class CustomersService {
             throw new NotFoundException('Customer not found');
         }
 
-        return customer;
+        return this.sanitizeCustomer(customer, role);
     }
 
     async findByEmail(email: string, tenantId: string) {
@@ -82,7 +84,7 @@ export class CustomersService {
     }
 
     async update(id: string, dto: UpdateCustomerDto, tenantId: string) {
-        await this.findOne(id, tenantId);
+        await this.findOne(id, tenantId, 'ADMIN');
 
         // Check email uniqueness if email is being updated
         if (dto.email) {
@@ -106,8 +108,16 @@ export class CustomersService {
     }
 
     async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+        await this.findOne(id, tenantId, 'ADMIN');
         return this.prisma.customer.delete({ where: { id } });
+    }
+
+    private sanitizeCustomer(customer: any, role: string) {
+        if (role !== 'ADMIN') {
+            const { adminNotes, flags, ...safeCustomer } = customer;
+            return safeCustomer;
+        }
+        return customer;
     }
 
     async getCustomerStats(tenantId: string) {

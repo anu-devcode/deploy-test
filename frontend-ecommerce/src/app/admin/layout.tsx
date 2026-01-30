@@ -27,6 +27,7 @@ import {
     ShieldAlert,
     User,
     Layers,
+    Tag,
     Zap
 } from 'lucide-react';
 
@@ -125,6 +126,8 @@ export default function AdminLayout({
             label: 'Relationship & Mgmt',
             items: [
                 { label: 'Customers', icon: Users, href: '/admin/customers', permission: 'VIEW_ORDERS' },
+                { label: 'Promotions', icon: Tag, href: '/admin/promotions', permission: 'MANAGE_PRODUCTS' },
+                { label: 'Content CMS', icon: Layers, href: '/admin/cms', permission: 'MANAGE_PRODUCTS' },
                 { label: 'Automations', icon: Zap, href: '/admin/automations', permission: 'ALL' },
                 { label: 'Staff', icon: UserCog, href: '/admin/staff', permission: 'MANAGE_STAFF' },
                 { label: 'Settings', icon: Settings, href: '/admin/settings', permission: 'ALL' },

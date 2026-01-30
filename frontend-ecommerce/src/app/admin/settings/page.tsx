@@ -15,11 +15,16 @@ import {
     Mail,
     Phone,
     MapPin,
-    Smartphone
+    Smartphone,
+    GitBranch,
+    Zap,
+    Cpu,
+    Activity,
+    Plus
 } from 'lucide-react';
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<'store' | 'localization' | 'payments' | 'security'>('store');
+    const [activeTab, setActiveTab] = useState<'store' | 'localization' | 'payments' | 'security' | 'workflow' | 'advanced'>('store');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -36,6 +41,8 @@ export default function SettingsPage() {
         { id: 'localization', label: 'Regional & SEO', icon: Globe },
         { id: 'payments', label: 'FinTech Integrations', icon: CreditCard },
         { id: 'security', label: 'System Security', icon: Lock },
+        { id: 'workflow', label: 'Order Workflow', icon: GitBranch },
+        { id: 'advanced', label: 'Feature Toggles', icon: Zap },
     ];
 
     return (
@@ -197,29 +204,99 @@ export default function SettingsPage() {
                             </button>
                         </div>
                     )}
-                </div>
-            </div>
 
-            {/* Danger Zone */}
-            <div className="bg-rose-50/30 rounded-3xl border border-rose-100 p-8 space-y-4">
-                <div>
-                    <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
-                        <Trash2 className="w-5 h-5" /> Danger Zone
-                    </h3>
-                    <p className="text-sm text-rose-700 mt-1 opacity-80">Irreversible actions that affect the entire store database.</p>
+                    {activeTab === 'workflow' && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <h3 className="text-lg font-bold text-slate-900">Order Lifecycle Customization</h3>
+                            <p className="text-sm text-slate-500">Define the states and automated transitions for your fulfilment pipeline.</p>
+
+                            <div className="space-y-4">
+                                {[
+                                    { label: 'Draft', color: 'bg-slate-100 text-slate-600' },
+                                    { label: 'Pending Payment', color: 'bg-amber-100 text-amber-600' },
+                                    { label: 'Processing', color: 'bg-indigo-100 text-indigo-600' },
+                                    { label: 'Shipped', color: 'bg-blue-100 text-blue-600' },
+                                    { label: 'Delivered', color: 'bg-emerald-100 text-emerald-600' },
+                                ].map((status) => (
+                                    <div key={status.label} className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl bg-slate-50/30">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-slate-300" />
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${status.color}`}>
+                                                {status.label}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <button className="text-xs font-bold text-slate-400 hover:text-slate-600">Rules</button>
+                                            <button className="text-xs font-bold text-indigo-600 hover:underline">Edit</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm font-bold hover:border-emerald-400 hover:text-emerald-500 transition-all flex items-center justify-center gap-2">
+                                <Plus className="w-4 h-4" /> Add Custom Workflow State
+                            </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'advanced' && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <h3 className="text-lg font-bold text-slate-900">Experimental Flags</h3>
+                            <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex gap-4">
+                                <Cpu className="w-5 h-5 text-indigo-600 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-bold text-indigo-900">V2 Platform Capabilities</p>
+                                    <p className="text-xs text-indigo-700 leading-relaxed mt-1">
+                                        Enable cutting-edge features before they hit the stable branch. Caution: these may affect checkout performance.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {[
+                                    { id: 'ai-desc', label: 'AI Inventory Descriptions', desc: 'Auto-generate SEO copy for new product units.', active: true },
+                                    { id: 'v2-checkout', label: 'One-Tap Checkout V2', desc: 'Streamlined biometric-ready ordering flow.', active: false },
+                                    { id: 'live-track', label: 'Real-time Logistics Map', desc: 'GPS tracking for internal delivery fleet.', active: true },
+                                ].map((flag) => (
+                                    <div key={flag.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl bg-white shadow-sm">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm font-bold text-slate-900">{flag.label}</p>
+                                                {flag.active && <span className="bg-emerald-100 text-emerald-600 text-[8px] px-1.5 py-0.5 rounded font-black uppercase">Active</span>}
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 mt-0.5">{flag.desc}</p>
+                                        </div>
+                                        <button className={`w-12 h-6 rounded-full relative transition-all ${flag.active ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all ${flag.active ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-rose-100">
+
+                {/* Danger Zone */}
+                <div className="bg-rose-50/30 rounded-3xl border border-rose-100 p-8 space-y-4">
                     <div>
-                        <p className="text-sm font-bold text-slate-900">Clear Store Cache</p>
-                        <p className="text-[11px] text-slate-500">Force refresh of all product and category metadata.</p>
+                        <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                            <Trash2 className="w-5 h-5" /> Danger Zone
+                        </h3>
+                        <p className="text-sm text-rose-700 mt-1 opacity-80">Irreversible actions that affect the entire store database.</p>
                     </div>
-                    <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
-                        Execute Flush
+                    <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-rose-100">
+                        <div>
+                            <p className="text-sm font-bold text-slate-900">Clear Store Cache</p>
+                            <p className="text-[11px] text-slate-500">Force refresh of all product and category metadata.</p>
+                        </div>
+                        <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                            Execute Flush
+                        </button>
+                    </div>
+                    <button className="w-full py-4 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-2xl text-sm font-bold border border-rose-200 transition-all">
+                        Deactivate This Store Instance
                     </button>
                 </div>
-                <button className="w-full py-4 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-2xl text-sm font-bold border border-rose-200 transition-all">
-                    Deactivate This Store Instance
-                </button>
             </div>
         </div>
     );

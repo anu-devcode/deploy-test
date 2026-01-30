@@ -23,6 +23,7 @@ model Tenant {
   carts       Cart[]
   reviews     Review[]
   deliveries  Delivery[]
+  promotions  Promotion[]
   automationRules AutomationRule[]
 }
 
@@ -107,6 +108,8 @@ model Customer {
   orders    Order[]
   cart      Cart?
   reviews   Review[]
+  adminNotes String?
+  flags      String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -153,8 +156,16 @@ model Order {
   shippingCountry String?
   trackingNumber  String?
   notes           String?
-  customerId      String
-  customer        Customer      @relation(fields: [customerId], references: [id])
+  
+  // Guest Checkout Fields
+  isGuest         Boolean       @default(false)
+  guestEmail      String?
+  guestName       String?
+  guestPhone      String?
+  trackingToken   String?       @unique // For guest order tracking
+  
+  customerId      String?       // Optional for guest checkout
+  customer        Customer?     @relation(fields: [customerId], references: [id])
   tenantId        String
   tenant          Tenant        @relation(fields: [tenantId], references: [id])
   items           OrderItem[]
@@ -163,6 +174,7 @@ model Order {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
+
 
 model OrderItem {
   id        String  @id @default(uuid())
@@ -368,4 +380,45 @@ enum DeliveryStatus {
   IN_TRANSIT
   DELIVERED
   FAILED
+}
+
+enum PromotionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum PromotionTarget {
+  PRODUCT
+  CATEGORY
+  CART
+}
+
+enum PromoBusinessType {
+  RETAIL
+  BULK
+  BOTH
+}
+
+model Promotion {
+  id             String           @id @default(uuid())
+  name           String
+  description    String?
+  code           String?          @unique
+  type           PromotionType
+  target         PromotionTarget
+  targetIds      String[]         @default([])
+  value          Decimal
+  minAmount      Decimal?         @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+  usageLimit     Int?
+  currentUsage   Int              @default(0)
+  businessType   PromoBusinessType @default(BOTH)
+  isActive       Boolean          @default(true)
+  tenantId       String
+  tenant         Tenant           @relation(fields: [tenantId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([code])
 }

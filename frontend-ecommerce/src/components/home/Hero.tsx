@@ -143,7 +143,7 @@ export function Hero({ allProducts, tenants }: HeroProps) {
                                 <span
                                     className="text-[5rem] sm:text-[8rem] md:text-[11rem] lg:text-[18rem] font-black tracking-[-0.06em] text-white leading-none drop-shadow-[0_40px_80px_rgba(0,0,0,0.9)] relative z-10 block whitespace-nowrap"
                                     style={{
-                                        transform: typeof window !== 'undefined' && window.innerWidth > 768 ? `translate3d(${mousePos.x * 0.1}px, ${mousePos.y * 0.1}px, 0) rotateX(${mousePos.y * -0.05}deg) rotateY(${mousePos.x * 0.05}deg)` : 'none',
+                                        transform: isLoaded ? `translate3d(${mousePos.x * 0.1}px, ${mousePos.y * 0.1}px, 0) rotateX(${mousePos.y * -0.05}deg) rotateY(${mousePos.x * 0.05}deg)` : 'none',
                                         transition: 'transform 0.1s ease-out'
                                     }}
                                 >

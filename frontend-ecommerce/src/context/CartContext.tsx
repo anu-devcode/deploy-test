@@ -5,6 +5,7 @@ import { seedProducts } from '@/lib/mock-data';
 import { readJson, writeJson } from '@/lib/storage';
 import type { Product } from '@/types';
 import { useTenant } from './TenantContext';
+import { useAuth } from './AuthContext';
 
 type CartItem = {
   productId: string;
@@ -26,8 +27,11 @@ type CartContextType = {
   itemCount: number;
   loading: boolean;
   addToCart: (productId: string, quantity: number) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
+  toggleCart: () => void;
+  isOpen: boolean;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -36,23 +40,53 @@ const emptyState: CartState = { items: [] };
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { tenant } = useTenant();
+  const { user, isAuthenticated } = useAuth();
   const [state, setState] = useState<CartState>(emptyState);
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const storageKey = `cart:${tenant.id}`;
+  // Storage keys: one for guest, one for user (tenant-scoped)
+  const guestKey = `cart:guest:${tenant.id}`;
+  const userKey = user ? `cart:user:${user.id}:${tenant.id}` : null;
+  const activeKey = userKey || guestKey;
 
+  // Load cart
   useEffect(() => {
-    // Load cart from localStorage when tenant changes
-    const saved = readJson<CartState>(storageKey, emptyState);
-    setState(saved);
-    setLoading(false);
-  }, [storageKey]);
+    setLoading(true);
+    const saved = readJson<CartState>(activeKey, emptyState);
 
+    // If just logged in, merge guest cart into user cart
+    if (isAuthenticated && user) {
+      const guestCart = readJson<CartState>(guestKey, emptyState);
+      if (guestCart.items.length > 0) {
+        const mergedItems = [...saved.items];
+        guestCart.items.forEach(guestItem => {
+          const existing = mergedItems.find(i => i.productId === guestItem.productId);
+          if (existing) {
+            existing.quantity += guestItem.quantity;
+          } else {
+            mergedItems.push(guestItem);
+          }
+        });
+        setState({ items: mergedItems });
+        // Clear guest cart after merge
+        writeJson(guestKey, emptyState);
+      } else {
+        setState(saved);
+      }
+    } else {
+      setState(saved);
+    }
+
+    setLoading(false);
+  }, [activeKey, isAuthenticated, user, tenant.id, guestKey]);
+
+  // Persist cart
   useEffect(() => {
     if (!loading) {
-      writeJson(storageKey, state);
+      writeJson(activeKey, state);
     }
-  }, [state, storageKey, loading]);
+  }, [state, activeKey, loading]);
 
   const items: EnrichedCartItem[] = useMemo(() => {
     return state.items
@@ -62,7 +96,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return {
           ...item,
           product,
-          lineTotal: product.price * item.quantity,
+          lineTotal: Number(product.price) * item.quantity,
         };
       })
       .filter((x): x is EnrichedCartItem => Boolean(x));
@@ -90,6 +124,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ),
       };
     });
+    setIsOpen(true); // Auto-open side cart
+  };
+
+  const updateQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setState((prev) => ({
+      items: prev.items.map((i) =>
+        i.productId === productId ? { ...i, quantity } : i
+      ),
+    }));
   };
 
   const removeFromCart = (productId: string) => {
@@ -99,6 +146,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = () => setState(emptyState);
+  const toggleCart = () => setIsOpen(!isOpen);
 
   return (
     <CartContext.Provider
@@ -108,8 +156,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         itemCount,
         loading,
         addToCart,
+        updateQuantity,
         removeFromCart,
         clearCart,
+        toggleCart,
+        isOpen,
       }}
     >
       {children}
