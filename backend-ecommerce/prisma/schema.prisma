@@ -24,6 +24,7 @@ model Tenant {
   reviews     Review[]
   deliveries  Delivery[]
   promotions  Promotion[]
+  wishlists   Wishlist[]
   automationRules AutomationRule[]
 }
 
@@ -44,6 +45,7 @@ model User {
 model Product {
   id             String      @id @default(uuid())
   name           String
+  slug           String      @unique // SEO-friendly identifier
   description    String?
   price          Decimal     // Base reference price
   compareAtPrice Decimal?    // Original price for discount display
@@ -100,20 +102,39 @@ model Customer {
   firstName String?
   lastName  String?
   phone     String?
-  address   String?
-  city      String?
-  country   String?
+  avatar    String?
+  
+  // Addresses moved to separate model
+  addresses CustomerAddress[]
+  
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   orders    Order[]
   cart      Cart?
   reviews   Review[]
+  wishlist  Wishlist?
   adminNotes String?
   flags      String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([email, tenantId])
+}
+
+model CustomerAddress {
+  id        String   @id @default(uuid())
+  type      String   @default("Home") // Home, Work, Other
+  label     String?  // e.g. "Primary residence"
+  street    String
+  city      String
+  phone     String?
+  isDefault Boolean  @default(false)
+  
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cart {
@@ -138,6 +159,28 @@ model CartItem {
   updatedAt DateTime @updatedAt
 
   @@unique([cartId, productId])
+}
+
+model Wishlist {
+  id         String   @id @default(uuid())
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id])
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  items      WishlistItem[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([wishlistId, productId])
 }
 
 model Order {
@@ -187,17 +230,19 @@ model OrderItem {
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  orderId       String
-  order         Order         @relation(fields: [orderId], references: [id])
-  amount        Decimal
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  transactionId String?
-  providerRef   String?
-  metadata      Json?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                    String        @id @default(uuid())
+  orderId               String
+  order                 Order         @relation(fields: [orderId], references: [id])
+  amount                Decimal
+  method                PaymentMethod
+  status                PaymentStatus @default(PENDING)
+  transactionId         String?
+  providerRef           String?
+  receiptUrl            String?       // For manual payments
+  manualVerificationNote String?      // For admin feedback
+  metadata              Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 }
 
 model Warehouse {
@@ -301,6 +346,7 @@ enum Role {
 
 enum OrderStatus {
   PENDING
+  PENDING_VERIFICATION
   CONFIRMED
   PROCESSING
   PACKED
@@ -322,6 +368,7 @@ enum PaymentMethod {
   CBE
   MPESA
   BANK_TRANSFER
+  ONLINE
   CASH_ON_DELIVERY
 }
 

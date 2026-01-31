@@ -20,6 +20,7 @@ import { DeliveryModule } from './delivery';
 import { AnalyticsModule } from './analytics';
 import { StorefrontModule } from './storefront';
 import { CategoriesModule } from './categories';
+import { WishlistModule } from './wishlist/wishlist.module';
 import { AutomationModule } from './automation/automation.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { StaffModule } from './staff/staff.module';
@@ -46,6 +47,7 @@ import { StaffModule } from './staff/staff.module';
     StorefrontModule,
     CategoriesModule,
     AutomationModule,
+    WishlistModule,
     PromotionsModule,
     StaffModule,
     // EventsModule,

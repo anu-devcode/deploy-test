@@ -15,115 +15,138 @@ export function ProfileOverview({ orders, loading, onViewAllOrders }: ProfileOve
     const totalSpent = orders.reduce((acc, order) => acc + order.total, 0);
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Stats Grid */}
+        <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
+            {/* Stats Grid - Premium Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center justify-between group hover:border-emerald-200 transition-all">
-                    <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
-                        <h3 className="text-3xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
-                            {loading ? '...' : orders.length}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-lg shadow-emerald-500/20">
-                        <Package className="w-6 h-6" />
+                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
+                    {/* Background Decoration */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-emerald-50 transition-colors" />
+
+                    <div className="relative z-10 flex flex-col gap-6">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                            <Package className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                                {loading ? '...' : orders.length}
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-all">
-                    <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Spent</p>
-                        <h3 className="text-3xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {loading ? '...' : `ETB ${totalSpent.toLocaleString()}`}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-lg shadow-blue-500/20">
-                        <TrendingUp className="w-6 h-6" />
+                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-blue-50 transition-colors" />
+
+                    <div className="relative z-10 flex flex-col gap-6">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                            <TrendingUp className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Spent</p>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                                {loading ? '...' : `ETB ${totalSpent.toLocaleString()}`}
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center justify-between group hover:border-amber-200 transition-all">
-                    <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Loyalty Points</p>
-                        <h3 className="text-3xl font-black text-slate-900 group-hover:text-amber-500 transition-colors">
-                            {loading ? '...' : Math.floor(totalSpent / 100)}
-                        </h3>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-lg shadow-amber-500/20">
-                        <Clock className="w-6 h-6" />
+                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-amber-50 transition-colors" />
+
+                    <div className="relative z-10 flex flex-col gap-6">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Loyalty Points</p>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                                {loading ? '...' : Math.floor(totalSpent / 100)}
+                            </h3>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Recent Order */}
-            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+            {/* Recent Order Section */}
+            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-6 md:px-8 md:py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-50">
                     <div>
-                        <h3 className="text-xl font-black text-slate-900">Recent Order</h3>
-                        <p className="text-sm font-bold text-slate-400 mt-1">Status of your latest purchase</p>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Latest Order</h3>
+                        <p className="text-sm font-bold text-slate-400 mt-0.5">Summary of your most recent activity</p>
                     </div>
                     <button
                         onClick={onViewAllOrders}
-                        className="text-sm font-black text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-50 text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all group"
                     >
-                        View All
-                        <ChevronRight className="w-4 h4 group-hover:translate-x-1 transition-transform" />
+                        See All Activity
+                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
 
                 {loading ? (
-                    <div className="p-12 text-center font-bold text-slate-400">Loading order details...</div>
+                    <div className="p-20 text-center">
+                        <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-900 rounded-full animate-spin mx-auto mb-4" />
+                        <p className="font-bold text-slate-400">Loading details...</p>
+                    </div>
                 ) : !recentOrder ? (
-                    <div className="p-12 text-center flex flex-col items-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                            <ShoppingBag className="w-8 h-8 text-slate-300" />
+                    <div className="p-20 text-center flex flex-col items-center">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                            <ShoppingBag className="w-8 h-8 text-slate-200" />
                         </div>
-                        <p className="text-slate-500 font-bold">No orders yet</p>
-                        <Link href="/products" className="mt-4 px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all">
+                        <p className="text-slate-900 font-black text-lg">No orders yet</p>
+                        <p className="text-slate-400 font-bold text-sm mt-1 max-w-xs">Start building your order history today.</p>
+                        <Link href="/products" className="mt-8 px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl shadow-slate-200">
                             Start Shopping
                         </Link>
                     </div>
                 ) : (
-                    <div className="p-8">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <h4 className="text-2xl font-black text-slate-900">{recentOrder.orderNumber}</h4>
-                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${recentOrder.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
-                                            recentOrder.status === 'SHIPPED' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-amber-100 text-amber-700'
+                    <div className="p-5 md:p-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="px-4 py-2 rounded-xl bg-slate-900 text-white font-black text-sm tracking-tight">
+                                        #{recentOrder.orderNumber}
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border ${recentOrder.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                        recentOrder.status === 'SHIPPED' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                            'bg-amber-50 text-amber-700 border-amber-100'
                                         }`}>
                                         {recentOrder.status}
                                     </span>
                                 </div>
-                                <p className="text-sm font-bold text-slate-400 mt-1">
-                                    Placed on {new Date(recentOrder.createdAt).toLocaleDateString()}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Amount</p>
-                                <p className="text-2xl font-black text-emerald-600">ETB {recentOrder.total.toLocaleString()}</p>
-                            </div>
-                        </div>
-
-                        {/* Recent Items Preview (First 2) */}
-                        <div className="space-y-4">
-                            {recentOrder.items.slice(0, 2).map((item: any, idx: number) => (
-                                <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">
-                                        {item.product?.imageToken || '📦'}
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-slate-900">{item.product?.name || item.name}</p>
-                                        <p className="text-xs font-bold text-slate-400">Qty: {item.quantity}</p>
-                                    </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-3xl md:text-4xl font-black text-slate-900 flex items-baseline gap-2">
+                                        ETB {recentOrder.total.toLocaleString()}
+                                        <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                                    </h4>
+                                    <p className="text-sm font-bold text-slate-400">
+                                        Placed {new Date(recentOrder.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+                                    </p>
                                 </div>
-                            ))}
-                            {recentOrder.items.length > 2 && (
-                                <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-widest pt-2">
-                                    + {recentOrder.items.length - 2} more items
-                                </p>
-                            )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Items Preview</h5>
+                                <div className="flex flex-wrap gap-3">
+                                    {recentOrder.items.slice(0, 3).map((item: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-all group">
+                                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm group-hover:scale-105 transition-transform">
+                                                {item.product?.imageToken || '📦'}
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-900 text-xs">{item.product?.name || item.name}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase">Qty: {item.quantity}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {recentOrder.items.length > 3 && (
+                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase p-2 text-center leading-tight">
+                                            +{recentOrder.items.length - 3}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

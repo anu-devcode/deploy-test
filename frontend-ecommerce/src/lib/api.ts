@@ -25,6 +25,7 @@ export interface Category { id: string; name: string; slug: string; description?
 export interface Product {
     id: string;
     name: string;
+    slug: string;
     description?: string;
     price: number;
     stock: number;
@@ -58,6 +59,7 @@ export interface Order {
     shippingAddress?: string;
     shippingCity?: string;
     paymentMethod?: string;
+    paymentStatus?: string;
     items: any[];
     createdAt: string;
     updatedAt: string;
@@ -114,6 +116,7 @@ export interface Review {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     productName: string;
     customerName: string;
+    customer?: { firstName: string; lastName: string; email: string };
     createdAt: string;
 }
 
@@ -182,42 +185,42 @@ export interface ContentBlock {
 }
 
 
+import { seedProducts, tenants as seedTenants } from './mock-data';
+
 class ApiClient {
     private tenantId: string | null = null;
     private token: string | null = null;
 
     // --- STATEFUL PERSISTENCE FOR MOCks ---
-    private products: Product[] = [
-        {
-            id: 'p1',
-            name: 'Premium Red Lentils',
-            description: 'Organic Ethiopian red lentils, high protein.',
-            price: 129,
-            stock: 850,
-            inventory: { available: 850, reserved: 0, damaged: 0 },
-            sku: 'LENT-001',
-            categoryId: 'cat1',
-            category: { id: 'cat1', name: 'Legumes', slug: 'legumes' },
-            status: 'In Stock',
-            avgRating: 4.8,
-            reviewCount: 42,
-            compareAtPrice: 1500,
-            retail: { enabled: true, price: 129, unit: 'kg', minOrder: 1 },
-            bulk: { enabled: true, price: 115, unit: 'quintal', minOrder: 1 },
-            images: ['/products/lentils.jpg'],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    ];
+    private products: Product[] = seedProducts.map(p => ({
+        ...p,
+        stock: p.stock || 100,
+        inventory: { available: p.stock || 100, reserved: 0, damaged: 0 },
+        categoryId: p.categoryId || (typeof p.category === 'string' ? p.category.toLowerCase().replace(/\s+/g, '-') : p.category?.id),
+        category: typeof p.category === 'string' ? {
+            id: p.category.toLowerCase().replace(/\s+/g, '-'),
+            name: p.category,
+            slug: p.category.toLowerCase().replace(/\s+/g, '-')
+        } : p.category,
+        retail: p.retail || { enabled: true, price: p.price, unit: 'pcs', minOrder: 1 },
+        bulk: p.bulk || { enabled: true, price: Math.floor(p.price * 0.9), unit: 'box', minOrder: 10 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    })) as Product[];
 
-    private categories: Category[] = [
-        { id: 'cat1', name: 'Grains & Cereals', slug: 'grains-cereals', description: 'Essential staples including wheat, barley, and maize.', _count: { products: 12 } },
-        { id: 'cat2', name: 'Pulses', slug: 'pulses', description: 'High-protein legumes like lentils, beans, and chickpeas.', _count: { products: 24 } },
-    ];
+    private categories: Category[] = Array.from(new Set(seedProducts.map(p =>
+        typeof p.category === 'string' ? p.category : p.category?.name
+    ))).map((name, index) => ({
+        id: name!.toLowerCase().replace(/\s+/g, '-'),
+        name: name!,
+        slug: name!.toLowerCase().replace(/\s+/g, '-'),
+        _count: { products: seedProducts.filter(p => (typeof p.category === 'string' ? p.category : p.category?.name) === name).length }
+    }));
 
     private orders: Order[] = [
-        { id: 'o101', orderNumber: 'ORD-2024-001', total: 2580, status: 'PENDING', customer: { name: 'Selam T.', email: 'selam@example.com' }, items: [], createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'o101', orderNumber: 'ORD-2024-001', total: 2580, status: 'DELIVERED', paymentStatus: 'PAID', customer: { name: 'Selam T.', email: 'selam@example.com' }, items: [], createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date().toISOString() },
     ];
+    private wishlists: Record<string, string[]> = {}; // customerId -> productIds
 
     private notifications: any[] = [];
     private pages: ContentPage[] = [
@@ -292,7 +295,8 @@ class ApiClient {
         { id: 'pay1', orderId: 'o101', amount: 2580, method: 'TELEBIRR', status: 'COMPLETED', transactionId: 'TX12345678', createdAt: new Date().toISOString() }
     ];
     private reviews: Review[] = [
-        { id: 'r1', rating: 5, comment: 'Excellent quality lentils!', status: 'APPROVED', productName: 'Premium Red Lentils', customerName: 'Selam T.', createdAt: new Date().toISOString() }
+        { id: 'r1', rating: 5, comment: 'Exceptional quality lentils!', status: 'APPROVED', productName: 'Premium Red Lentils', customerName: 'Selam T.', customer: { firstName: 'Selam', lastName: 'T.', email: 'selam@example.com' }, createdAt: new Date().toISOString() },
+        { id: 'r2', rating: 4, comment: 'Great for bulk purchases.', status: 'APPROVED', productName: 'Premium Red Lentils', customerName: 'Abebe B.', customer: { firstName: 'Abebe', lastName: 'B.', email: 'abebe@example.com' }, createdAt: new Date().toISOString() },
     ];
     private auditLogs: AuditLog[] = [
         { id: 'al1', productId: 'p1', productName: 'Premium Red Lentils', type: 'ADJUSTMENT', quantity: 50, notes: 'Restock from local warehouse', date: new Date().toISOString() }
@@ -403,6 +407,96 @@ class ApiClient {
         return { success: true };
     }
 
+    async updateProfile(data: any) {
+        try {
+            return await this.request<any>('/profile', {
+                method: 'PATCH',
+                body: data
+            });
+        } catch (e) {
+            console.warn('Backend profile update failed, falling back to mock', e);
+            return {
+                success: true,
+                user: data
+            };
+        }
+    }
+
+    // Address Management
+    async getAddresses() {
+        try {
+            return await this.request<any[]>('/profile/addresses');
+        } catch (e) {
+            console.warn('Backend getAddresses failed, falling back to mock');
+            return [
+                {
+                    id: '1',
+                    type: 'Home',
+                    label: 'Primary residence',
+                    street: 'Bole, near Edna Mall, Addis Ababa',
+                    city: 'Addis Ababa',
+                    phone: '+251 911 234567',
+                    isDefault: true
+                }
+            ];
+        }
+    }
+
+    async addAddress(data: any) {
+        return await this.request<any>('/profile/addresses', {
+            method: 'POST',
+            body: data
+        });
+    }
+
+    async deleteAddress(id: string) {
+        return await this.request<any>(`/profile/addresses/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async setAddressDefault(id: string) {
+        return await this.request<any>(`/profile/addresses/${id}/default`, {
+            method: 'PATCH'
+        });
+    }
+
+    async getProfile() {
+        try {
+            return await this.request<any>('/profile');
+        } catch (e) {
+            console.warn('Backend getProfile failed, falling back to mock');
+            return this.customers[0]; // fallback to first mock customer
+        }
+    }
+
+    async getBillingInfo() {
+        try {
+            return await this.request<any>('/profile/billing');
+        } catch (e) {
+            console.warn('Backend getBillingInfo failed, falling back to mock');
+            return {
+                savedMethods: [
+                    { id: 'm1', type: 'CARD', brand: 'visa', last4: '4242', expiry: '12/26', isDefault: true }
+                ],
+                billingAddress: {
+                    address: 'Bole, Addis Ababa',
+                    city: 'Addis Ababa',
+                    country: 'Ethiopia',
+                }
+            };
+        }
+    }
+
+    async getInvoices() {
+        try {
+            return await this.request<any[]>('/profile/invoices');
+        } catch (e) {
+            console.warn('Backend getInvoices failed');
+            return [];
+        }
+    }
+
     // --- CUSTOMER MANAGEMENT ---
     async getCustomers() { return this.customers; }
 
@@ -446,9 +540,11 @@ class ApiClient {
     }
 
     async createProduct(data: Partial<CreateProductInput>) {
+        const slug = (data.name || 'new-product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const newProduct: Product = {
             id: Math.random().toString(36).substr(2, 9),
             name: data.name || 'New Product',
+            slug,
             description: data.description,
             price: data.price || 0,
             stock: data.stock || 0,
@@ -558,6 +654,7 @@ class ApiClient {
                 orderNumber: `ORD-${Date.now()}`,
                 total: 0, // Should calculate from items
                 status: 'PENDING',
+                paymentStatus: 'PENDING',
                 items: [],
                 isGuest: data.isGuest,
                 guestEmail: data.guestEmail,
@@ -570,9 +667,187 @@ class ApiClient {
         }
     }
 
+    async initializePayment(data: { orderId: string; amount: number; method: string }) {
+        try {
+            return await this.request<any>('/payments/initialize', {
+                method: 'POST',
+                body: data
+            });
+        } catch (e) {
+            console.warn('Backend payment initialization failed, falling back to mock');
+            const instructions: any = {
+                TELEBIRR: {
+                    name: 'Telebirr SuperApp',
+                    accountName: 'Adis Harvest Global',
+                    accountNumber: '+251 912 345 678',
+                    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=telebirr://pay?to=0912345678',
+                    type: 'phone'
+                },
+                CBE: {
+                    name: 'Commercial Bank of Ethiopia',
+                    accountName: 'Adis Harvest PLC',
+                    accountNumber: '1000123456789',
+                    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=cbe:1000123456789',
+                    type: 'account'
+                }
+            };
+            return {
+                paymentId: Math.random().toString(36).substr(2, 9),
+                instructions: (instructions as any)[data.method] || { instructions: 'Follow on-screen steps.' }
+            };
+        }
+    }
+
+    async submitManualPayment(paymentId: string, data: { receiptUrl: string }) {
+        return await this.request<any>(`/payments/${paymentId}/submit-manual`, {
+            method: 'POST',
+            body: data
+        });
+    }
+
+    async verifyPayment(paymentId: string, approve: boolean, note?: string) {
+        return await this.request<any>(`/payments/${paymentId}/verify`, {
+            method: 'POST',
+            body: { approve, note }
+        });
+    }
+
     async deleteOrder(id: string) {
+
         this.orders = this.orders.filter(o => o.id !== id);
         return { success: true };
+    }
+
+    // --- REVIEWS ---
+    async getProductReviews(productId: string) {
+        return this.reviews;
+    }
+
+    async getProductStats(productId: string) {
+        const totalReviews = this.reviews.length;
+        const averageRating = totalReviews > 0
+            ? this.reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews
+            : 0;
+        return { averageRating, totalReviews };
+    }
+
+    async getNotifications() {
+        return this.notifications;
+    }
+
+    // --- DASHBOARD ---
+    async getDashboardStats() {
+        return {
+            totalRevenue: 125430,
+            revenueChange: 12.5,
+            activeOrders: 42,
+            ordersChange: 8.2,
+            totalCustomers: 850,
+            customersChange: 5.4,
+            avgOrderValue: 2986,
+            avgOrderChange: -2.1
+        };
+    }
+
+    // --- WISHLIST ---
+    async getWishlist(customerId: string) {
+        try {
+            return await this.request<any>(`/wishlist/${customerId}`);
+        } catch (e) {
+            const productIds = this.wishlists[customerId] || [];
+            return {
+                id: 'mock-wishlist',
+                customerId,
+                items: productIds.map(pid => ({
+                    id: `wi-${pid}`,
+                    productId: pid,
+                    product: this.products.find(p => p.id === pid)
+                })).filter(item => item.product)
+            };
+        }
+    }
+
+    async addToWishlist(customerId: string, productId: string) {
+        try {
+            return await this.request<any>(`/wishlist/${customerId}/items`, {
+                method: 'POST',
+                body: { productId }
+            });
+        } catch (e) {
+            if (!this.wishlists[customerId]) this.wishlists[customerId] = [];
+            if (!this.wishlists[customerId].includes(productId)) {
+                this.wishlists[customerId].push(productId);
+            }
+            return this.getWishlist(customerId);
+        }
+    }
+
+    async removeFromWishlist(customerId: string, productId: string) {
+        try {
+            return await this.request<any>(`/wishlist/${customerId}/items/${productId}`, {
+                method: 'DELETE'
+            });
+        } catch (e) {
+            if (this.wishlists[customerId]) {
+                this.wishlists[customerId] = this.wishlists[customerId].filter(id => id !== productId);
+            }
+            return this.getWishlist(customerId);
+        }
+    }
+
+    async getSalesHistory(period: string) {
+        return [
+            { date: 'Mon', revenue: 4500, orders: 12 },
+            { date: 'Tue', revenue: 5200, orders: 15 },
+            { date: 'Wed', revenue: 4800, orders: 11 },
+            { date: 'Thu', revenue: 6100, orders: 18 },
+            { date: 'Fri', revenue: 5900, orders: 17 },
+            { date: 'Sat', revenue: 7200, orders: 22 },
+            { date: 'Sun', revenue: 6800, orders: 20 }
+        ];
+    }
+
+    async getOperationalAlerts() {
+        return [
+            { id: '1', level: 'CRITICAL', type: 'INVENTORY', message: 'Ethiopian Yirgacheffe (Bulk) is below 5% stock', time: '10m ago' },
+            { id: '2', level: 'WARNING', type: 'PAYMENT', message: 'Unusual failure rate for Telebirr payments', time: '45m ago' },
+            { id: '3', level: 'INFO', type: 'SYSTEM', message: 'Weekly automated backup completed', time: '2h ago' }
+        ];
+    }
+
+    async getTopSellingProducts() {
+        return [
+            { id: '1', name: 'Sidamo Coffee Beans', sales: 450, revenue: 45000, trend: 'UP' },
+            { id: '2', name: 'Harar Whole Bean', sales: 380, revenue: 38000, trend: 'UP' },
+            { id: '3', name: 'Organic Teff', sales: 320, revenue: 16000, trend: 'DOWN' }
+        ];
+    }
+
+    async getCartMetrics() {
+        return {
+            activeCarts: 124,
+            abandonmentRate: 32.5,
+            recoveredCarts: 18,
+            topAbandonmentProducts: [
+                { id: '1', name: 'Honey 500g', count: 15 },
+                { id: '2', name: 'Spices Mix', count: 12 }
+            ]
+        };
+    }
+
+    async createReview(data: any) {
+        const newReview: Review = {
+            id: Math.random().toString(),
+            rating: data.rating,
+            comment: data.comment,
+            status: 'PENDING',
+            productName: 'Product', // Should fetch from product state
+            customerName: 'Anonymous',
+            customer: { firstName: 'Anonymous', lastName: '', email: '' },
+            createdAt: new Date().toISOString()
+        };
+        this.reviews.push(newReview);
+        return newReview;
     }
 
 }

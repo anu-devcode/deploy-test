@@ -13,41 +13,43 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
 
     if (!images || images.length === 0) {
         return (
-            <div className="aspect-square bg-gray-100 rounded-2xl flex items-center justify-center">
-                <span className="text-6xl">📦</span>
+            <div className="aspect-square bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100">
+                <span className="text-6xl grayscale opacity-20">📦</span>
             </div>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {/* Main Image */}
-            <div className="aspect-square bg-white rounded-2xl border border-gray-100 overflow-hidden relative">
-                {/* Fallback to emoji if URL is invalid (for demo) or use Next/Image */}
-                <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                    {/* Simplified for now, assuming external URLs need configuration or are placeholders */}
+            <div className="aspect-square bg-white rounded-3xl border border-slate-100 overflow-hidden relative shadow-sm hover:shadow-md transition-shadow duration-500">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50/50 to-white">
                     <img
                         src={selectedImage}
                         alt={productName}
-                        className="w-full h-full object-contain"
+                        className="max-w-[85%] max-h-[85%] object-contain hover:scale-105 transition-transform duration-700"
                     />
                 </div>
             </div>
 
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                 {images.map((image, index) => (
                     <button
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`aspect-square rounded-xl border-2 overflow-hidden ${selectedImage === image ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-200 hover:border-emerald-300'
+                        className={`w-20 h-20 flex-shrink-0 rounded-2xl border transition-all duration-300 overflow-hidden ${selectedImage === image
+                                ? 'border-emerald-500 bg-emerald-50/30'
+                                : 'border-slate-100 bg-white hover:border-slate-300'
                             }`}
                     >
-                        <img
-                            src={image}
-                            alt={`${productName} view ${index + 1}`}
-                            className="w-full h-full object-cover"
-                        />
+                        <div className="w-full h-full flex items-center justify-center p-2">
+                            <img
+                                src={image}
+                                alt={`${productName} view ${index + 1}`}
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
                     </button>
                 ))}
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSocket } from '@/context/SocketContext';
 import api from '@/lib/api';
 import {
     TrendingUp,
@@ -61,13 +62,33 @@ export default function AdminDashboard() {
     const [period, setPeriod] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY'>('DAILY');
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchData();
-    }, [period]);
+    const { subscribe, socket } = useSocket();
 
-    const fetchData = async () => {
+    useEffect(() => {
+        fetchData(true);
+
+        if (!socket) return;
+
+        // Subscribe to real-time events that should trigger a refresh
+        const unsubNewOrder = subscribe('new_order', () => {
+            console.log('New order received, refreshing dashboard...');
+            fetchData();
+        });
+
+        const unsubInventory = subscribe('inventory_updated', () => {
+            console.log('Inventory updated, refreshing dashboard...');
+            fetchData();
+        });
+
+        return () => {
+            unsubNewOrder();
+            unsubInventory();
+        };
+    }, [period, socket, subscribe]);
+
+    const fetchData = async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial) setLoading(true);
             const [statsData, salesData, alertsData, topProductsData, cartData] = await Promise.all([
                 api.getDashboardStats(),
                 api.getSalesHistory(period),

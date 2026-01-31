@@ -42,11 +42,12 @@ export default function AdminLoginPage() {
             setTenant('brolf-main');
 
             const userData = await login(email, password);
-            setLoggedInUser(userData);
 
             if (userData.requiresPasswordChange) {
+                setLoggedInUser(userData);
                 setAuthState('FORCE_CHANGE');
             } else {
+                // AuthContext.login already sets authenticated state if requiresPasswordChange is false
                 router.push('/admin');
             }
         } catch (err: any) {
@@ -58,6 +59,8 @@ export default function AdminLoginPage() {
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
+
         if (newPassword !== confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -71,7 +74,7 @@ export default function AdminLoginPage() {
         try {
             await api.changePassword(newPassword);
 
-            // Finalize authentication manually after successful change
+            // Finalize authentication in context after successful change
             const finalizedUser = {
                 ...loggedInUser,
                 requiresPasswordChange: false
@@ -79,6 +82,7 @@ export default function AdminLoginPage() {
 
             setIsAuthenticated(true);
             setUser(finalizedUser);
+            // Sync to localStorage as well (AuthContext will pick it up on mount)
             localStorage.setItem('user', JSON.stringify(finalizedUser));
 
             router.push('/admin');

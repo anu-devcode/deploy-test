@@ -1,10 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import { Product, Tenant } from '@/types';
-import { Heart, Eye, Link as LinkIcon, ShoppingCart, Star, Plus, Minus } from 'lucide-react';
-import { useCart } from '@/context';
+import { ProductCard } from '@/components/products/ProductCard';
 
 interface ProductsSectionProps {
     filteredProducts: Product[];
@@ -25,7 +22,6 @@ export function ProductsSection({
     setSelectedIndustry,
     formatPrice
 }: ProductsSectionProps) {
-    const { addToCart, updateQuantity, items } = useCart();
 
     return (
         <section id="products" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 md:py-20 lg:py-28">
@@ -62,169 +58,9 @@ export function ProductsSection({
                 </div>
             ) : (
                 <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredProducts.map((product) => {
-                        const tenant = tenants.find(t => t.id === product.tenantId);
-
-                        // Map product images
-                        const productImages: { [key: string]: string } = {
-                            'p_ag_001': '/lentils.png',
-                            'p_ag_002': '/wheat.png',
-                            'p_ag_003': '/sesame.png',
-                        };
-
-                        return (
-                            <div
-                                key={product.id}
-                                className="group relative bg-white rounded-2xl md:rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 hover:-translate-y-3 border border-slate-100"
-                            >
-                                {/* Product Image */}
-                                <div className="relative h-64 md:h-80 overflow-hidden">
-                                    {productImages[product.id] ? (
-                                        <Image
-                                            src={productImages[product.id]}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                        />
-                                    ) : (
-                                        <div
-                                            className="h-full flex items-center justify-center text-8xl md:text-9xl"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${tenant?.theme.primaryColor}20 0%, ${tenant?.theme.secondaryColor || tenant?.theme.primaryColor}20 100%)`
-                                            }}
-                                        >
-                                            <span className="group-hover:scale-110 transition-transform duration-500">
-                                                {product.imageToken}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {/* Gradient Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                                    {/* Floating Badges */}
-                                    <div className="absolute top-3 left-3 md:top-4 md:left-4 flex flex-col gap-1.5 md:gap-2">
-                                        <span className="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-[10px] md:text-xs font-black text-emerald-700 uppercase shadow-lg">
-                                            {tenant?.industry}
-                                        </span>
-                                        <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] md:text-xs font-black uppercase shadow-lg">
-                                            Premium
-                                        </span>
-                                    </div>
-
-                                    {/* Hover Actions */}
-                                    <div className="absolute top-3 right-3 md:top-4 md:right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-                                        <button className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110">
-                                            <Heart className="w-4 h-4 md:w-5 md:h-5" />
-                                        </button>
-                                        <Link
-                                            href={`/${tenant?.slug}/product/${product.id}`}
-                                            className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white text-emerald-950 transition-all hover:scale-110"
-                                        >
-                                            <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                                        </Link>
-                                    </div>
-
-                                    {/* Quick Add Button */}
-                                    <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 opacity-0 md:group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 hidden md:block">
-                                        <button
-                                            onClick={() => addToCart(product.id, 1)}
-                                            className="w-full px-4 py-3 rounded-lg md:rounded-xl bg-white text-emerald-950 font-black text-xs md:text-sm hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2"
-                                        >
-                                            <ShoppingCart className="w-4 h-4" />
-                                            Quick Add
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="p-4 md:p-6 space-y-3 md:space-y-4">
-                                    {/* Category & Rating */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-[10px] md:text-xs font-bold text-emerald-700 uppercase tracking-wide">
-                                            {typeof product.category === 'string' ? product.category : product.category?.name}
-                                        </span>
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-amber-400 text-xs md:text-sm">⭐</span>
-                                            <span className="text-xs md:text-sm font-bold text-slate-700">4.9</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Product Name */}
-                                    <h3 className="text-xl md:text-2xl font-black text-slate-900 line-clamp-1 md:line-clamp-2 group-hover:text-emerald-600 transition-colors leading-tight">
-                                        {String(product.name)}
-                                    </h3>
-
-                                    {/* Description */}
-                                    <p className="text-xs md:text-sm text-slate-600 line-clamp-2 leading-relaxed font-medium">
-                                        {product.description}
-                                    </p>
-
-                                    {/* Tenant Info */}
-                                    <div className="flex items-center gap-2 pt-1 md:pt-2">
-                                        <div
-                                            className="w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-[10px] md:text-xs font-black text-white shadow-lg"
-                                            style={{ backgroundColor: tenant?.theme.primaryColor }}
-                                        >
-                                            {tenant?.theme.logoText?.[0]}
-                                        </div>
-                                        <span className="text-[10px] md:text-xs font-bold text-slate-500">
-                                            by {tenant?.name}
-                                        </span>
-                                    </div>
-
-                                    {/* Price and Action */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-slate-100 gap-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-0.5">Price</p>
-                                            <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                                                {formatPrice(product.price)}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const cartItem = (items || []).find(i => i.productId === product.id);
-                                                if (cartItem) {
-                                                    return (
-                                                        <div className="flex items-center gap-1 bg-emerald-50 rounded-xl p-1 border border-emerald-100">
-                                                            <button
-                                                                onClick={(e) => { e.preventDefault(); updateQuantity(product.id, cartItem.quantity - 1); }}
-                                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white transition-all"
-                                                            >
-                                                                <Minus className="w-3 h-3" />
-                                                            </button>
-                                                            <span className="w-6 text-center text-xs font-black text-emerald-900">{cartItem.quantity}</span>
-                                                            <button
-                                                                onClick={(e) => { e.preventDefault(); updateQuantity(product.id, cartItem.quantity + 1); }}
-                                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm hover:bg-emerald-600 hover:text-white transition-all"
-                                                            >
-                                                                <Plus className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                }
-                                                return (
-                                                    <button
-                                                        onClick={(e) => { e.preventDefault(); addToCart(product.id, 1); }}
-                                                        className="px-5 py-3 rounded-xl bg-slate-900 text-white font-black text-xs hover:bg-black transition-all shadow-lg"
-                                                    >
-                                                        Add to Cart
-                                                    </button>
-                                                );
-                                            })()}
-                                            <Link
-                                                href={`/${tenant?.slug}/product/${product.id}`}
-                                                className="p-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product as any} />
+                    ))}
                 </div>
             )}
         </section>

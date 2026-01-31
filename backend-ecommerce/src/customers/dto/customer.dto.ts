@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class CreateCustomerDto {
     @IsEmail()
@@ -18,15 +18,7 @@ export class CreateCustomerDto {
 
     @IsOptional()
     @IsString()
-    address?: string;
-
-    @IsOptional()
-    @IsString()
-    city?: string;
-
-    @IsOptional()
-    @IsString()
-    country?: string;
+    avatar?: string;
 
     @IsOptional()
     @IsString()
@@ -56,7 +48,59 @@ export class UpdateCustomerDto {
 
     @IsOptional()
     @IsString()
-    address?: string;
+    avatar?: string;
+
+    @IsOptional()
+    @IsString()
+    adminNotes?: string;
+
+    @IsOptional()
+    @IsString()
+    name?: string;
+
+    @IsOptional()
+    @IsString({ each: true })
+    flags?: string[];
+}
+
+export class CreateAddressDto {
+    @IsNotEmpty()
+    @IsString()
+    type: string;
+
+    @IsOptional()
+    @IsString()
+    label?: string;
+
+    @IsNotEmpty()
+    @IsString()
+    street: string;
+
+    @IsNotEmpty()
+    @IsString()
+    city: string;
+
+    @IsOptional()
+    @IsString()
+    phone?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isDefault?: boolean;
+}
+
+export class UpdateAddressDto {
+    @IsOptional()
+    @IsString()
+    type?: string;
+
+    @IsOptional()
+    @IsString()
+    label?: string;
+
+    @IsOptional()
+    @IsString()
+    street?: string;
 
     @IsOptional()
     @IsString()
@@ -64,13 +108,9 @@ export class UpdateCustomerDto {
 
     @IsOptional()
     @IsString()
-    country?: string;
+    phone?: string;
 
     @IsOptional()
-    @IsString()
-    adminNotes?: string;
-
-    @IsOptional()
-    @IsString({ each: true })
-    flags?: string[];
+    @IsBoolean()
+    isDefault?: boolean;
 }

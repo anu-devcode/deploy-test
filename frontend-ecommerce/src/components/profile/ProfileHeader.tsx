@@ -4,40 +4,39 @@ import { useAuth } from '@/context/AuthContext';
 import { UserCircle, LogOut } from 'lucide-react';
 
 export function ProfileHeader() {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     return (
-        <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center md:justify-between gap-6 relative overflow-hidden">
-            {/* Decorative Background Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-50 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 opacity-50" />
+        <div className="bg-white rounded-3xl md:rounded-[2rem] p-5 md:p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-30" />
 
-            <div className="flex flex-col md:flex-row items-center gap-6 relative z-10 w-full md:w-auto">
-                <div className="h-20 w-20 md:h-24 md:w-24 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 p-0.5 shadow-xl shadow-emerald-500/20 shrink-0">
-                    <div className="h-full w-full bg-white rounded-[22px] flex items-center justify-center text-emerald-600 font-black text-3xl md:text-4xl">
-                        {user?.email?.charAt(0).toUpperCase() || <UserCircle className="w-10 h-10 md:w-12 md:h-12" />}
-                    </div>
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 relative z-10 w-full">
+                <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-slate-900 border-2 border-white flex items-center justify-center text-white font-black text-2xl md:text-3xl shrink-0 shadow-lg shadow-slate-200 overflow-hidden">
+                    {user?.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                        user?.email?.charAt(0).toUpperCase() || <UserCircle className="w-8 h-8 md:w-10 md:h-10" />
+                    )}
                 </div>
-                <div className="text-center md:text-left">
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-1">
-                        Welcome back, {user?.email?.split('@')[0] || 'Member'}
+
+                <div className="text-center md:text-left space-y-1">
+                    <p className="text-[10px] md:text-xs font-black text-emerald-600 uppercase tracking-[0.2em]">Customer Account</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                        {user?.name || user?.email?.split('@')[0] || 'Member'}
                     </h1>
-                    <p className="text-slate-500 font-medium text-sm md:text-base mb-3">
+                    <p className="text-slate-500 font-medium text-sm md:text-base">
                         {user?.email}
                     </p>
-                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100/50 border border-emerald-100 text-emerald-700 font-black text-xs uppercase tracking-wider">
-                        {user?.role || 'Customer'}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] uppercase">
+                            {user?.role || 'Customer'}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase">
+                            Verified
+                        </span>
                     </div>
                 </div>
             </div>
-
-            <button
-                onClick={logout}
-                className="relative z-10 flex items-center gap-2 px-6 py-3 rounded-full bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 hover:text-rose-700 transition-all active:scale-95 border border-rose-100"
-            >
-                <LogOut className="w-5 h-5" />
-                <span>Sign Out</span>
-            </button>
         </div>
     );
 }

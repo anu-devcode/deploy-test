@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/context';
+import { useAuth, useSocket } from '@/context';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
@@ -95,6 +95,59 @@ export default function AdminLayout({
         setNotifications([]);
         setIsNotificationOpen(false);
     };
+
+    const { subscribe, socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const unsubNewOrder = subscribe('new_order', (order: any) => {
+            console.log('New order received via WebSocket:', order);
+            const newNotification = {
+                id: Date.now(),
+                type: 'SYSTEM',
+                title: 'New Order Received',
+                message: `Order ${order.orderNumber} for ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB' }).format(order.total / 100)} was just placed.`,
+                time: 'Just now',
+                read: false
+            };
+            setNotifications(prev => [newNotification, ...prev]);
+
+            // Optional: Notification sound could be added here
+        });
+
+        const unsubUpdate = subscribe('order_updated', (data: { orderId: string, status: string }) => {
+            const updateNotification = {
+                id: Date.now(),
+                type: 'SYSTEM',
+                title: 'Order Updated',
+                message: `Order #${data.orderId} status changed to ${data.status}.`,
+                time: 'Just now',
+                read: false
+            };
+            setNotifications(prev => [updateNotification, ...prev]);
+        });
+
+        const unsubInventory = subscribe('inventory_updated', (data: { productId: string, stock: number }) => {
+            if (data.stock < 10) {
+                const stockNotification = {
+                    id: Date.now(),
+                    type: 'INVENTORY',
+                    title: 'Low Stock Alert',
+                    message: `Product ID ${data.productId} is running low (${data.stock} remains).`,
+                    time: 'Just now',
+                    read: false
+                };
+                setNotifications(prev => [stockNotification, ...prev]);
+            }
+        });
+
+        return () => {
+            unsubNewOrder();
+            unsubUpdate();
+            unsubInventory();
+        };
+    }, [socket, subscribe]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 

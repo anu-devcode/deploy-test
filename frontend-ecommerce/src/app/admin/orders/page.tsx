@@ -23,8 +23,10 @@ import {
     User,
     CreditCard,
     AlertCircle,
-    Package
+    Package,
+    ArrowLeft
 } from 'lucide-react';
+import { Badge } from '@/components';
 import { Order, OrderStatus } from '@/types';
 
 export default function AdminOrdersPage() {
@@ -95,22 +97,24 @@ export default function AdminOrdersPage() {
         { label: 'Fulfilled', value: orders.filter(o => o.status === 'fulfilled' || o.status === 'DELIVERED').length, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     ];
 
-    const getStatusStyles = (status: OrderStatus) => {
+    const getStatusStyles = (status: string) => {
         const s = status.toLowerCase();
         switch (s) {
             case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-            case 'paid': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'pending_verification': return 'bg-purple-50 text-purple-600 border-purple-100';
+            case 'paid': case 'confirmed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
             case 'fulfilled': case 'delivered': return 'bg-blue-50 text-blue-600 border-blue-100';
             case 'cancelled': return 'bg-rose-50 text-rose-600 border-rose-100';
             default: return 'bg-slate-50 text-slate-600 border-slate-100';
         }
     };
 
-    const getStatusIcon = (status: OrderStatus) => {
+    const getStatusIcon = (status: string) => {
         const s = status.toLowerCase();
         switch (s) {
             case 'pending': return <Clock className="w-3 h-3" />;
-            case 'paid': return <CheckCircle2 className="w-3 h-3" />;
+            case 'pending_verification': return <AlertCircle className="w-3 h-3" />;
+            case 'paid': case 'confirmed': return <CheckCircle2 className="w-3 h-3" />;
             case 'fulfilled': case 'delivered': return <Truck className="w-3 h-3" />;
             case 'cancelled': return <XCircle className="w-3 h-3" />;
             default: return null;
@@ -322,6 +326,88 @@ export default function AdminOrdersPage() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Manual Payment Verification */}
+                            {(selectedOrder.status === 'PENDING_VERIFICATION' || (selectedOrder as any).receiptUrl) && (
+                                <div className="p-8 rounded-[2rem] bg-purple-50 border border-purple-100 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 rounded-xl bg-purple-600 text-white">
+                                                <CreditCard className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Manual Payment Verification</p>
+                                                <p className="text-[10px] text-purple-600 font-bold uppercase tracking-widest">Awaiting Admin Signature</p>
+                                            </div>
+                                        </div>
+                                        <Badge className="bg-purple-200 text-purple-800 border-none font-black text-[9px] uppercase">Review Required</Badge>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Receipt</p>
+                                            <div className="aspect-[4/5] bg-white rounded-2xl border-2 border-dashed border-purple-200 flex items-center justify-center overflow-hidden group cursor-zoom-in">
+                                                {(selectedOrder as any).receiptUrl ? (
+                                                    <img src={(selectedOrder as any).receiptUrl} alt="Receipt" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
+                                                ) : (
+                                                    <div className="text-center p-4">
+                                                        <Package className="w-10 h-10 text-purple-200 mx-auto mb-2" />
+                                                        <p className="text-[10px] font-bold text-purple-300">RECEIPT_NOT_LOADED</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div className="p-5 bg-white rounded-2xl border border-purple-100">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Verification Ledger</p>
+                                                <textarea
+                                                    placeholder="Add verification notes (e.g. Reference confirmed...)"
+                                                    className="w-full h-24 bg-slate-50 border-none rounded-xl p-3 text-xs font-bold text-slate-900 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-3">
+                                                <button
+                                                    onClick={async () => {
+                                                        const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
+                                                        setLoading(true);
+                                                        try {
+                                                            await api.verifyPayment((selectedOrder as any).paymentId || selectedOrder.id, true, note);
+                                                            fetchOrders();
+                                                            setSelectedOrder(null);
+                                                        } catch (e) {
+                                                            alert('Verification failed');
+                                                        } finally {
+                                                            setLoading(false);
+                                                        }
+                                                    }}
+                                                    className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4" /> Approve & Confirm Order
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
+                                                        if (!note) return alert('Please provide a reason for rejection');
+                                                        setLoading(true);
+                                                        try {
+                                                            await api.verifyPayment((selectedOrder as any).paymentId || selectedOrder.id, false, note);
+                                                            fetchOrders();
+                                                            setSelectedOrder(null);
+                                                        } catch (e) {
+                                                            alert('Rejection failed');
+                                                        } finally {
+                                                            setLoading(false);
+                                                        }
+                                                    }}
+                                                    className="w-full py-4 bg-white border border-rose-200 text-rose-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <XCircle className="w-4 h-4" /> Reject Payment
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Action Control */}
                             <div className="pt-6 border-t border-slate-100 flex gap-4">

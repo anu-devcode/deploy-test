@@ -1,28 +1,40 @@
-import { IsNotEmpty, IsNumber, IsEnum, IsOptional, IsString, IsObject } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsOptional, IsBoolean } from 'class-validator';
 import { PaymentMethod } from '@prisma/client';
 
 export class InitializePaymentDto {
-    @IsNotEmpty()
-    @IsEnum(PaymentMethod)
-    method: PaymentMethod;
-
-    @IsNotEmpty()
+    @IsString()
     orderId: string;
 
     @IsNumber()
     amount: number;
 
+    @IsEnum(PaymentMethod)
+    method: PaymentMethod;
+
     @IsOptional()
-    @IsObject()
-    metadata?: Record<string, any>;
+    metadata?: any;
 }
 
 export class ConfirmPaymentDto {
-    @IsNotEmpty()
     @IsString()
-    transactionId: string;
-
     @IsOptional()
+    transactionId?: string;
+
     @IsString()
+    @IsOptional()
     providerRef?: string;
+}
+
+export class SubmitManualPaymentDto {
+    @IsString()
+    receiptUrl: string;
+}
+
+export class VerifyManualPaymentDto {
+    @IsBoolean()
+    approve: boolean;
+
+    @IsString()
+    @IsOptional()
+    note?: string;
 }

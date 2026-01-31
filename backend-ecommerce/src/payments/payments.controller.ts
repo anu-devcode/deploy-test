@@ -30,4 +30,22 @@ export class PaymentsController {
     ) {
         return this.paymentsService.getOrderPayments(orderId, tenantId);
     }
+
+    @Post(':id/submit-manual')
+    submitManual(
+        @Param('id') id: string,
+        @Body() dto: any, // SubmitManualPaymentDto
+        @TenantId() tenantId: string,
+    ) {
+        return this.paymentsService.submitManual(id, dto, tenantId);
+    }
+
+    @Post(':id/verify')
+    verify(
+        @Param('id') id: string,
+        @Body() dto: any, // VerifyManualPaymentDto
+        @TenantId() tenantId: string,
+    ) {
+        return this.paymentsService.verify(id, dto, tenantId);
+    }
 }

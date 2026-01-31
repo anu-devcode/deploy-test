@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { AutomationService } from '../automation/automation.service';
+import { EventsGateway } from '../events/events.gateway';
 import { randomBytes } from 'crypto';
 
 const Decimal = Prisma.Decimal;
@@ -11,7 +12,8 @@ const Decimal = Prisma.Decimal;
 export class OrdersService {
     constructor(
         private prisma: PrismaService,
-        private automationService: AutomationService
+        private automationService: AutomationService,
+        private eventsGateway: EventsGateway
     ) { }
 
     private generateTrackingToken(): string {
@@ -83,11 +85,11 @@ export class OrdersService {
                 shippingCity: dto.shippingCity,
                 paymentMethod: dto.paymentMethod,
                 // Customer (optional for guests)
-                customerId: dto.customerId || null,
+                customerId: dto.customerId || undefined,
                 items: {
                     create: orderItems,
                 },
-            },
+            } as any,
             include: {
                 items: {
                     include: {
@@ -98,8 +100,34 @@ export class OrdersService {
             },
         });
 
+        // 1.5 Sync Profile if requested
+        if (dto.saveAddressToProfile && dto.customerId) {
+            let firstName: string | undefined;
+            let lastName: string | undefined;
+
+            if (dto.guestName) {
+                const parts = dto.guestName.trim().split(/\s+/);
+                firstName = parts[0];
+                lastName = parts.slice(1).join(' ') || '';
+            }
+
+            await this.prisma.customer.update({
+                where: { id: dto.customerId },
+                data: {
+                    firstName,
+                    lastName,
+                    phone: dto.guestPhone, // Use guest phone as it's the most recent
+                    address: dto.shippingAddress,
+                    city: dto.shippingCity,
+                }
+            });
+        }
+
         // Trigger Automation
         await this.automationService.trigger('ORDER_CREATED', order, tenantId);
+
+        // Emit WebSocket Event
+        this.eventsGateway.notifyNewOrder(tenantId, order);
 
         return order;
     }
@@ -164,19 +192,19 @@ export class OrdersService {
 
         // Return limited info for security
         return {
-            orderNumber: order.orderNumber,
-            status: order.status,
-            paymentStatus: order.paymentStatus,
-            total: order.total,
-            shippingAddress: order.shippingAddress,
-            shippingCity: order.shippingCity,
-            trackingNumber: order.trackingNumber,
-            items: order.items.map(item => ({
+            orderNumber: (order as any).orderNumber,
+            status: (order as any).status,
+            paymentStatus: (order as any).paymentStatus,
+            total: (order as any).total,
+            shippingAddress: (order as any).shippingAddress,
+            shippingCity: (order as any).shippingCity,
+            trackingNumber: (order as any).trackingNumber,
+            items: (order as any).items.map((item: any) => ({
                 name: item.product.name,
                 quantity: item.quantity,
                 price: item.price,
             })),
-            createdAt: order.createdAt,
+            createdAt: (order as any).createdAt,
         };
     }
 
@@ -200,29 +228,34 @@ export class OrdersService {
         }
 
         return {
-            orderNumber: order.orderNumber,
-            status: order.status,
-            paymentStatus: order.paymentStatus,
-            total: order.total,
-            guestName: order.guestName,
-            shippingAddress: order.shippingAddress,
-            shippingCity: order.shippingCity,
-            trackingNumber: order.trackingNumber,
-            items: order.items.map(item => ({
+            orderNumber: (order as any).orderNumber,
+            status: (order as any).status,
+            paymentStatus: (order as any).paymentStatus,
+            total: (order as any).total,
+            guestName: (order as any).guestName,
+            shippingAddress: (order as any).shippingAddress,
+            shippingCity: (order as any).shippingCity,
+            trackingNumber: (order as any).trackingNumber,
+            items: (order as any).items.map((item: any) => ({
                 name: item.product.name,
                 quantity: item.quantity,
                 price: item.price,
             })),
-            createdAt: order.createdAt,
+            createdAt: (order as any).createdAt,
         };
     }
 
     async updateStatus(id: string, status: OrderStatus, tenantId: string) {
         await this.findOne(id, tenantId);
-        return this.prisma.order.update({
+        const order = await this.prisma.order.update({
             where: { id },
             data: { status },
         });
+
+        // Emit WebSocket Event
+        this.eventsGateway.notifyOrderStatusUpdate(tenantId, id, status);
+
+        return order;
     }
 
     async remove(id: string, tenantId: string) {

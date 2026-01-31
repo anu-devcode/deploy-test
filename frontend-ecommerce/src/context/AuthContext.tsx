@@ -6,6 +6,7 @@ import api, { Permission } from '@/lib/api';
 interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
+    token: string | null;
     tenantId: string | null;
     login: (email: string, password: string) => Promise<any>;
     logout: () => void;
@@ -17,9 +18,16 @@ interface AuthContextType {
 interface User {
     id: string;
     email: string;
+    name?: string;
+    phone?: string;
+    avatar?: string;
     role: string;
     permissions: Permission[];
     requiresPasswordChange: boolean;
+    preferences?: {
+        locale?: string;
+        timezone?: string;
+    };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const [token, setTokenState] = useState<string | null>(null);
     const [tenantId, setTenantId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -39,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             api.setToken(token);
             api.setTenantId(storedTenantId);
             setIsAuthenticated(true);
+            setTokenState(token);
             setTenantId(storedTenantId);
             if (storedUser) {
                 try {
@@ -46,9 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser({
                         id: parsedUser.id || 'unknown',
                         email: parsedUser.email || '',
+                        name: parsedUser.name,
+                        phone: parsedUser.phone,
+                        avatar: parsedUser.avatar,
                         role: parsedUser.role || 'STAFF',
                         permissions: parsedUser.permissions || [],
-                        requiresPasswordChange: parsedUser.requiresPasswordChange || false
+                        requiresPasswordChange: parsedUser.requiresPasswordChange || false,
+                        preferences: parsedUser.preferences
                     });
                 } catch (e) {
                     console.error('Failed to parse stored user', e);
@@ -65,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('token', mockToken);
             api.setToken(mockToken);
             setIsAuthenticated(true);
+            setTokenState(mockToken);
             const userData: User = {
                 id: 'demo-admin-id',
                 email,
@@ -80,19 +95,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await api.login(email, password);
         localStorage.setItem('token', response.access_token);
         api.setToken(response.access_token);
+        setTokenState(response.access_token);
 
         // Decode JWT to get user info (using window.atob for mock)
         const payload = JSON.parse(atob(response.access_token.split('.')[1]));
         const userData: User = {
             id: payload.sub,
             email: payload.email,
+            name: payload.name,
             role: payload.role,
             permissions: payload.permissions || [],
-            requiresPasswordChange: payload.requiresPasswordChange || false
+            requiresPasswordChange: payload.requiresPasswordChange || false,
+            // Mock preferences for now
+            preferences: {
+                locale: 'en-US',
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }
         };
 
         if (!userData.requiresPasswordChange) {
             setIsAuthenticated(true);
+            setTokenState(response.access_token);
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
         }
@@ -104,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setIsAuthenticated(false);
+        setTokenState(null);
         setUser(null);
     };
 
@@ -117,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <AuthContext.Provider value={{
             isAuthenticated,
             user,
+            token,
             tenantId,
             login,
             logout,

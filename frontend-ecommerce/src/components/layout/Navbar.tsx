@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Menu, X, User } from 'lucide-react';
-import { useCart } from '@/context';
+import { Search, ShoppingCart, Menu, X, User, Zap, Store } from 'lucide-react';
+import { useCart, useBusiness } from '@/context';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 
 export function Navbar() {
+    const { mode, toggleMode } = useBusiness();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { itemCount, toggleCart } = useCart();
@@ -32,7 +33,7 @@ export function Navbar() {
     const isDarkText = isScrolled || !isLandingPage;
 
     const navLinks = [
-        { name: 'Products', href: '/#products' },
+        { name: 'Products', href: '/products' },
         { name: 'Categories', href: '/#categories' },
         { name: 'About', href: '/about' },
         { name: 'Contact', href: '/contact' },
@@ -92,16 +93,27 @@ export function Navbar() {
                                 <span className="absolute inset-0 rounded-full border border-current opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-700"></span>
                             </button>
 
-                            {/* Account - Desktop Only */}
+                            {/* Account - Improved Visibility */}
                             <Link
                                 href={isAuthenticated ? '/profile' : '/login'}
-                                className={`hidden md:flex relative p-2 md:p-4 rounded-full transition-all duration-700 group ${isDarkText
+                                className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-5 md:py-2 rounded-full transition-all duration-700 group ${isDarkText
                                     ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                                     : 'bg-white/5 text-white hover:bg-white/10'
                                     }`}
                             >
-                                <User className="w-4 h-4 md:w-5 md:h-5 group-hover:scale-125 transition-transform" />
-                                <span className="absolute inset-0 rounded-full border border-current opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-700"></span>
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform">
+                                    {user?.avatar ? (
+                                        <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-[10px] md:text-xs font-black">{(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</span>
+                                    )}
+                                </div>
+                                <div className="hidden sm:flex flex-col items-start -space-y-1">
+                                    <span className={`text-[9px] font-black uppercase tracking-widest opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-emerald-200'}`}>My Account</span>
+                                    <span className="text-xs font-black truncate max-w-[100px]">
+                                        {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Member'}
+                                    </span>
+                                </div>
                             </Link>
 
                             {/* Cart */}
@@ -139,15 +151,31 @@ export function Navbar() {
                     <div className="fixed inset-0 z-[100] lg:hidden animate-in fade-in duration-500">
                         <div className="absolute inset-0 bg-[#01110e]/95 backdrop-blur-3xl" onClick={() => setIsMobileMenuOpen(false)} />
                         <nav className="relative h-full flex flex-col items-center justify-center gap-8 md:gap-12 p-8">
-                            <div className="mb-8">
-                                <span className="text-emerald-500 font-black text-6xl">አ</span>
-                            </div>
+                            {/* Mobile Account Summary */}
+                            {isAuthenticated && (
+                                <div className="flex flex-col items-center gap-4 mb-4 animate-in zoom-in-50 duration-500">
+                                    <div className="w-24 h-24 rounded-3xl bg-emerald-500/20 p-1 ring-4 ring-emerald-500/10">
+                                        <div className="w-full h-full rounded-[1.2rem] bg-slate-900 border-2 border-white/20 flex items-center justify-center text-white text-3xl font-black overflow-hidden shadow-2xl">
+                                            {user?.avatar ? (
+                                                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                (user?.name || user?.email || 'U').charAt(0).toUpperCase()
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-xl font-black text-white tracking-tight">{user?.name || user?.email?.split('@')[0]}</h3>
+                                        <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest">{user?.role || 'Customer'}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {navLinks.map((item, i) => (
                                 <Link
                                     key={item.name}
                                     href={item.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="text-3xl md:text-5xl font-black text-white hover:text-emerald-500 transition-all tracking-[0.2em] uppercase text-center animate-in slide-in-from-bottom-10"
+                                    className="text-2xl md:text-4xl font-black text-white/90 hover:text-emerald-500 transition-all tracking-[0.2em] uppercase text-center animate-in slide-in-from-bottom-10"
                                     style={{ animationDelay: `${i * 100}ms` }}
                                 >
                                     {item.name}
@@ -157,10 +185,10 @@ export function Navbar() {
                             <Link
                                 href={isAuthenticated ? '/profile' : '/login'}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="text-3xl md:text-5xl font-black text-white hover:text-emerald-500 transition-all tracking-[0.2em] uppercase text-center animate-in slide-in-from-bottom-10"
+                                className="text-2xl md:text-4xl font-black text-emerald-500 hover:text-emerald-400 transition-all tracking-[0.2em] uppercase text-center animate-in slide-in-from-bottom-10"
                                 style={{ animationDelay: `${navLinks.length * 100}ms` }}
                             >
-                                {isAuthenticated ? 'My Account' : 'Sign In'}
+                                {isAuthenticated ? 'Go to Profile' : 'Sign In'}
                             </Link>
 
                             <button

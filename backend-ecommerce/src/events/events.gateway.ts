@@ -58,4 +58,16 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     notifyNewOrder(tenantId: string, order: any) {
         this.server.to(`tenant:${tenantId}`).emit('new_order', order);
     }
+
+    notifyProductUpdate(tenantId: string, product: any) {
+        this.server.to(`tenant:${tenantId}`).emit('product_updated', product);
+    }
+
+    notifyInventoryUpdate(tenantId: string, productId: string, stock: number) {
+        this.server.to(`tenant:${tenantId}`).emit('inventory_updated', { productId, stock });
+    }
+
+    notifySystemAnnouncement(tenantId: string, announcement: any) {
+        this.server.to(`tenant:${tenantId}`).emit('system_announcement', announcement);
+    }
 }

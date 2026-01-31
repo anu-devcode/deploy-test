@@ -112,6 +112,132 @@ export class CustomersService {
         return this.prisma.customer.delete({ where: { id } });
     }
 
+    async getProfile(customerId: string, tenantId: string) {
+        const customer = await this.prisma.customer.findUnique({
+            where: { id: customerId },
+            include: {
+                _count: {
+                    select: { orders: true }
+                },
+                addresses: true
+            }
+        });
+        if (!customer || customer.tenantId !== tenantId) {
+            throw new NotFoundException('Profile not found');
+        }
+        return this.sanitizeCustomer(customer, 'CUSTOMER');
+    }
+
+    async updateProfile(customerId: string, dto: UpdateCustomerDto, tenantId: string) {
+        await this.getProfile(customerId, tenantId);
+
+        let firstName = dto.firstName;
+        let lastName = dto.lastName;
+
+        if (dto.name && !firstName && !lastName) {
+            const parts = dto.name.trim().split(/\s+/);
+            firstName = parts[0];
+            lastName = parts.slice(1).join(' ') || '';
+        }
+
+        return this.prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                firstName: firstName !== undefined ? firstName : undefined,
+                lastName: lastName !== undefined ? lastName : undefined,
+                phone: dto.phone,
+                avatar: dto.avatar,
+            } as any
+        });
+    }
+
+    // Address Management
+    async getAddresses(customerId: string) {
+        return this.prisma.customerAddress.findMany({
+            where: { customerId },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async addAddress(customerId: string, dto: any) {
+        // If this is the first address, make it default
+        const count = await this.prisma.customerAddress.count({ where: { customerId } });
+        const isDefault = count === 0 ? true : (dto.isDefault || false);
+
+        // If new address is default, unset other defaults
+        if (isDefault) {
+            await this.prisma.customerAddress.updateMany({
+                where: { customerId, isDefault: true },
+                data: { isDefault: false }
+            });
+        }
+
+        return this.prisma.customerAddress.create({
+            data: {
+                ...dto,
+                isDefault,
+                customerId
+            }
+        });
+    }
+
+    async deleteAddress(customerId: string, addressId: string) {
+        const address = await this.prisma.customerAddress.findFirst({
+            where: { id: addressId, customerId }
+        });
+
+        if (!address) throw new NotFoundException('Address not found');
+
+        return this.prisma.customerAddress.delete({
+            where: { id: addressId }
+        });
+    }
+
+    async setAddressDefault(customerId: string, addressId: string) {
+        await this.prisma.customerAddress.updateMany({
+            where: { customerId, isDefault: true },
+            data: { isDefault: false }
+        });
+
+        return this.prisma.customerAddress.update({
+            where: { id: addressId },
+            data: { isDefault: true }
+        });
+    }
+
+    async getBillingInfo(customerId: string, tenantId: string) {
+        const customer = await this.getProfile(customerId, tenantId);
+        const defaultAddress = customer.addresses?.find((a: any) => a.isDefault) || customer.addresses?.[0];
+
+        // Mocking billing info as requested
+        return {
+            savedMethods: [
+                { id: 'm1', type: 'CARD', brand: 'visa', last4: '4242', expiry: '12/26', isDefault: true }
+            ],
+            billingAddress: {
+                address: defaultAddress?.street || '',
+                city: defaultAddress?.city || '',
+                country: 'Ethiopia', // Hardcoded or from address if we add it
+            }
+        };
+    }
+
+    async getInvoices(customerId: string, tenantId: string) {
+        const orders = await this.prisma.order.findMany({
+            where: { customerId, tenantId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                orderNumber: true,
+                total: true,
+                status: true,
+                paymentStatus: true,
+                createdAt: true,
+            }
+        });
+        return orders;
+    }
+
     private sanitizeCustomer(customer: any, role: string) {
         if (role !== 'ADMIN') {
             const { adminNotes, flags, ...safeCustomer } = customer;

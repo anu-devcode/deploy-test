@@ -45,6 +45,10 @@ export class CreateOrderDto {
     @IsString()
     paymentMethod?: string;
 
+    @IsOptional()
+    @IsBoolean()
+    saveAddressToProfile?: boolean;
+
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => OrderItemDto)

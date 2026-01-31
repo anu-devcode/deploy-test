@@ -67,18 +67,33 @@ export class StorefrontService {
         };
     }
 
-    // Get single product by ID
-    async getProduct(id: string, tenantId: string) {
+    // Get single product by ID or SLUG
+    async getProduct(idOrSlug: string, tenantId: string) {
+        const isUuid = idOrSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+
         return this.prisma.product.findFirst({
-            where: { id, tenantId, isPublished: true },
+            where: {
+                OR: [
+                    { id: isUuid ? idOrSlug : undefined },
+                    { slug: idOrSlug }
+                ],
+                tenantId,
+                isPublished: true
+            },
             include: {
                 category: true,
+                warehouse: { select: { name: true, city: true } },
                 reviews: {
                     where: { status: 'APPROVED' },
                     include: { customer: { select: { firstName: true, lastName: true } } },
                     orderBy: { createdAt: 'desc' },
                     take: 10,
                 },
+                stockMovements: {
+                    include: { warehouse: { select: { name: true, city: true } } },
+                    orderBy: { createdAt: 'desc' },
+                    take: 20
+                }
             },
         });
     }
