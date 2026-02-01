@@ -2,17 +2,30 @@
 
 import { useCart } from '@/context';
 // Tenant context removed - using root routes for Adis Harvest ecommerce
-import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export function SideCart() {
-    const { items, subtotal, itemCount, isOpen, toggleCart, updateQuantity, removeFromCart } = useCart();
+    const {
+        items,
+        selectedItems,
+        subtotal,
+        selectedSubtotal,
+        itemCount,
+        selectedCount,
+        isOpen,
+        toggleCart,
+        updateQuantity,
+        removeFromCart,
+        toggleSelection
+    } = useCart();
     const router = useRouter();
 
     if (!isOpen) return null;
 
     const handleCheckout = () => {
+        if (selectedCount === 0) return;
         toggleCart();
         router.push('/checkout');
     };
@@ -35,7 +48,7 @@ export function SideCart() {
                             <div>
                                 <h2 className="text-xl font-black text-slate-900 leading-none">Your Cart</h2>
                                 <p className="text-xs text-slate-500 font-bold mt-1 uppercase tracking-wider">
-                                    {itemCount} items selected
+                                    {selectedCount} / {itemCount} items selected
                                 </p>
                             </div>
                         </div>
@@ -69,10 +82,19 @@ export function SideCart() {
                             items.map((item) => (
                                 <div
                                     key={item.productId}
-                                    className="group relative flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-emerald-100 hover:bg-emerald-50/20 transition-all"
+                                    onClick={() => toggleSelection(item.productId)}
+                                    className={`group relative flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${item.selected
+                                        ? 'border-emerald-100 bg-emerald-50/20 shadow-sm'
+                                        : 'border-slate-50 opacity-60 grayscale-[0.5]'
+                                        }`}
                                 >
-                                    <div className="w-20 h-20 rounded-xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-3xl overflow-hidden relative">
+                                    <div className="w-20 h-20 rounded-xl bg-white border border-slate-100 flex-shrink-0 flex items-center justify-center text-3xl overflow-hidden relative">
                                         {item.product.imageToken ?? '📦'}
+                                        {item.selected && (
+                                            <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                                                <Check className="w-3 h-3 text-white" />
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -82,8 +104,11 @@ export function SideCart() {
                                                     {item.product.name}
                                                 </h4>
                                                 <button
-                                                    onClick={() => removeFromCart(item.productId)}
-                                                    className="text-slate-300 hover:text-rose-500 transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        removeFromCart(item.productId);
+                                                    }}
+                                                    className="text-slate-300 hover:text-rose-500 transition-colors p-1"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -94,7 +119,7 @@ export function SideCart() {
                                         </div>
 
                                         <div className="flex items-center justify-between mt-2">
-                                            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+                                            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm" onClick={e => e.stopPropagation()}>
                                                 <button
                                                     onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                                                     className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-600 transition-colors"
@@ -109,7 +134,7 @@ export function SideCart() {
                                                     <Plus className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                            <p className="text-sm font-black text-emerald-600">
+                                            <p className={`text-sm font-black ${item.selected ? 'text-emerald-600' : 'text-slate-400'}`}>
                                                 ETB {Number(item.lineTotal).toLocaleString()}
                                             </p>
                                         </div>
@@ -124,21 +149,22 @@ export function SideCart() {
                         <div className="px-6 py-8 border-t border-slate-100 bg-slate-50/50 space-y-4">
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between text-slate-500">
-                                    <span className="text-xs font-bold uppercase tracking-widest">Subtotal</span>
-                                    <span className="text-sm font-bold">ETB {subtotal.toLocaleString()}</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest">Subtotal ({selectedCount} items)</span>
+                                    <span className="text-sm font-bold">ETB {selectedSubtotal.toLocaleString()}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-slate-900">
-                                    <span className="text-lg font-black uppercase">Grand Total</span>
-                                    <span className="text-2xl font-black text-emerald-600">ETB {subtotal.toLocaleString()}</span>
+                                <div className="flex items-center justify-between text-slate-900 border-t border-slate-100 pt-3">
+                                    <span className="text-lg font-black uppercase tracking-tight italic">Checkout Total</span>
+                                    <span className="text-2xl font-black text-emerald-600">ETB {selectedSubtotal.toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleCheckout}
-                                className="w-full py-5 px-6 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-900/20"
+                                disabled={selectedCount === 0}
+                                className="w-full py-5 px-6 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-900/20 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                             >
                                 Continue to Checkout
-                                <ArrowRight className="w-5 h-5" />
+                                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                             </button>
 
                             <Link

@@ -15,6 +15,7 @@ import { Billing } from '@/components/profile/Billing';
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { BottomNav } from '@/components/profile/BottomNav';
 import { Wishlist } from '@/components/profile/Wishlist';
+import { ActivityCenter } from '@/components/profile/ActivityCenter';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -22,7 +23,8 @@ import {
     Wallet as WalletIcon,
     Settings,
     CreditCard,
-    Heart
+    Heart,
+    MessageSquare
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -36,16 +38,21 @@ export default function ProfilePage() {
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeSection, setActiveSection] = useState(searchParams.get('section') || 'messages');
 
     // Sync state with URL
     useEffect(() => {
         const tab = searchParams.get('tab');
+        const section = searchParams.get('section');
         if (tab) setActiveTab(tab);
+        if (section) setActiveSection(section);
     }, [searchParams]);
 
-    const handleTabChange = (tab: string) => {
+    const handleTabChange = (tab: string, section?: string) => {
         setActiveTab(tab);
-        router.push(`/profile?tab=${tab}`, { scroll: false });
+        if (section) setActiveSection(section);
+        const url = section ? `/profile?tab=${tab}&section=${section}` : `/profile?tab=${tab}`;
+        router.push(url, { scroll: false });
     };
 
     useEffect(() => {
@@ -79,7 +86,7 @@ export default function ProfilePage() {
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
-                return <ProfileOverview orders={orders} loading={loading} onViewAllOrders={() => handleTabChange('orders')} />;
+                return <ProfileOverview orders={orders} loading={loading} onViewAllOrders={() => handleTabChange('orders')} onTabChange={handleTabChange} />;
             case 'orders':
                 return <OrderHistory orders={orders} loading={loading} />;
             case 'addresses':
@@ -92,8 +99,10 @@ export default function ProfilePage() {
                 return <Billing />;
             case 'wishlist':
                 return <Wishlist />;
+            case 'inbox':
+                return <ActivityCenter initialSection={activeSection} />;
             default:
-                return <ProfileOverview orders={orders} loading={loading} onViewAllOrders={() => handleTabChange('orders')} />;
+                return <ProfileOverview orders={orders} loading={loading} onViewAllOrders={() => handleTabChange('orders')} onTabChange={handleTabChange} />;
         }
     };
 
@@ -123,6 +132,7 @@ export default function ProfilePage() {
                                 {[
                                     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
                                     { id: 'orders', label: 'Orders', icon: ShoppingBag },
+                                    { id: 'inbox', label: 'Activity Center', icon: MessageSquare },
                                     { id: 'wishlist', label: 'Wishlist', icon: Heart },
                                     { id: 'addresses', label: 'Addresses', icon: MapPin },
                                     { id: 'billing', label: 'Billing', icon: CreditCard },

@@ -1,13 +1,28 @@
 'use client';
 
 import { useCart } from '@/context';
-import { ShoppingCart, Trash2, ArrowRight, Minus, Plus, Package } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowRight, Minus, Plus, Package, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
-    const { items, subtotal, itemCount, removeFromCart, updateQuantity, loading } = useCart();
+    const {
+        items,
+        selectedItems,
+        subtotal,
+        selectedSubtotal,
+        itemCount,
+        selectedCount,
+        removeFromCart,
+        updateQuantity,
+        toggleSelection,
+        selectAll,
+        loading
+    } = useCart();
     const router = useRouter();
+
+    const allSelected = items.length > 0 && selectedCount === itemCount;
+    const someSelected = selectedCount > 0 && selectedCount < itemCount;
 
     if (loading) {
         return (
@@ -62,8 +77,20 @@ export default function CartPage() {
                             <p className="text-slate-400 font-bold mt-2 uppercase tracking-[0.2em] text-xs">Review Items & Manage Quantities</p>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="px-6 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-black uppercase tracking-widest border border-emerald-500/20">
-                                {itemCount} items
+                            <button
+                                onClick={() => selectAll(!allSelected)}
+                                className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group"
+                            >
+                                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${allSelected ? 'bg-emerald-500 border-emerald-500' : 'border-white/20 group-hover:border-white/40'}`}>
+                                    {allSelected && <Check className="w-3.5 h-3.5 text-slate-950" />}
+                                    {!allSelected && someSelected && <div className="w-2 h-2 bg-emerald-500 rounded-sm" />}
+                                </div>
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                                    {allSelected ? 'Deselect All' : 'Select All'}
+                                </span>
+                            </button>
+                            <span className="px-6 py-3 bg-emerald-500/10 text-emerald-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                {selectedCount} / {itemCount} selected
                             </span>
                         </div>
                     </div>
@@ -74,10 +101,18 @@ export default function CartPage() {
                             {items.map((item, idx) => (
                                 <div
                                     key={item.productId}
-                                    className="bg-white/5 backdrop-blur-3xl p-6 sm:p-8 rounded-[3rem] border border-white/10 hover:border-emerald-500/30 transition-all group animate-in fade-in slide-in-from-bottom-8 duration-700"
+                                    className={`bg-white/5 backdrop-blur-3xl p-6 sm:p-8 rounded-[3rem] border transition-all group animate-in fade-in slide-in-from-bottom-8 duration-700 ${item.selected ? 'border-emerald-500/30 ring-1 ring-emerald-500/20' : 'border-white/10 hover:border-white/20'}`}
                                     style={{ animationDelay: `${idx * 100}ms` }}
                                 >
                                     <div className="flex flex-col sm:flex-row items-center gap-8">
+                                        {/* Selection Checkbox */}
+                                        <button
+                                            onClick={() => toggleSelection(item.productId)}
+                                            className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 ${item.selected ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-white/10 hover:border-white/30'}`}
+                                        >
+                                            {item.selected && <Check className="w-4 h-4 text-slate-950" />}
+                                        </button>
+
                                         {/* Product Icon/Image - Clickable */}
                                         <Link href={`/products/${item.product.slug || item.product.id}`} className="w-32 h-32 bg-emerald-500/5 rounded-[2rem] flex items-center justify-center text-5xl border border-white/5 hover:scale-105 transition-transform duration-500 overflow-hidden relative block group">
                                             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
@@ -155,7 +190,7 @@ export default function CartPage() {
                                 <div className="space-y-6 mb-10">
                                     <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
                                         <span className="text-slate-500 italic">Subtotal</span>
-                                        <span className="text-white">ETB {subtotal.toLocaleString()}</span>
+                                        <span className="text-white">ETB {selectedSubtotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
                                         <span className="text-slate-500 italic">Logistics</span>
@@ -163,15 +198,16 @@ export default function CartPage() {
                                     </div>
                                     <div className="pt-6 border-t border-white/5 flex justify-between items-end">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Payload</span>
-                                            <span className="text-4xl font-black text-emerald-500">ETB {subtotal.toLocaleString()}</span>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Payload ({selectedCount} items)</span>
+                                            <span className="text-4xl font-black text-emerald-500">ETB {selectedSubtotal.toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={() => router.push('/checkout')}
-                                    className="w-full py-6 bg-emerald-500 text-slate-950 rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-emerald-500/20 active:scale-95 group"
+                                    disabled={selectedCount === 0}
+                                    className="w-full py-6 bg-emerald-500 text-slate-950 rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-emerald-500/20 active:scale-95 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                                 >
                                     Proceed to Checkout
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />

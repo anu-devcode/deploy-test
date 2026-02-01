@@ -25,6 +25,8 @@ model Tenant {
   deliveries  Delivery[]
   promotions  Promotion[]
   wishlists   Wishlist[]
+  notifications Notification[]
+  helpMessages  HelpMessage[]
   automationRules AutomationRule[]
 }
 
@@ -79,6 +81,7 @@ model Product {
   cartItems      CartItem[]
   stockMovements StockMovement[]
   reviews        Review[]
+  wishlistItems  WishlistItem[]
 }
 
 model Category {
@@ -113,6 +116,8 @@ model Customer {
   cart      Cart?
   reviews   Review[]
   wishlist  Wishlist?
+  notifications Notification[]
+  helpMessages  HelpMessage[]
   adminNotes String?
   flags      String[] @default([])
   createdAt DateTime @default(now())
@@ -395,6 +400,63 @@ model Review {
   updatedAt   DateTime     @updatedAt
 
   @@unique([productId, customerId])
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  type        NotificationType
+  title       String
+  message     String
+  link        String?          // e.g., "/orders/123"
+  isRead      Boolean          @default(false)
+  customerId  String?          // Null for broadcast/system alerts
+  customer    Customer?        @relation(fields: [customerId], references: [id])
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model HelpMessage {
+  id          String            @id @default(uuid())
+  subject     String?
+  content     String
+  status      HelpMessageStatus @default(OPEN)
+  senderRole  MessageSenderRole
+  isRead      Boolean           @default(false)
+  
+  // Threading logic
+  parentId    String?
+  parent      HelpMessage?      @relation("MessageThread", fields: [parentId], references: [id])
+  replies     HelpMessage[]     @relation("MessageThread")
+
+  customerId  String
+  customer    Customer          @relation(fields: [customerId], references: [id])
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum NotificationType {
+  ORDER_STATUS
+  PAYMENT_RECEIVED
+  STOCK_ALERT
+  PROMOTION
+  SYSTEM
+}
+
+enum HelpMessageStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MessageSenderRole {
+  CUSTOMER
+  ADMIN
+  STAFF
 }
 
 model Delivery {

@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Search, ShoppingCart, Menu, X, User, Zap, Store } from 'lucide-react';
-import { useCart, useBusiness } from '@/context';
+import { useCart, useBusiness, useNotifications } from '@/context';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
+import { SearchComponent } from '../shared/SearchComponent';
 
 export function Navbar() {
     const { mode, toggleMode } = useBusiness();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { itemCount, toggleCart } = useCart();
+    const { unreadCount } = useNotifications();
     const { isAuthenticated, user } = useAuth();
     const pathname = usePathname();
     const isLandingPage = pathname === '/';
@@ -84,30 +86,32 @@ export function Navbar() {
                         </nav>
 
                         <div className="flex items-center gap-2 sm:gap-6 md:gap-10">
-                            {/* Search */}
-                            <button className={`relative p-2 md:p-4 rounded-full transition-all duration-700 group ${isDarkText
-                                ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                                : 'bg-white/5 text-white hover:bg-white/10'
-                                }`}>
-                                <Search className="w-4 h-4 md:w-5 md:h-5 group-hover:scale-125 transition-transform" />
-                                <span className="absolute inset-0 rounded-full border border-current opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-700"></span>
-                            </button>
+                            <div className="flex">
+                                <SearchComponent />
+                            </div>
+
+                            {/* Notifications / Profile */}
 
                             {/* Account - Improved Visibility */}
                             <Link
                                 href={isAuthenticated ? '/profile' : '/login'}
-                                className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-5 md:py-2 rounded-full transition-all duration-700 group ${isDarkText
+                                className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-5 md:py-2 rounded-full transition-all duration-700 group relative ${isDarkText
                                     ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                                     : 'bg-white/5 text-white hover:bg-white/10'
                                     }`}
                             >
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform">
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform relative">
                                     {user?.avatar ? (
                                         <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
                                     ) : (
                                         <span className="text-[10px] md:text-xs font-black">{(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</span>
                                     )}
                                 </div>
+                                {isAuthenticated && unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-rose-500 text-white text-[8px] md:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-bounce">
+                                        {unreadCount}
+                                    </span>
+                                )}
                                 <div className="hidden sm:flex flex-col items-start -space-y-1">
                                     <span className={`text-[9px] font-black uppercase tracking-widest opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-emerald-200'}`}>My Account</span>
                                     <span className="text-xs font-black truncate max-w-[100px]">
@@ -181,15 +185,7 @@ export function Navbar() {
                                     {item.name}
                                 </Link>
                             ))}
-                            {/* Mobile Account Link */}
-                            <Link
-                                href={isAuthenticated ? '/profile' : '/login'}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="text-2xl md:text-4xl font-black text-emerald-500 hover:text-emerald-400 transition-all tracking-[0.2em] uppercase text-center animate-in slide-in-from-bottom-10"
-                                style={{ animationDelay: `${navLinks.length * 100}ms` }}
-                            >
-                                {isAuthenticated ? 'Go to Profile' : 'Sign In'}
-                            </Link>
+                            {/* Mobile Account Link removed as requested - top icon is enough */}
 
                             <button
                                 onClick={() => setIsMobileMenuOpen(false)}

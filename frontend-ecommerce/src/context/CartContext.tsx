@@ -10,11 +10,13 @@ import { useAuth } from './AuthContext';
 type CartItem = {
   productId: string;
   quantity: number;
+  selected?: boolean;
 };
 
 type EnrichedCartItem = CartItem & {
   product: Product;
   lineTotal: number;
+  selected: boolean;
 };
 
 type CartState = {
@@ -23,13 +25,19 @@ type CartState = {
 
 type CartContextType = {
   items: EnrichedCartItem[];
+  selectedItems: EnrichedCartItem[];
   subtotal: number;
+  selectedSubtotal: number;
   itemCount: number;
+  selectedCount: number;
   loading: boolean;
   addToCart: (productId: string, quantity: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
+  toggleSelection: (productId: string) => void;
+  selectAll: (selected: boolean) => void;
   clearCart: () => void;
+  clearSelectedItems: () => void;
   toggleCart: () => void;
   isOpen: boolean;
 };
@@ -97,14 +105,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ...item,
           product,
           lineTotal: Number(product.price) * item.quantity,
+          selected: item.selected !== false, // Default to true if undefined
         };
       })
       .filter((x): x is EnrichedCartItem => Boolean(x));
   }, [state.items]);
 
+  const selectedItems = useMemo(() => items.filter(i => i.selected), [items]);
+
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.lineTotal, 0),
     [items]
+  );
+
+  const selectedSubtotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.lineTotal, 0),
+    [selectedItems]
   );
 
   const itemCount = useMemo(
@@ -112,15 +128,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items]
   );
 
+  const selectedCount = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+    [selectedItems]
+  );
+
   const addToCart = (productId: string, quantity: number) => {
     setState((prev) => {
       const existing = prev.items.find((i) => i.productId === productId);
       if (!existing) {
-        return { items: [...prev.items, { productId, quantity }] };
+        return { items: [...prev.items, { productId, quantity, selected: true }] };
       }
       return {
         items: prev.items.map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + quantity } : i
+          i.productId === productId
+            ? { ...i, quantity: i.quantity + quantity, selected: true }
+            : i
         ),
       };
     });
@@ -145,20 +168,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const toggleSelection = (productId: string) => {
+    setState((prev) => ({
+      items: prev.items.map((i) =>
+        i.productId === productId ? { ...i, selected: i.selected === false } : i
+      ),
+    }));
+  };
+
+  const selectAll = (selected: boolean) => {
+    setState((prev) => ({
+      items: prev.items.map((i) => ({ ...i, selected })),
+    }));
+  };
+
   const clearCart = () => setState(emptyState);
+
+  const clearSelectedItems = () => {
+    setState((prev) => ({
+      items: prev.items.filter((i) => i.selected === false),
+    }));
+  };
+
   const toggleCart = () => setIsOpen(!isOpen);
 
   return (
     <CartContext.Provider
       value={{
         items,
+        selectedItems,
         subtotal,
+        selectedSubtotal,
         itemCount,
+        selectedCount,
         loading,
         addToCart,
         updateQuantity,
         removeFromCart,
+        toggleSelection,
+        selectAll,
         clearCart,
+        clearSelectedItems,
         toggleCart,
         isOpen,
       }}

@@ -24,6 +24,8 @@ import { WishlistModule } from './wishlist/wishlist.module';
 import { AutomationModule } from './automation/automation.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { StaffModule } from './staff/staff.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { MessagesModule } from './messages/messages.module';
 // import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
 
 @Module({
@@ -50,6 +52,8 @@ import { StaffModule } from './staff/staff.module';
     WishlistModule,
     PromotionsModule,
     StaffModule,
+    NotificationsModule,
+    MessagesModule,
     // EventsModule,
   ],
   controllers: [AppController],

@@ -11,12 +11,13 @@ import {
     UserCircle,
     Wallet,
     CreditCard,
-    Heart
+    Heart,
+    MessageSquare
 } from 'lucide-react';
 
 interface ProfileSidebarProps {
     activeTab: string;
-    onTabChange: (tab: string) => void;
+    onTabChange: (tab: string, section?: string) => void;
 }
 
 export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) {
@@ -25,6 +26,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'orders', label: 'Orders', icon: ShoppingBag },
+        { id: 'inbox', label: 'Activity Center', icon: MessageSquare },
         { id: 'wishlist', label: 'Wishlist', icon: Heart },
         { id: 'addresses', label: 'Addresses', icon: MapPin },
         { id: 'billing', label: 'Payments and Billing', icon: CreditCard },

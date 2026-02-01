@@ -179,6 +179,7 @@ export default function AdminLayout({
             label: 'Relationship & Mgmt',
             items: [
                 { label: 'Customers', icon: Users, href: '/admin/customers', permission: 'VIEW_ORDERS' },
+                { label: 'Messages', icon: Bell, href: '/admin/messages', permission: 'VIEW_ORDERS' },
                 { label: 'Promotions', icon: Tag, href: '/admin/promotions', permission: 'MANAGE_PRODUCTS' },
                 { label: 'Content CMS', icon: Layers, href: '/admin/cms', permission: 'MANAGE_PRODUCTS' },
                 { label: 'Automations', icon: Zap, href: '/admin/automations', permission: 'ALL' },

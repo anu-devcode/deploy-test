@@ -11,7 +11,12 @@ import { api } from '@/lib/api';
 type Step = 'account' | 'address' | 'review' | 'payment' | 'success';
 
 export default function CheckoutPage() {
-    const { items, subtotal, itemCount, clearCart } = useCart();
+    const {
+        selectedItems: items,
+        selectedSubtotal: subtotal,
+        selectedCount: itemCount,
+        clearSelectedItems
+    } = useCart();
     const { isAuthenticated, user } = useAuth();
     const [step, setStep] = useState<Step>('account');
     const [isGuest, setIsGuest] = useState(false);
@@ -136,7 +141,7 @@ export default function CheckoutPage() {
 
             // 4. Finalize
             setStep('success');
-            clearCart();
+            clearSelectedItems();
         } catch (err) {
             console.error('Order completion failed', err);
             alert('Order processing failed. Please check your connection and try again.');

@@ -533,10 +533,22 @@ class ApiClient {
     }
 
     async getStorefrontProducts(params: any) {
-        return {
-            products: this.products,
-            pagination: { total: this.products.length, page: 1, limit: 10, totalPages: 1 }
-        };
+        // Build query string
+        const queryParams = new URLSearchParams();
+        if (params.search) queryParams.append('search', params.search);
+        if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+        if (params.limit) queryParams.append('limit', params.limit.toString());
+        if (params.page) queryParams.append('page', params.page.toString());
+        if (params.featured) queryParams.append('featured', 'true');
+        if (params.tags) queryParams.append('tags', params.tags.join(','));
+        if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+        if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+        return this.request<any>(`/storefront/products?${queryParams.toString()}`);
+    }
+
+    async searchProducts(query: string) {
+        return this.getStorefrontProducts({ search: query, limit: 5 });
     }
 
     async createProduct(data: Partial<CreateProductInput>) {
@@ -731,10 +743,6 @@ class ApiClient {
         return { averageRating, totalReviews };
     }
 
-    async getNotifications() {
-        return this.notifications;
-    }
-
     // --- DASHBOARD ---
     async getDashboardStats() {
         return {
@@ -848,6 +856,66 @@ class ApiClient {
         };
         this.reviews.push(newReview);
         return newReview;
+    }
+
+    // --- NOTIFICATIONS ---
+    async getNotifications() {
+        return this.request<any[]>('/notifications');
+    }
+
+    async getRecentNotifications() {
+        return this.request<any[]>('/notifications/recent');
+    }
+
+    async getUnreadNotificationsCount() {
+        return this.request<{ count: number }>('/notifications/unread-count');
+    }
+
+    async markNotificationAsRead(id: string) {
+        return this.request<any>(`/notifications/${id}/read`, { method: 'PATCH' });
+    }
+
+    // --- MESSAGES / HELP ---
+    async getMessages() {
+        return this.request<any[]>('/messages');
+    }
+
+    async getUnreadMessagesCount() {
+        return this.request<{ count: number }>('/messages/unread-count');
+    }
+
+    async getMessageThread(id: string) {
+        return this.request<any>(`/messages/${id}`);
+    }
+
+    async sendMessage(data: { subject?: string; content: string; parentId?: string }) {
+        return this.request<any>('/messages', {
+            method: 'POST',
+            body: data
+        });
+    }
+
+    // Admin Specific
+    async getAdminMessages() {
+        return this.request<any[]>('/messages/admin');
+    }
+
+    async adminReplyToMessage(id: string, content: string) {
+        return this.request<any>(`/messages/admin/${id}/reply`, {
+            method: 'POST',
+            body: { content }
+        });
+    }
+
+    async updateMessageStatus(id: string, status: string) {
+        return this.request<any>(`/messages/${id}/status`, {
+            method: 'PATCH',
+            body: { status }
+        });
+    }
+
+    async markMessageAsRead(id: string) {
+        return this.request<any>(`/messages/${id}/read`, { method: 'PATCH' });
     }
 
 }

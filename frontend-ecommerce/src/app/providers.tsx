@@ -1,4 +1,4 @@
-import { AuthProvider, CartProvider, TenantProvider, SocketProvider, BusinessProvider, WishlistProvider } from '@/context';
+import { AuthProvider, CartProvider, TenantProvider, SocketProvider, BusinessProvider, WishlistProvider, NotificationProvider } from '@/context';
 import { DEFAULT_TENANT_SLUG } from '@/lib/mock-data';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -7,11 +7,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <SocketProvider>
                 <TenantProvider tenantSlug={DEFAULT_TENANT_SLUG}>
                     <BusinessProvider>
-                        <WishlistProvider>
-                            <CartProvider>
-                                {children}
-                            </CartProvider>
-                        </WishlistProvider>
+                        <NotificationProvider>
+                            <WishlistProvider>
+                                <CartProvider>
+                                    {children}
+                                </CartProvider>
+                            </WishlistProvider>
+                        </NotificationProvider>
                     </BusinessProvider>
                 </TenantProvider>
             </SocketProvider>
