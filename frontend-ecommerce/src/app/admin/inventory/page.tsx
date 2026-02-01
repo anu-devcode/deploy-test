@@ -53,10 +53,12 @@ export default function InventoryPage() {
             setAuditLogs(lData);
 
             // Collect all batches for the batches tab
-            const allBatches = await Promise.all(pData.map(p => api.getProductBatches(p.id)));
+            const allBatches = await Promise.all(pData.map((p: any) => api.getProductBatches(p.id)));
             setBatches(allBatches.flat());
         } catch (error) {
             console.error('Failed to load inventory data:', error);
+            setProducts([]);
+            setAuditLogs([]);
         } finally {
             setLoading(false);
         }

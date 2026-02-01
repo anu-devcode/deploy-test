@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { ArrowLeft, ChevronRight, Lock, Mail, Bell, CheckCircle2, Shield, Smartphone, UserCircle, Camera, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Lock, Mail, Bell, CheckCircle2, Shield, Smartphone, UserCircle, Camera, Trash2, Laptop } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import SecuritySettings from './SecuritySettings';
 
-type Section = 'profile' | 'security' | 'notifications';
+type Section = 'profile' | 'security' | 'notifications' | 'sessions';
 
 export function AccountSettings() {
     const { user, setUser } = useAuth();
@@ -77,6 +78,7 @@ export function AccountSettings() {
     const sections = [
         { id: 'profile' as Section, label: 'Personal Information', desc: 'Avatar, Name, Phone & Region', icon: UserCircle, color: 'bg-slate-900', textColor: 'text-white' },
         { id: 'security' as Section, label: 'Security & Password', desc: 'Password & Authentication', icon: Lock, color: 'bg-rose-50', textColor: 'text-rose-500' },
+        { id: 'sessions' as Section, label: 'Login Security', desc: 'Active Sessions & Devices', icon: Laptop, color: 'bg-blue-50', textColor: 'text-blue-500' },
         { id: 'notifications' as Section, label: 'Notifications', desc: 'Email & SMS Preferences', icon: Bell, color: 'bg-amber-50', textColor: 'text-amber-500' }
     ];
 
@@ -345,6 +347,21 @@ export function AccountSettings() {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {activeSection === 'sessions' && (
+                <div className="bg-white rounded-3xl md:rounded-[2.5rem] p-5 md:p-12 shadow-sm border border-slate-100">
+                    <div className="flex items-center gap-4 mb-8 md:mb-10">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500">
+                            <Laptop className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Login Security</h3>
+                            <p className="text-sm font-bold text-slate-400">Manage active sessions and devices</p>
+                        </div>
+                    </div>
+                    <SecuritySettings />
                 </div>
             )}
 

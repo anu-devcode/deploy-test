@@ -12,6 +12,16 @@ export class AnalyticsController {
         return this.analyticsService.getDashboardStats();
     }
 
+    @Get('inventory-summary')
+    getInventorySummary() {
+        return this.analyticsService.getInventorySummary();
+    }
+
+    @Get('orders-summary')
+    getOrdersSummary() {
+        return this.analyticsService.getOrdersSummary();
+    }
+
     @Get('recent-orders')
     getRecentOrders(@Query('limit') limit?: string) {
         return this.analyticsService.getRecentOrders(limit ? parseInt(limit) : 10);
@@ -35,5 +45,15 @@ export class AnalyticsController {
     @Get('pending-reviews')
     getPendingReviews() {
         return this.analyticsService.getPendingReviews();
+    }
+
+    @Get('alerts')
+    getOperationalAlerts() {
+        return this.analyticsService.getOperationalAlerts();
+    }
+
+    @Get('cart-metrics')
+    getCartMetrics() {
+        return this.analyticsService.getCartMetrics();
     }
 }

@@ -157,6 +157,93 @@ export class WarehouseService {
         });
     }
 
+    async getProductStockMovements(productId: string) {
+        return this.prisma.stockMovement.findMany({
+            where: { productId },
+            include: {
+                warehouse: { select: { name: true } },
+                product: { select: { name: true, sku: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async getAllStockMovements() {
+        return this.prisma.stockMovement.findMany({
+            include: {
+                warehouse: { select: { name: true } },
+                product: { select: { name: true, sku: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 200,
+        });
+    }
+
+    async getProductBatches(productId: string) {
+        // Group movements by batchNumber or just return unique batches
+        const movements = await this.prisma.stockMovement.findMany({
+            where: { productId, NOT: { batchNumber: null } },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // Simple aggregation for now
+        const batches = new Map();
+        movements.forEach(m => {
+            if (!batches.has(m.batchNumber)) {
+                batches.set(m.batchNumber, {
+                    id: m.id,
+                    productId: m.productId,
+                    batchNumber: m.batchNumber,
+                    grade: m.grade,
+                    quantity: 0,
+                    expiryDate: null, // Would need another field in schema for this
+                });
+            }
+            const b = batches.get(m.batchNumber);
+            b.quantity += m.quantity;
+        });
+
+        return Array.from(batches.values());
+    }
+
+    async processMovement(dto: any) {
+        // Find default warehouse if none provided
+        let warehouseId = dto.warehouseId;
+        if (!warehouseId) {
+            const defW = await this.prisma.warehouse.findFirst({ where: { isDefault: true } });
+            if (!defW) {
+                const anyW = await this.prisma.warehouse.findFirst();
+                if (!anyW) throw new NotFoundException('No warehouse found to process movement');
+                warehouseId = anyW.id;
+            } else {
+                warehouseId = defW.id;
+            }
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            const movement = await tx.stockMovement.create({
+                data: {
+                    productId: dto.productId,
+                    warehouseId,
+                    quantity: dto.quantity,
+                    type: dto.type || MovementType.ADJUSTMENT,
+                    notes: dto.notes,
+                    batchNumber: dto.batchNumber,
+                    grade: dto.grade,
+                },
+            });
+
+            await tx.product.update({
+                where: { id: dto.productId },
+                data: {
+                    stock: { increment: dto.quantity },
+                },
+            });
+
+            return movement;
+        });
+    }
+
     async getInventorySummary() {
         const [totalProducts, lowStockProducts, outOfStockProducts, warehouses] = await Promise.all([
             this.prisma.product.count(),

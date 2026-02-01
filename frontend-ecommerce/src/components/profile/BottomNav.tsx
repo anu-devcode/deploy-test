@@ -7,7 +7,8 @@ import {
     Wallet as WalletIcon,
     Settings,
     CreditCard,
-    Heart
+    Heart,
+    Shield
 } from 'lucide-react';
 
 interface BottomNavProps {
@@ -19,8 +20,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     const tabs = [
         { id: 'overview', label: 'Home', icon: LayoutDashboard },
         { id: 'orders', label: 'Orders', icon: ShoppingBag },
-        { id: 'wishlist', label: 'Wishlist', icon: Heart },
-        { id: 'settings', label: 'More', icon: Settings },
+        { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
     return (

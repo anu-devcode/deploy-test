@@ -9,8 +9,10 @@ interface AuthInputProps {
     placeholder: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBlur?: () => void;
     required?: boolean;
     error?: string;
+    hasError?: boolean;
     rightElement?: React.ReactNode;
 }
 
@@ -21,27 +23,37 @@ export default function AuthInput({
     placeholder,
     value,
     onChange,
+    onBlur,
     required = false,
     error,
+    hasError = false,
     rightElement
 }: AuthInputProps) {
+    const showError = hasError || !!error;
+
     return (
         <div className="space-y-3">
             <div className="flex justify-between items-center px-4">
-                <label className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{label}</label>
+                <label className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${showError ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {label}
+                </label>
                 {rightElement}
             </div>
             <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-lime-500/20 rounded-2xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+                <div className={`absolute inset-0 rounded-2xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 ${showError ? 'bg-red-500/20' : 'bg-gradient-to-r from-emerald-500/20 to-lime-500/20'}`} />
                 <div className="relative">
-                    <Icon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-100/20 group-focus-within:text-emerald-400 transition-all duration-300" />
+                    <Icon className={`absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${showError ? 'text-red-400/50 group-focus-within:text-red-400' : 'text-emerald-100/20 group-focus-within:text-emerald-400'}`} />
                     <input
                         type={type}
                         required={required}
                         placeholder={placeholder}
-                        className={`w-full bg-white/[0.04] border ${error ? 'border-red-500/50' : 'border-white/10'} rounded-2xl py-5 pl-14 pr-6 text-white text-sm font-medium placeholder:text-emerald-100/10 focus:outline-none focus:ring-1 focus:ring-emerald-500/30 focus:bg-white/[0.06] transition-all duration-300 shadow-inner`}
+                        className={`w-full bg-white/[0.04] border rounded-2xl py-5 pl-14 pr-6 text-white text-sm font-medium placeholder:text-emerald-100/10 focus:outline-none focus:ring-1 transition-all duration-300 shadow-inner ${showError
+                            ? 'border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50'
+                            : 'border-white/10 focus:ring-emerald-500/30 focus:bg-white/[0.06]'
+                            }`}
                         value={value}
                         onChange={onChange}
+                        onBlur={onBlur}
                     />
                 </div>
             </div>

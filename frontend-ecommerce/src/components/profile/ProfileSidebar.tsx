@@ -12,7 +12,8 @@ import {
     Wallet,
     CreditCard,
     Heart,
-    MessageSquare
+    MessageSquare,
+    Shield
 } from 'lucide-react';
 
 interface ProfileSidebarProps {

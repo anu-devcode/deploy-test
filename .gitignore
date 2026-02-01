@@ -1,11 +1,35 @@
-# Nestjs specific
-/dist
-/node_modules
-/build
-/tmp
+# ===============================
+# Dependencies
+# ===============================
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
+# ===============================
+# Build outputs
+# ===============================
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# ===============================
+# Environment files
+# ===============================
+.env
+.env.*
+!.env.example
+
+# ===============================
 # Logs
-logs
+# ===============================
+logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
@@ -13,12 +37,66 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# dotenv environment variable files
-.env
-.env.development
-.env.test
-.env.production
+# ===============================
+# Cache and temp directories
+# ===============================
+.temp/
+.tmp/
+.cache/
+*.cache
+.turbo/
 
-# temp directory
-.temp
-.tmp
+# ===============================
+# IDE and editors
+# ===============================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# ===============================
+# OS generated files
+# ===============================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# ===============================
+# Testing and coverage
+# ===============================
+coverage/
+.nyc_output/
+*.lcov
+
+# ===============================
+# Prisma
+# ===============================
+**/generated/prisma/
+
+# ===============================
+# Vercel
+# ===============================
+.vercel/
+
+# ===============================
+# Debug
+# ===============================
+*.pem
+
+# ===============================
+# Package manager locks (keep only one)
+# Uncomment the ones you don't use
+# ===============================
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+
+# ===============================
+# Misc
+# ===============================
+*.local
+.eslintcache
+.stylelintcache

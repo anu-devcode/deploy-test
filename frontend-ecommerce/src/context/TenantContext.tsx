@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
-import { getTenantBySlug } from "@/lib/mock-data";
 import type { Tenant } from "@/types";
 
 type TenantContextValue = {
@@ -18,13 +17,15 @@ export function TenantProvider({
   children: React.ReactNode;
 }) {
   const tenant = useMemo(() => {
-    const t = getTenantBySlug(tenantSlug);
-    if (!t) {
-      // Keep this frontend-only: fail fast if a route points to an unknown tenant.
-      throw new Error(`Unknown tenant slug: ${tenantSlug}`);
-    }
-    return t;
-  }, [tenantSlug]);
+    // Default system tenant
+    return {
+      id: "t_ag_001",
+      slug: "adis-harvest",
+      name: "Adis Harvest",
+      industry: "agriculture" as any,
+      theme: { primaryColor: "#10b981", secondaryColor: "#14b8a6", logoText: "Adis" },
+    };
+  }, []);
 
   return (
     <TenantContext.Provider value={{ tenant }}>

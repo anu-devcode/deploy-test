@@ -61,4 +61,9 @@ export class StorefrontController {
     getTenantConfig(@Param('slug') slug: string) {
         return this.storefrontService.getTenantConfig(slug);
     }
+
+    @Get('promotions')
+    getPromotions() {
+        return this.storefrontService.getPromotions();
+    }
 }

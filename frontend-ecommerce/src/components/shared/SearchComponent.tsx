@@ -112,7 +112,8 @@ export function SearchComponent() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search products..."
-                className={`w-full bg-transparent h-10 md:h-12 pl-12 pr-10 rounded-full outline-none text-sm md:text-base text-slate-800 placeholder:text-slate-400 font-medium transition-all duration-500 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none w-0'}`}
+                className={`w-full bg-transparent h-10 md:h-12 pl-12 pr-10 rounded-full outline-none text-sm md:text-base font-medium transition-all duration-500 ${isOpen ? 'opacity-100 pointer-events-auto text-gray-900 placeholder:text-gray-400 caret-indigo-600' : 'opacity-0 pointer-events-none w-0'}`}
+                style={{ color: '#111827' }}
             />
 
             {/* Icon Button */}

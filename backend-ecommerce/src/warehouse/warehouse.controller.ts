@@ -49,8 +49,34 @@ export class WarehouseController {
         return this.warehouseService.adjustStock(id, dto);
     }
 
-    @Get(':id/movements')
-    getMovements(@Param('id') id: string) {
-        return this.warehouseService.getStockMovements(id);
+    @Get('stock-logs')
+    getStockAuditLogs() {
+        return this.warehouseService.getAllStockMovements();
+    }
+
+    @Get('stock-logs/product/:productId')
+    getProductStockLogs(@Param('productId') productId: string) {
+        return this.warehouseService.getProductStockMovements(productId);
+    }
+
+    @Get('batches/product/:productId')
+    getProductBatches(@Param('productId') productId: string) {
+        return this.warehouseService.getProductBatches(productId);
+    }
+
+    @Post('stock-movement')
+    processStockMovement(@Body() data: any) {
+        // Map frontend fields like 'action' to 'type'
+        const dto: StockAdjustmentDto = {
+            productId: data.productId,
+            quantity: data.action === 'STOCK_OUT' ? -Math.abs(data.quantity) : Math.abs(data.quantity),
+            type: data.action as any,
+            notes: data.reason,
+            batchNumber: data.batchNumber,
+            grade: data.grade,
+        };
+        // We'll need a default warehouse if not provided, or frontend should send it.
+        // Assuming default warehouse for now if not specified.
+        return this.warehouseService.processMovement(dto);
     }
 }

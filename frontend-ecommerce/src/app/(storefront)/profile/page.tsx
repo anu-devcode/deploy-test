@@ -16,6 +16,7 @@ import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { BottomNav } from '@/components/profile/BottomNav';
 import { Wishlist } from '@/components/profile/Wishlist';
 import { ActivityCenter } from '@/components/profile/ActivityCenter';
+import SecuritySettings from '@/components/profile/SecuritySettings';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -24,7 +25,8 @@ import {
     Settings,
     CreditCard,
     Heart,
-    MessageSquare
+    MessageSquare,
+    Shield
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -65,8 +67,8 @@ export default function ProfilePage() {
             setLoading(true);
             try {
                 const allOrders = await api.getOrders();
-                // Filter orders for current user (Mock logic)
-                const myOrders = allOrders.filter(o =>
+                // Filter orders for current user
+                const myOrders = allOrders.filter((o: Order) =>
                     o.customer?.email === user?.email ||
                     o.guestEmail === user?.email
                 );
@@ -138,7 +140,7 @@ export default function ProfilePage() {
                                     { id: 'billing', label: 'Billing', icon: CreditCard },
                                     { id: 'wallet', label: 'Wallet', icon: WalletIcon },
                                     { id: 'settings', label: 'Settings', icon: Settings },
-                                ].map((tab) => {
+                                ].map((tab: any) => {
                                     const Icon = tab.icon;
                                     const isActive = activeTab === tab.id;
                                     return (

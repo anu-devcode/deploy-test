@@ -9,13 +9,12 @@ export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
     @Post()
-    @Post()
     create(@Body() dto: CreateOrderDto) {
         return this.ordersService.create(dto);
     }
 
     // Public tracking for guests
-    @Get('track/email')
+    @Get('track')
     trackByEmail(@Query('orderNumber') orderNumber: string, @Query('email') email: string) {
         return this.ordersService.trackByEmail(orderNumber, email);
     }
@@ -25,8 +24,6 @@ export class OrdersController {
         return this.ordersService.trackByToken(token);
     }
 
-    @Get()
-    @UseGuards(AuthGuard('jwt'))
     @Get()
     @UseGuards(AuthGuard('jwt'))
     findAll() {

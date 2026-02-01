@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
             // Setup default tenant for admin
             setTenant('brolf-main');
 
-            const userData = await login(email, password);
+            const userData = await login(email, password, 'ADMIN');
 
             if (userData.requiresPasswordChange) {
                 setLoggedInUser(userData);

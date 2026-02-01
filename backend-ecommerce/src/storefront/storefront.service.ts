@@ -162,4 +162,11 @@ export class StorefrontService {
             orderBy: { createdAt: 'desc' },
         });
     }
+
+    async getPromotions() {
+        return this.prisma.promotion.findMany({
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 }

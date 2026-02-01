@@ -2,14 +2,20 @@ import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/c
 import { WishlistService } from './wishlist.service';
 import { AddToWishlistDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from '../common/decorators';
 
 @Controller('wishlist')
 @UseGuards(AuthGuard('jwt'))
 export class WishlistController {
     constructor(private readonly wishlistService: WishlistService) { }
 
+    @Get()
+    getWishlist(@CurrentUser() user: any) {
+        return this.wishlistService.getWishlist(user.id);
+    }
+
     @Get(':customerId')
-    getWishlist(@Param('customerId') customerId: string) {
+    getWishlistById(@Param('customerId') customerId: string) {
         return this.wishlistService.getWishlist(customerId);
     }
 
@@ -29,8 +35,13 @@ export class WishlistController {
         return this.wishlistService.removeFromWishlist(customerId, productId);
     }
 
+    @Delete()
+    clearWishlist(@CurrentUser() user: any) {
+        return this.wishlistService.clearWishlist(user.id);
+    }
+
     @Delete(':customerId')
-    clearWishlist(@Param('customerId') customerId: string) {
+    clearWishlistById(@Param('customerId') customerId: string) {
         return this.wishlistService.clearWishlist(customerId);
     }
 }

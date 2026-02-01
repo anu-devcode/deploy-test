@@ -1,5 +1,6 @@
 import { AuthProvider, CartProvider, TenantProvider, SocketProvider, BusinessProvider, WishlistProvider, NotificationProvider } from '@/context';
-import { DEFAULT_TENANT_SLUG } from '@/lib/mock-data';
+// Default tenant slug used for legacy context
+const DEFAULT_TENANT_SLUG = "adis-harvest";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (

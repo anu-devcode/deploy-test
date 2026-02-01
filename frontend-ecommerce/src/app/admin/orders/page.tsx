@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { seedOrders } from '@/lib/mock-data';
 import {
     ShoppingCart,
     Search,
@@ -44,11 +43,11 @@ export default function AdminOrdersPage() {
         try {
             setLoading(true);
             const data = await api.getOrders();
-            const combinedOrders = (data as any[]).length > 0 ? (data as any as Order[]) : seedOrders;
+            const combinedOrders = (data as any[]).length > 0 ? (data as any as Order[]) : [];
             setOrders(combinedOrders);
         } catch (error) {
             console.error('Failed to fetch orders:', error);
-            setOrders(seedOrders);
+            setOrders([]);
         } finally {
             setLoading(false);
         }

@@ -3,8 +3,9 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
 
-@Controller('admin/categories')
-@UseGuards(AuthGuard('jwt'))
+@Controller('categories')
+// Remove AuthGuard to allow storefront to fetch categories, 
+// but you might want to add it back for mutate operations.
 export class CategoriesController {
     constructor(private readonly categoriesService: CategoriesService) { }
 

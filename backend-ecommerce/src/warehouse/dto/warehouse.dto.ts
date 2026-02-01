@@ -65,4 +65,16 @@ export class StockAdjustmentDto {
     @IsOptional()
     @IsString()
     notes?: string;
+
+    @IsOptional()
+    @IsString()
+    batchNumber?: string;
+
+    @IsOptional()
+    @IsString()
+    grade?: string;
+
+    @IsOptional()
+    @IsString()
+    userId?: string;
 }

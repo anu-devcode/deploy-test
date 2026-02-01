@@ -2,52 +2,53 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@n
 import { CartService } from './cart.service';
 import { AddToCartDto, UpdateCartItemDto, CheckoutDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from '../common/decorators';
 
 @Controller('cart')
 @UseGuards(AuthGuard('jwt'))
 export class CartController {
     constructor(private readonly cartService: CartService) { }
 
-    @Get(':customerId')
-    getCart(@Param('customerId') customerId: string) {
-        return this.cartService.getOrCreateCart(customerId);
+    @Get()
+    getCart(@CurrentUser() user: any) {
+        return this.cartService.getOrCreateCart(user.id);
     }
 
-    @Post(':customerId/items')
+    @Post('items')
     addToCart(
-        @Param('customerId') customerId: string,
+        @CurrentUser() user: any,
         @Body() dto: AddToCartDto,
     ) {
-        return this.cartService.addToCart(customerId, dto);
+        return this.cartService.addToCart(user.id, dto);
     }
 
-    @Patch(':customerId/items/:productId')
+    @Patch('items/:productId')
     updateCartItem(
-        @Param('customerId') customerId: string,
+        @CurrentUser() user: any,
         @Param('productId') productId: string,
         @Body() dto: UpdateCartItemDto,
     ) {
-        return this.cartService.updateCartItem(customerId, productId, dto);
+        return this.cartService.updateCartItem(user.id, productId, dto);
     }
 
-    @Delete(':customerId/items/:productId')
+    @Delete('items/:productId')
     removeFromCart(
-        @Param('customerId') customerId: string,
+        @CurrentUser() user: any,
         @Param('productId') productId: string,
     ) {
-        return this.cartService.removeFromCart(customerId, productId);
+        return this.cartService.removeFromCart(user.id, productId);
     }
 
-    @Delete(':customerId')
-    clearCart(@Param('customerId') customerId: string) {
-        return this.cartService.clearCart(customerId);
+    @Delete()
+    clearCart(@CurrentUser() user: any) {
+        return this.cartService.clearCart(user.id);
     }
 
-    @Post(':customerId/checkout')
+    @Post('checkout')
     checkout(
-        @Param('customerId') customerId: string,
+        @CurrentUser() user: any,
         @Body() dto: CheckoutDto,
     ) {
-        return this.cartService.checkout(customerId, dto);
+        return this.cartService.checkout(user.id, dto);
     }
 }

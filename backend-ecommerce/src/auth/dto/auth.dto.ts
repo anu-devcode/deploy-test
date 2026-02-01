@@ -6,12 +6,17 @@ export class RegisterDto {
     email: string;
 
     @IsNotEmpty()
-    @MinLength(6)
+    @MinLength(8, { message: 'Password must be at least 8 characters long' })
     password: string;
 
     @IsOptional()
     @IsEnum(Role)
     role?: Role;
+}
+
+export enum AuthPortal {
+    STOREFRONT = 'STOREFRONT',
+    ADMIN = 'ADMIN'
 }
 
 export class LoginDto {
@@ -20,6 +25,10 @@ export class LoginDto {
 
     @IsNotEmpty()
     password: string;
+
+    @IsOptional()
+    @IsEnum(AuthPortal)
+    portal?: AuthPortal = AuthPortal.STOREFRONT;
 }
 
 export class RequestResetDto {
@@ -32,6 +41,6 @@ export class ResetPasswordDto {
     token: string;
 
     @IsNotEmpty()
-    @MinLength(6)
+    @MinLength(8, { message: 'Password must be at least 8 characters long' })
     password: string;
 }

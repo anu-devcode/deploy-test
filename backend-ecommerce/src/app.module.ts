@@ -24,7 +24,7 @@ import { PromotionsModule } from './promotions/promotions.module';
 import { StaffModule } from './staff/staff.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
-// import { EventsModule } from './events'; // Temporary: Disabled due to dependency issue
+import { EventsModule } from './events';
 
 @Module({
   imports: [
@@ -51,7 +51,7 @@ import { MessagesModule } from './messages/messages.module';
     StaffModule,
     NotificationsModule,
     MessagesModule,
-    // EventsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

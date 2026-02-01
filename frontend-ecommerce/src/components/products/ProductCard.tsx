@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Product } from '@/lib/api';
 import { Heart, Eye, ShoppingCart, Star, Plus, Minus, Zap, Store } from 'lucide-react';
 import { useCart, useBusiness, useWishlist } from '@/context';
-import { tenants } from '@/lib/mock-data';
 
 interface ProductCardProps {
   product: Product;
@@ -12,7 +11,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, updateQuantity, items } = useCart();
   const { mode } = useBusiness();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const tenant = tenants.find(t => t.id === product.tenantId);
+
+  // Use safe defaults for branding
+  const primaryColor = '#10b981';
+  const secondaryColor = '#14b8a6';
+  const logoText = 'A';
 
   const cartItem = (items || []).find(i => i.productId === product.id);
 
@@ -48,7 +51,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div
             className="w-full h-full flex items-center justify-center text-7xl"
             style={{
-              background: `linear-gradient(135deg, ${tenant?.theme.primaryColor || '#10b981'}10 0%, ${tenant?.theme.secondaryColor || tenant?.theme.primaryColor || '#14b8a6'}10 100%)`
+              background: `linear-gradient(135deg, ${primaryColor}10 0%, ${secondaryColor}10 100%)`
             }}
           >
             <span className="opacity-80 group-hover:scale-110 transition-transform duration-500">
@@ -60,7 +63,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
           <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[9px] font-bold text-emerald-800 uppercase tracking-wider shadow-sm border border-emerald-50">
-            {tenant?.industry || 'General'}
+            {typeof product.category === 'string' ? product.category : product.category?.name || 'General'}
           </span>
           {isBulk && (
             <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
@@ -85,8 +88,8 @@ export function ProductCard({ product }: ProductCardProps) {
             toggleWishlist(product.id);
           }}
           className={`w-9 h-9 rounded-full shadow-md flex items-center justify-center transition-all ${isInWishlist(product.id)
-              ? 'bg-rose-500 text-white hover:bg-rose-600'
-              : 'bg-white text-slate-600 hover:bg-emerald-600 hover:text-white'
+            ? 'bg-rose-500 text-white hover:bg-rose-600'
+            : 'bg-white text-slate-600 hover:bg-emerald-600 hover:text-white'
             }`}
         >
           <Heart className={`w-3.5 h-3.5 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
@@ -134,16 +137,16 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </h3>
 
-        {/* Tenant Branding - More subtle */}
+        {/* Product Branding - Minimalist */}
         <div className="flex items-center gap-2 relative z-10 pointer-events-none">
           <div
             className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm"
-            style={{ backgroundColor: tenant?.theme.primaryColor || '#10b981' }}
+            style={{ backgroundColor: primaryColor }}
           >
-            {tenant?.theme.logoText?.[0] || 'B'}
+            {logoText}
           </div>
           <span className="text-[10px] font-medium text-slate-400">
-            {tenant?.name || 'Brolf'}
+            Adis Harvest
           </span>
         </div>
 

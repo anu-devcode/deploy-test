@@ -6,10 +6,10 @@ import api, { Permission } from '@/lib/api';
 interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
-    token: string | null;
     tenantId: string | null;
-    login: (email: string, password: string) => Promise<any>;
-    logout: () => void;
+    login: (email: string, password: string, portal?: 'STOREFRONT' | 'ADMIN') => Promise<any>;
+    logout: () => Promise<void>;
+    deleteAccount: () => Promise<void>;
     setTenant: (tenantId: string) => void;
     setIsAuthenticated: (val: boolean) => void;
     setUser: (user: User | null) => void;
@@ -24,6 +24,7 @@ interface User {
     role: string;
     permissions: Permission[];
     requiresPasswordChange: boolean;
+    isPrimary?: boolean;
     preferences?: {
         locale?: string;
         timezone?: string;
@@ -35,99 +36,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const [token, setTokenState] = useState<string | null>(null);
     const [tenantId, setTenantId] = useState<string | null>(null);
 
     useEffect(() => {
-        // Check for stored auth on mount
-        const token = localStorage.getItem('token');
-        const storedTenantId = localStorage.getItem('tenantId');
+        // Hydrate from localStorage for fast UI, then verify session
         const storedUser = localStorage.getItem('user');
+        const storedTenantId = localStorage.getItem('tenantId');
 
-        if (token && storedTenantId) {
-            api.setToken(token);
+        if (storedTenantId) {
             api.setTenantId(storedTenantId);
-            setIsAuthenticated(true);
-            setTokenState(token);
             setTenantId(storedTenantId);
-            if (storedUser) {
-                try {
-                    const parsedUser = JSON.parse(storedUser);
-                    setUser({
-                        id: parsedUser.id || 'unknown',
-                        email: parsedUser.email || '',
-                        name: parsedUser.name,
-                        phone: parsedUser.phone,
-                        avatar: parsedUser.avatar,
-                        role: parsedUser.role || 'STAFF',
-                        permissions: parsedUser.permissions || [],
-                        requiresPasswordChange: parsedUser.requiresPasswordChange || false,
-                        preferences: parsedUser.preferences
-                    });
-                } catch (e) {
-                    console.error('Failed to parse stored user', e);
-                    localStorage.removeItem('user');
-                }
+        }
+
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+                setIsAuthenticated(true);
+            } catch (e) {
+                console.error('Failed to parse stored user', e);
             }
         }
+
+        // Ideally call a `/auth/me` or similar to verify cookie session
+        // api.getProfile().then(user => { ... }).catch(() => logout())
     }, []);
 
-    const login = async (email: string, password: string) => {
-        // "For now" admin bypass
-        if (email === 'admin@brolf.tech' && password === '1234567') {
-            const mockToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(JSON.stringify({ email, role: 'ADMIN', sub: 'demo-admin-id' }))}.signature`;
-            localStorage.setItem('token', mockToken);
-            api.setToken(mockToken);
-            setIsAuthenticated(true);
-            setTokenState(mockToken);
-            const userData: User = {
-                id: 'demo-admin-id',
-                email,
-                role: 'ADMIN',
-                permissions: ['ALL'],
-                requiresPasswordChange: false
-            };
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            return;
-        }
-
-        const response = await api.login(email, password);
-        localStorage.setItem('token', response.access_token);
-        api.setToken(response.access_token);
-        setTokenState(response.access_token);
-
-        // Decode JWT to get user info (using window.atob for mock)
-        const payload = JSON.parse(atob(response.access_token.split('.')[1]));
-        const userData: User = {
-            id: payload.sub,
-            email: payload.email,
-            name: payload.name,
-            role: payload.role,
-            permissions: payload.permissions || [],
-            requiresPasswordChange: payload.requiresPasswordChange || false,
-            // Mock preferences for now
-            preferences: {
-                locale: 'en-US',
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            }
-        };
+    const login = async (email: string, password: string, portal: 'STOREFRONT' | 'ADMIN' = 'STOREFRONT') => {
+        const response = await api.login(email, password, portal);
+        // response.user contains all necessary fields
+        const userData = response.user;
 
         if (!userData.requiresPasswordChange) {
             setIsAuthenticated(true);
-            setTokenState(response.access_token);
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
         }
 
-        return userData; // Return to handle "Requires Change" redirect in UI
+        return userData;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
+    const logout = async () => {
+        try {
+            await api.logout();
+        } catch (e) {
+            console.error('Logout failed', e);
+        }
         localStorage.removeItem('user');
         setIsAuthenticated(false);
-        setTokenState(null);
+        setUser(null);
+    };
+
+    const deleteAccount = async () => {
+        await api.deleteAccount();
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
         setUser(null);
     };
 
@@ -141,10 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <AuthContext.Provider value={{
             isAuthenticated,
             user,
-            token,
             tenantId,
             login,
             logout,
+            deleteAccount,
             setTenant,
             setIsAuthenticated,
             setUser

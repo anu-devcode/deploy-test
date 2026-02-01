@@ -22,7 +22,7 @@ function RegisterContent() {
 
         setLoading(true);
         try {
-            await api.register(data.email, data.password, data.role);
+            await api.register(data.email, data.password);
             router.push('/login?registered=true');
         } catch (err: any) {
             setError(err.message || 'Sign up failed. Try again.');

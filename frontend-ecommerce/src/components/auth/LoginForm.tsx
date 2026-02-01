@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Mail, Lock, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 import AuthInput from './AuthInput';
 import SocialAuth from './SocialAuth';
 
@@ -13,15 +13,33 @@ interface LoginFormProps {
     success?: string | null;
 }
 
+// Validation helpers
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPassword = (password: string) => password.length >= 8;
+
 export default function LoginForm({ onSubmit, loading, error, success }: LoginFormProps) {
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
+    const [touched, setTouched] = useState({ email: false, password: false });
+
+    const validation = useMemo(() => ({
+        email: touched.email && !isValidEmail(formData.email) ? 'Please enter a valid email address' : null,
+        password: touched.password && !isValidPassword(formData.password) ? 'Password must be at least 8 characters' : null
+    }), [formData, touched]);
+
+    const isFormValid = isValidEmail(formData.email) && isValidPassword(formData.password);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setTouched({ email: true, password: true });
+        if (!isFormValid) return;
         await onSubmit(formData);
+    };
+
+    const handleBlur = (field: 'email' | 'password') => {
+        setTouched(prev => ({ ...prev, [field]: true }));
     };
 
     return (
@@ -40,32 +58,52 @@ export default function LoginForm({ onSubmit, loading, error, success }: LoginFo
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                <AuthInput
-                    label="Email"
-                    icon={Mail}
-                    type="email"
-                    placeholder="email@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+                <div className="space-y-2">
+                    <AuthInput
+                        label="Email"
+                        icon={Mail}
+                        type="email"
+                        placeholder="email@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onBlur={() => handleBlur('email')}
+                        hasError={!!validation.email}
+                    />
+                    {validation.email && (
+                        <div className="flex items-center gap-2 px-4 text-red-400 text-[10px] font-bold uppercase tracking-wide">
+                            <AlertCircle className="w-3 h-3" />
+                            {validation.email}
+                        </div>
+                    )}
+                </div>
 
-                <AuthInput
-                    label="Password"
-                    icon={Lock}
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    rightElement={
-                        <Link href="#" className="text-[10px] font-black text-emerald-100/20 hover:text-emerald-400 uppercase tracking-widest transition-colors">
-                            Forgot?
-                        </Link>
-                    }
-                />
+                <div className="space-y-2">
+                    <AuthInput
+                        label="Password"
+                        icon={Lock}
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onBlur={() => handleBlur('password')}
+                        hasError={!!validation.password}
+                        rightElement={
+                            <Link href="#" className="text-[10px] font-black text-emerald-100/20 hover:text-emerald-400 uppercase tracking-widest transition-colors">
+                                Forgot?
+                            </Link>
+                        }
+                    />
+                    {validation.password && (
+                        <div className="flex items-center gap-2 px-4 text-red-400 text-[10px] font-bold uppercase tracking-wide">
+                            <AlertCircle className="w-3 h-3" />
+                            {validation.password}
+                        </div>
+                    )}
+                </div>
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !isFormValid}
                     className="group relative w-full py-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-slate-950 font-black text-sm uppercase tracking-[0.2em] overflow-hidden transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span className="relative z-10 flex items-center justify-center gap-4">

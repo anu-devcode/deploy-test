@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, Sparkles, ShieldCheck } from 'lucide-react';
+import { User, Mail, Lock, ShieldCheck, AlertCircle } from 'lucide-react';
 import AuthInput from './AuthInput';
 import SocialAuth from './SocialAuth';
 
@@ -11,6 +11,10 @@ interface RegisterFormProps {
     loading: boolean;
     error: string | null;
 }
+
+// Validation helpers
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPassword = (password: string) => password.length >= 8;
 
 export default function RegisterForm({ onSubmit, loading, error }: RegisterFormProps) {
     const [formData, setFormData] = useState({
@@ -21,11 +25,52 @@ export default function RegisterForm({ onSubmit, loading, error }: RegisterFormP
         confirmPassword: '',
         role: 'CUSTOMER'
     });
+    const [touched, setTouched] = useState({
+        firstName: false,
+        lastName: false,
+        email: false,
+        password: false,
+        confirmPassword: false
+    });
+
+    const validation = useMemo(() => ({
+        firstName: touched.firstName && !formData.firstName.trim() ? 'First name is required' : null,
+        lastName: touched.lastName && !formData.lastName.trim() ? 'Last name is required' : null,
+        email: touched.email && !isValidEmail(formData.email) ? 'Please enter a valid email address' : null,
+        password: touched.password && !isValidPassword(formData.password) ? 'Password must be at least 8 characters' : null,
+        confirmPassword: touched.confirmPassword && formData.password !== formData.confirmPassword ? 'Passwords do not match' : null
+    }), [formData, touched]);
+
+    const isFormValid =
+        formData.firstName.trim() &&
+        formData.lastName.trim() &&
+        isValidEmail(formData.email) &&
+        isValidPassword(formData.password) &&
+        formData.password === formData.confirmPassword;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setTouched({
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true,
+            confirmPassword: true
+        });
+        if (!isFormValid) return;
         await onSubmit(formData);
     };
+
+    const handleBlur = (field: keyof typeof touched) => {
+        setTouched(prev => ({ ...prev, [field]: true }));
+    };
+
+    const renderError = (message: string | null) => message && (
+        <div className="flex items-center gap-2 px-4 text-red-400 text-[10px] font-bold uppercase tracking-wide">
+            <AlertCircle className="w-3 h-3" />
+            {message}
+        </div>
+    );
 
     return (
         <div className="space-y-6 animate-[fade-in_0.5s_ease-out]">
@@ -37,76 +82,85 @@ export default function RegisterForm({ onSubmit, loading, error }: RegisterFormP
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
-                    <AuthInput
-                        label="First Name"
-                        icon={User}
-                        type="text"
-                        placeholder="John"
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        required
-                    />
-                    <AuthInput
-                        label="Last Name"
-                        icon={User}
-                        type="text"
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        required
-                    />
-                </div>
-
-                <AuthInput
-                    label="Email"
-                    icon={Mail}
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                />
-
-                <div className="space-y-3 px-4">
-                    <label className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Select Role</label>
-                    <div className="relative group">
-                        <Sparkles className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-100/20 group-focus-within:text-emerald-400 transition-colors" />
-                        <select
-                            className="w-full bg-white/[0.04] border border-white/10 rounded-2xl py-5 pl-14 pr-6 text-white text-sm font-medium appearance-none focus:outline-none focus:ring-1 focus:ring-emerald-500/30 focus:bg-white/[0.06] transition-all"
-                            value={formData.role}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        >
-                            <option value="CUSTOMER" className="bg-[#020c0b]">Customer</option>
-                            <option value="FARMER" className="bg-[#020c0b]">Farmer</option>
-                            <option value="EXPORTER" className="bg-[#020c0b]">Exporter</option>
-                        </select>
+                    <div className="space-y-1">
+                        <AuthInput
+                            label="First Name"
+                            icon={User}
+                            type="text"
+                            placeholder="John"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                            onBlur={() => handleBlur('firstName')}
+                            hasError={!!validation.firstName}
+                            required
+                        />
+                        {renderError(validation.firstName)}
+                    </div>
+                    <div className="space-y-1">
+                        <AuthInput
+                            label="Last Name"
+                            icon={User}
+                            type="text"
+                            placeholder="Doe"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            onBlur={() => handleBlur('lastName')}
+                            hasError={!!validation.lastName}
+                            required
+                        />
+                        {renderError(validation.lastName)}
                     </div>
                 </div>
 
+                <div className="space-y-1">
+                    <AuthInput
+                        label="Email"
+                        icon={Mail}
+                        type="email"
+                        placeholder="john@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onBlur={() => handleBlur('email')}
+                        hasError={!!validation.email}
+                        required
+                    />
+                    {renderError(validation.email)}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                    <AuthInput
-                        label="Password"
-                        icon={Lock}
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        required
-                    />
-                    <AuthInput
-                        label="Confirm Password"
-                        icon={Lock}
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        required
-                    />
+                    <div className="space-y-1">
+                        <AuthInput
+                            label="Password"
+                            icon={Lock}
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            onBlur={() => handleBlur('password')}
+                            hasError={!!validation.password}
+                            required
+                        />
+                        {renderError(validation.password)}
+                    </div>
+                    <div className="space-y-1">
+                        <AuthInput
+                            label="Confirm Password"
+                            icon={Lock}
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.confirmPassword}
+                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            onBlur={() => handleBlur('confirmPassword')}
+                            hasError={!!validation.confirmPassword}
+                            required
+                        />
+                        {renderError(validation.confirmPassword)}
+                    </div>
                 </div>
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !isFormValid}
                     className="group relative w-full py-6 mt-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-500 text-slate-950 font-black text-sm uppercase tracking-[0.2em] overflow-hidden transition-all hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span className="relative z-10 flex items-center justify-center gap-4">

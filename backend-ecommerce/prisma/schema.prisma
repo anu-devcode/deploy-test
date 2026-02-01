@@ -11,12 +11,36 @@ model User {
   id             String   @id @default(uuid())
   email          String   @unique
   password       String
-  role           Role     @default(STAFF)
+  role           Role     @default(CUSTOMER)
   isFirstLogin   Boolean  @default(true)
+  isSocialLoginEnabled Boolean @default(true) // Admin toggle
+  deletedAt      DateTime? // Soft delete coverage
+  
+  // Two-Factor Authentication
+  twoFactorEnabled    Boolean @default(false)
+  twoFactorMethod     String? // 'email', 'authenticator', 'sms'
+  twoFactorSecret     String? // TOTP secret for authenticator apps
+  twoFactorBackupCodes String[] // Backup codes for recovery
+  
   permissions    UserPermission[]
   passwordResetTokens PasswordResetToken[]
+  refreshTokens  RefreshToken[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  isPrimary Boolean  @default(false)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  lastUsedAt DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Product {
@@ -240,6 +264,9 @@ model StockMovement {
   quantity    Int           // Positive for in, negative for out
   type        MovementType
   reference   String?       // Order ID, adjustment ID, etc.
+  batchNumber String?       // For batch tracking
+  grade       String?       // For quality grading (e.g., Premium, Grade A)
+  userId      String?       // To track who performed the movement
   notes       String?
   createdAt   DateTime      @default(now())
 }
@@ -306,6 +333,7 @@ enum Role {
   SUPERADMIN
   ADMIN
   STAFF
+  CUSTOMER
 }
 
 enum OrderStatus {
@@ -479,4 +507,10 @@ model Promotion {
   updatedAt      DateTime         @updatedAt
 
   @@index([code])
+}
+
+model StoreConfig {
+  id                  String   @id @default("global")
+  isSocialLoginEnabled Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
 }

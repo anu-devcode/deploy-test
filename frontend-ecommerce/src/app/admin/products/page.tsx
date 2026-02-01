@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
-import { seedProducts } from '@/lib/mock-data';
 import {
     Plus,
     Search,
@@ -78,12 +77,12 @@ export default function AdminProductsPage() {
                 api.getCategories()
             ]);
 
-            const combinedProducts = (pData as any[]).length > 0 ? (pData as any as Product[]) : seedProducts;
+            const combinedProducts = (pData as any[]).length > 0 ? (pData as any as Product[]) : [];
             setProducts(combinedProducts);
             setCategories(cData as any);
         } catch (error) {
             console.error('Failed to load data:', error);
-            setProducts(seedProducts);
+            setProducts([]);
         } finally {
             setLoading(false);
         }

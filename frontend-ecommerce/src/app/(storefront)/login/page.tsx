@@ -21,7 +21,7 @@ function LoginContent() {
         setLoading(true);
 
         try {
-            const user = await login(data.email, data.password);
+            const user = await login(data.email, data.password, 'STOREFRONT');
 
             if (user?.role === 'ADMIN' || user?.role === 'STAFF') {
                 router.push('/admin');

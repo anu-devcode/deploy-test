@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { seedProducts, tenants } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import { FilterSection, Testimonials, ProductsSection, HowItWorks, BrandShowcase, HarvestStory } from "@/components/home";
 import type { Product } from "@/types";
 import { Hero } from '@/components/home/Hero';
@@ -13,7 +13,26 @@ export default function Home() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
-    const [allProducts, setAllProducts] = useState<Product[]>(seedProducts);
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                setLoading(true);
+                const data = await api.getProducts();
+                // Handle both flat array and paginated response just in case
+                const products = Array.isArray(data) ? data : (data as any).products || [];
+                setAllProducts(products);
+            } catch (err) {
+                console.error("Failed to load products", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadProducts();
+    }, []);
+
     const { subscribe, socket } = useSocket();
 
     // Listen for real-time product/inventory updates
@@ -44,8 +63,7 @@ export default function Home() {
 
         const matchesCategory = !selectedCategory || categoryName === selectedCategory;
 
-        const tenant = tenants.find(t => t.id === p.tenantId);
-        const matchesIndustry = !selectedIndustry || tenant?.industry === selectedIndustry;
+        const matchesIndustry = true; // Multi-tenancy removed
 
         return matchesSearch && matchesCategory && matchesIndustry;
     });
@@ -69,7 +87,7 @@ export default function Home() {
             <PromotionBanner />
             <Hero
                 allProducts={allProducts}
-                tenants={tenants}
+                tenants={[]}
             />
 
             <div id="impact">
@@ -87,14 +105,14 @@ export default function Home() {
             <ProductsSection
                 filteredProducts={filteredProducts}
                 allProducts={allProducts}
-                tenants={tenants}
+                tenants={[]}
                 setSearchQuery={setSearchQuery}
                 setSelectedCategory={setSelectedCategory}
                 setSelectedIndustry={setSelectedIndustry}
                 formatPrice={formatPrice}
             />
 
-            <BrandShowcase tenants={tenants} />
+            <BrandShowcase tenants={[]} />
 
             <HowItWorks />
 
