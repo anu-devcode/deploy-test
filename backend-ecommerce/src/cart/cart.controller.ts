@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto, UpdateCartItemDto, CheckoutDto } from './dto';
-import { TenantId } from '../common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('cart')
@@ -10,17 +9,16 @@ export class CartController {
     constructor(private readonly cartService: CartService) { }
 
     @Get(':customerId')
-    getCart(@Param('customerId') customerId: string, @TenantId() tenantId: string) {
-        return this.cartService.getOrCreateCart(customerId, tenantId);
+    getCart(@Param('customerId') customerId: string) {
+        return this.cartService.getOrCreateCart(customerId);
     }
 
     @Post(':customerId/items')
     addToCart(
         @Param('customerId') customerId: string,
         @Body() dto: AddToCartDto,
-        @TenantId() tenantId: string,
     ) {
-        return this.cartService.addToCart(customerId, dto, tenantId);
+        return this.cartService.addToCart(customerId, dto);
     }
 
     @Patch(':customerId/items/:productId')
@@ -28,31 +26,28 @@ export class CartController {
         @Param('customerId') customerId: string,
         @Param('productId') productId: string,
         @Body() dto: UpdateCartItemDto,
-        @TenantId() tenantId: string,
     ) {
-        return this.cartService.updateCartItem(customerId, productId, dto, tenantId);
+        return this.cartService.updateCartItem(customerId, productId, dto);
     }
 
     @Delete(':customerId/items/:productId')
     removeFromCart(
         @Param('customerId') customerId: string,
         @Param('productId') productId: string,
-        @TenantId() tenantId: string,
     ) {
-        return this.cartService.removeFromCart(customerId, productId, tenantId);
+        return this.cartService.removeFromCart(customerId, productId);
     }
 
     @Delete(':customerId')
-    clearCart(@Param('customerId') customerId: string, @TenantId() tenantId: string) {
-        return this.cartService.clearCart(customerId, tenantId);
+    clearCart(@Param('customerId') customerId: string) {
+        return this.cartService.clearCart(customerId);
     }
 
     @Post(':customerId/checkout')
     checkout(
         @Param('customerId') customerId: string,
         @Body() dto: CheckoutDto,
-        @TenantId() tenantId: string,
     ) {
-        return this.cartService.checkout(customerId, dto, tenantId);
+        return this.cartService.checkout(customerId, dto);
     }
 }

@@ -6,7 +6,7 @@ import { AddToWishlistDto } from './dto';
 export class WishlistService {
     constructor(private prisma: PrismaService) { }
 
-    async getWishlist(customerId: string, tenantId: string) {
+    async getWishlist(customerId: string) {
         let wishlist = await this.prisma.wishlist.findUnique({
             where: { customerId },
             include: {
@@ -27,7 +27,6 @@ export class WishlistService {
             wishlist = await this.prisma.wishlist.create({
                 data: {
                     customerId,
-                    tenantId,
                 },
                 include: {
                     items: {
@@ -46,10 +45,10 @@ export class WishlistService {
         return wishlist;
     }
 
-    async addToWishlist(customerId: string, dto: AddToWishlistDto, tenantId: string) {
-        // Verify product exists and belongs to tenant
+    async addToWishlist(customerId: string, dto: AddToWishlistDto) {
+        // Verify product exists
         const product = await this.prisma.product.findFirst({
-            where: { id: dto.productId, tenantId },
+            where: { id: dto.productId },
         });
 
         if (!product) {
@@ -63,7 +62,7 @@ export class WishlistService {
 
         if (!wishlist) {
             wishlist = await this.prisma.wishlist.create({
-                data: { customerId, tenantId },
+                data: { customerId },
             });
         }
 
@@ -86,10 +85,10 @@ export class WishlistService {
             });
         }
 
-        return this.getWishlist(customerId, tenantId);
+        return this.getWishlist(customerId);
     }
 
-    async removeFromWishlist(customerId: string, productId: string, tenantId: string) {
+    async removeFromWishlist(customerId: string, productId: string) {
         const wishlist = await this.prisma.wishlist.findUnique({
             where: { customerId },
         });
@@ -105,10 +104,10 @@ export class WishlistService {
             },
         });
 
-        return this.getWishlist(customerId, tenantId);
+        return this.getWishlist(customerId);
     }
 
-    async clearWishlist(customerId: string, tenantId: string) {
+    async clearWishlist(customerId: string) {
         const wishlist = await this.prisma.wishlist.findUnique({
             where: { customerId },
         });
@@ -119,6 +118,6 @@ export class WishlistService {
             });
         }
 
-        return this.getWishlist(customerId, tenantId);
+        return this.getWishlist(customerId);
     }
 }

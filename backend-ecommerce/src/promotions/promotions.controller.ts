@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { PromotionsService } from './promotions.service';
 import { CreatePromotionDto, UpdatePromotionDto, EvaluatePromotionDto } from './dto/promotion.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { TenantId } from '../common/decorators/tenant-id.decorator';
+
 
 @Controller('promotions')
 @UseGuards(JwtAuthGuard)
@@ -10,32 +10,32 @@ export class PromotionsController {
     constructor(private readonly promotionsService: PromotionsService) { }
 
     @Post()
-    create(@TenantId() tenantId: string, @Body() createPromotionDto: CreatePromotionDto) {
-        return this.promotionsService.create(tenantId, createPromotionDto);
+    create(@Body() createPromotionDto: CreatePromotionDto) {
+        return this.promotionsService.create(createPromotionDto);
     }
 
     @Get()
-    findAll(@TenantId() tenantId: string) {
-        return this.promotionsService.findAll(tenantId);
+    findAll() {
+        return this.promotionsService.findAll();
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionsService.findOne(id, tenantId);
+    findOne(@Param('id') id: string) {
+        return this.promotionsService.findOne(id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @TenantId() tenantId: string, @Body() updatePromotionDto: UpdatePromotionDto) {
-        return this.promotionsService.update(id, tenantId, updatePromotionDto);
+    update(@Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto) {
+        return this.promotionsService.update(id, updatePromotionDto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionsService.remove(id, tenantId);
+    remove(@Param('id') id: string) {
+        return this.promotionsService.remove(id);
     }
 
     @Post('evaluate')
-    evaluate(@TenantId() tenantId: string, @Body() evaluateDto: EvaluatePromotionDto) {
-        return this.promotionsService.evaluate(tenantId, evaluateDto);
+    evaluate(@Body() evaluateDto: EvaluatePromotionDto) {
+        return this.promotionsService.evaluate(evaluateDto);
     }
 }

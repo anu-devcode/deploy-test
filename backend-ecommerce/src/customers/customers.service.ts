@@ -6,10 +6,10 @@ import { CreateCustomerDto, UpdateCustomerDto } from './dto';
 export class CustomersService {
     constructor(private prisma: PrismaService) { }
 
-    async create(dto: CreateCustomerDto, tenantId: string) {
-        // Check if customer with same email exists in tenant
+    async create(dto: CreateCustomerDto) {
+        // Check if customer with same email exists
         const existing = await this.prisma.customer.findFirst({
-            where: { email: dto.email, tenantId },
+            where: { email: dto.email },
         });
 
         if (existing) {
@@ -19,14 +19,12 @@ export class CustomersService {
         return this.prisma.customer.create({
             data: {
                 ...dto,
-                tenantId,
             },
         });
     }
 
-    async findAll(tenantId: string, role: string) {
+    async findAll(role: string) {
         const customers = await this.prisma.customer.findMany({
-            where: { tenantId },
             include: {
                 orders: {
                     select: {
@@ -48,9 +46,9 @@ export class CustomersService {
         return customers.map(c => this.sanitizeCustomer(c, role));
     }
 
-    async findOne(id: string, tenantId: string, role: string) {
+    async findOne(id: string, role: string) {
         const customer = await this.prisma.customer.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: {
                 orders: {
                     include: {
@@ -77,21 +75,20 @@ export class CustomersService {
         return this.sanitizeCustomer(customer, role);
     }
 
-    async findByEmail(email: string, tenantId: string) {
+    async findByEmail(email: string) {
         return this.prisma.customer.findFirst({
-            where: { email, tenantId },
+            where: { email },
         });
     }
 
-    async update(id: string, dto: UpdateCustomerDto, tenantId: string) {
-        await this.findOne(id, tenantId, 'ADMIN');
+    async update(id: string, dto: UpdateCustomerDto) {
+        await this.findOne(id, 'ADMIN');
 
         // Check email uniqueness if email is being updated
         if (dto.email) {
             const existing = await this.prisma.customer.findFirst({
                 where: {
                     email: dto.email,
-                    tenantId,
                     NOT: { id },
                 },
             });
@@ -107,12 +104,12 @@ export class CustomersService {
         });
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId, 'ADMIN');
+    async remove(id: string) {
+        await this.findOne(id, 'ADMIN');
         return this.prisma.customer.delete({ where: { id } });
     }
 
-    async getProfile(customerId: string, tenantId: string) {
+    async getProfile(customerId: string) {
         const customer = await this.prisma.customer.findUnique({
             where: { id: customerId },
             include: {
@@ -122,14 +119,14 @@ export class CustomersService {
                 addresses: true
             }
         });
-        if (!customer || customer.tenantId !== tenantId) {
+        if (!customer) {
             throw new NotFoundException('Profile not found');
         }
         return this.sanitizeCustomer(customer, 'CUSTOMER');
     }
 
-    async updateProfile(customerId: string, dto: UpdateCustomerDto, tenantId: string) {
-        await this.getProfile(customerId, tenantId);
+    async updateProfile(customerId: string, dto: UpdateCustomerDto) {
+        await this.getProfile(customerId);
 
         let firstName = dto.firstName;
         let lastName = dto.lastName;
@@ -205,8 +202,8 @@ export class CustomersService {
         });
     }
 
-    async getBillingInfo(customerId: string, tenantId: string) {
-        const customer = await this.getProfile(customerId, tenantId);
+    async getBillingInfo(customerId: string) {
+        const customer = await this.getProfile(customerId);
         const defaultAddress = customer.addresses?.find((a: any) => a.isDefault) || customer.addresses?.[0];
 
         // Mocking billing info as requested
@@ -222,9 +219,9 @@ export class CustomersService {
         };
     }
 
-    async getInvoices(customerId: string, tenantId: string) {
+    async getInvoices(customerId: string) {
         const orders = await this.prisma.order.findMany({
-            where: { customerId, tenantId },
+            where: { customerId },
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
@@ -246,12 +243,11 @@ export class CustomersService {
         return customer;
     }
 
-    async getCustomerStats(tenantId: string) {
+    async getCustomerStats() {
         const [totalCustomers, customersThisMonth] = await Promise.all([
-            this.prisma.customer.count({ where: { tenantId } }),
+            this.prisma.customer.count(),
             this.prisma.customer.count({
                 where: {
-                    tenantId,
                     createdAt: {
                         gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                     },

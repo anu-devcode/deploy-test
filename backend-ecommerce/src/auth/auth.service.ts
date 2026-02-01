@@ -12,7 +12,7 @@ export class AuthService {
         private jwtService: JwtService,
     ) { }
 
-    async register(dto: RegisterDto, tenantId: string) {
+    async register(dto: RegisterDto) {
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
         const user = await this.prisma.user.create({
@@ -20,18 +20,16 @@ export class AuthService {
                 email: dto.email,
                 password: hashedPassword,
                 role: dto.role || 'STAFF',
-                tenantId,
             },
         });
 
-        return this.generateToken(user.id, user.email, user.role, tenantId);
+        return this.generateToken(user.id, user.email, user.role);
     }
 
-    async login(dto: LoginDto, tenantId: string) {
+    async login(dto: LoginDto) {
         const user = await this.prisma.user.findFirst({
             where: {
                 email: dto.email,
-                tenantId,
             },
         });
 
@@ -45,12 +43,12 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        return this.generateToken(user.id, user.email, user.role, tenantId);
+        return this.generateToken(user.id, user.email, user.role);
     }
 
-    async requestPasswordReset(email: string, tenantId: string) {
+    async requestPasswordReset(email: string) {
         const user = await this.prisma.user.findFirst({
-            where: { email, tenantId }
+            where: { email }
         });
 
         if (!user) {
@@ -99,8 +97,8 @@ export class AuthService {
         return { message: 'Password successfully reset' };
     }
 
-    private generateToken(userId: string, email: string, role: string, tenantId: string) {
-        const payload = { sub: userId, email, role, tenantId };
+    private generateToken(userId: string, email: string, role: string) {
+        const payload = { sub: userId, email, role };
         return {
             access_token: this.jwtService.sign(payload),
         };

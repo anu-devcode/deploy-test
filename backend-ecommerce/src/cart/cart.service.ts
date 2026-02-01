@@ -8,7 +8,7 @@ const Decimal = Prisma.Decimal;
 export class CartService {
     constructor(private prisma: PrismaService) { }
 
-    async getOrCreateCart(customerId: string, tenantId: string) {
+    async getOrCreateCart(customerId: string) {
         let cart = await this.prisma.cart.findUnique({
             where: { customerId },
             include: {
@@ -23,7 +23,6 @@ export class CartService {
             cart = await this.prisma.cart.create({
                 data: {
                     customerId,
-                    tenantId,
                 },
                 include: {
                     items: {
@@ -36,10 +35,10 @@ export class CartService {
         return this.formatCart(cart);
     }
 
-    async addToCart(customerId: string, dto: AddToCartDto, tenantId: string) {
-        // Verify product exists and belongs to tenant
+    async addToCart(customerId: string, dto: AddToCartDto) {
+        // Verify product exists
         const product = await this.prisma.product.findFirst({
-            where: { id: dto.productId, tenantId },
+            where: { id: dto.productId },
         });
 
         if (!product) {
@@ -57,7 +56,7 @@ export class CartService {
 
         if (!cart) {
             cart = await this.prisma.cart.create({
-                data: { customerId, tenantId },
+                data: { customerId },
             });
         }
 
@@ -88,14 +87,13 @@ export class CartService {
             });
         }
 
-        return this.getOrCreateCart(customerId, tenantId);
+        return this.getOrCreateCart(customerId);
     }
 
     async updateCartItem(
         customerId: string,
         productId: string,
         dto: UpdateCartItemDto,
-        tenantId: string,
     ) {
         const cart = await this.prisma.cart.findUnique({
             where: { customerId },
@@ -129,10 +127,10 @@ export class CartService {
             });
         }
 
-        return this.getOrCreateCart(customerId, tenantId);
+        return this.getOrCreateCart(customerId);
     }
 
-    async removeFromCart(customerId: string, productId: string, tenantId: string) {
+    async removeFromCart(customerId: string, productId: string) {
         const cart = await this.prisma.cart.findUnique({
             where: { customerId },
         });
@@ -148,10 +146,10 @@ export class CartService {
             },
         });
 
-        return this.getOrCreateCart(customerId, tenantId);
+        return this.getOrCreateCart(customerId);
     }
 
-    async clearCart(customerId: string, tenantId: string) {
+    async clearCart(customerId: string) {
         const cart = await this.prisma.cart.findUnique({
             where: { customerId },
         });
@@ -162,10 +160,10 @@ export class CartService {
             });
         }
 
-        return this.getOrCreateCart(customerId, tenantId);
+        return this.getOrCreateCart(customerId);
     }
 
-    async checkout(customerId: string, dto: CheckoutDto, tenantId: string) {
+    async checkout(customerId: string, dto: CheckoutDto) {
         const cart = await this.prisma.cart.findUnique({
             where: { customerId },
             include: {
@@ -199,7 +197,7 @@ export class CartService {
         });
 
         // Generate order number
-        const orderCount = await this.prisma.order.count({ where: { tenantId } });
+        const orderCount = await this.prisma.order.count();
         const orderNumber = `ORD-${String(orderCount + 1).padStart(6, '0')}`;
 
         // Create order in transaction
@@ -209,7 +207,6 @@ export class CartService {
                 data: {
                     orderNumber,
                     customerId,
-                    tenantId,
                     total,
                     shippingAddress: dto.shippingAddress,
                     shippingCity: dto.shippingCity,

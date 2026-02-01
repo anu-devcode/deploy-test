@@ -3,9 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma';
-import { CommonModule, TenantMiddleware } from './common';
-// TenantsModule disabled - reserved for future multi-tenant ERP
-// import { TenantsModule } from './tenants';
+import { CommonModule } from './common';
 import { AuthModule } from './auth';
 import { ProductsModule } from './products';
 import { OrdersModule } from './orders';
@@ -33,7 +31,6 @@ import { MessagesModule } from './messages/messages.module';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     CommonModule,
-    // TenantsModule, // Disabled for Adis Harvest single-tenant development
     AuthModule,
     ProductsModule,
     OrdersModule,
@@ -61,14 +58,6 @@ import { MessagesModule } from './messages/messages.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(TenantMiddleware)
-      .exclude(
-        { path: 'tenants', method: RequestMethod.ALL },
-        { path: 'health', method: RequestMethod.GET },
-        { path: 'auth/register', method: RequestMethod.POST },
-        { path: 'auth/login', method: RequestMethod.POST },
-      )
-      .forRoutes('*');
+    // Middleware removed for Single-Tenant Mode
   }
 }

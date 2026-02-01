@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto';
-import { TenantId, CurrentUser } from '../common/decorators';
+import { CurrentUser } from '../common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('customers')
@@ -10,36 +10,35 @@ export class CustomersController {
     constructor(private readonly customersService: CustomersService) { }
 
     @Post()
-    create(@Body() dto: CreateCustomerDto, @TenantId() tenantId: string) {
-        return this.customersService.create(dto, tenantId);
+    create(@Body() dto: CreateCustomerDto) {
+        return this.customersService.create(dto);
     }
 
     @Get()
-    findAll(@TenantId() tenantId: string, @CurrentUser() user: any) {
-        return this.customersService.findAll(tenantId, user.role);
+    findAll(@CurrentUser() user: any) {
+        return this.customersService.findAll(user.role);
     }
 
     @Get('stats')
-    getStats(@TenantId() tenantId: string) {
-        return this.customersService.getCustomerStats(tenantId);
+    getStats() {
+        return this.customersService.getCustomerStats();
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string, @TenantId() tenantId: string, @CurrentUser() user: any) {
-        return this.customersService.findOne(id, tenantId, user.role);
+    findOne(@Param('id') id: string, @CurrentUser() user: any) {
+        return this.customersService.findOne(id, user.role);
     }
 
     @Patch(':id')
     update(
         @Param('id') id: string,
         @Body() dto: UpdateCustomerDto,
-        @TenantId() tenantId: string,
     ) {
-        return this.customersService.update(id, dto, tenantId);
+        return this.customersService.update(id, dto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.customersService.remove(id, tenantId);
+    remove(@Param('id') id: string) {
+        return this.customersService.remove(id);
     }
 }

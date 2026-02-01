@@ -7,9 +7,9 @@ import * as bcrypt from 'bcrypt';
 export class StaffService {
     constructor(private prisma: PrismaService) { }
 
-    async create(dto: CreateStaffDto, tenantId: string) {
+    async create(dto: CreateStaffDto) {
         const existing = await this.prisma.user.findFirst({
-            where: { email: dto.email, tenantId }
+            where: { email: dto.email }
         });
 
         if (existing) throw new ConflictException('Staff with this email already exists');
@@ -21,7 +21,6 @@ export class StaffService {
                 email: dto.email,
                 password: hashedPassword,
                 role: dto.role,
-                tenantId,
             }
         });
 
@@ -41,27 +40,27 @@ export class StaffService {
             }
         }
 
-        return this.findOne(user.id, tenantId);
+        return this.findOne(user.id);
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.user.findMany({
-            where: { tenantId, role: { in: ['ADMIN', 'STAFF'] } },
+            where: { role: { in: ['ADMIN', 'STAFF'] } },
             include: { permissions: { include: { permission: true } } }
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const staff = await this.prisma.user.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: { permissions: { include: { permission: true } } }
         });
         if (!staff) throw new NotFoundException('Staff not found');
         return staff;
     }
 
-    async update(id: string, dto: UpdateStaffDto, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async update(id: string, dto: UpdateStaffDto) {
+        await this.findOne(id);
 
         return this.prisma.$transaction(async (tx) => {
             if (dto.role) {
@@ -92,8 +91,8 @@ export class StaffService {
         });
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async remove(id: string) {
+        await this.findOne(id);
         return this.prisma.user.delete({ where: { id } });
     }
 }

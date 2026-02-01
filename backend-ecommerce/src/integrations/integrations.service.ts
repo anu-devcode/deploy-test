@@ -39,16 +39,16 @@ export class IntegrationsService {
     }
 
     /**
-     * Verify tenant status with Super-Admin
+     * Verify app status with Super-Admin
      */
-    async verifyTenantWithSuperAdmin(tenantId: string) {
+    async verifyAppWithSuperAdmin() {
         if (!this.superAdminApiUrl) {
             console.warn('Super-Admin API URL not configured');
             return { verified: true }; // Default to verified if no super-admin
         }
 
         try {
-            const response = await fetch(`${this.superAdminApiUrl}/tenants/${tenantId}/verify`, {
+            const response = await fetch(`${this.superAdminApiUrl}/app/verify`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             });
@@ -62,7 +62,7 @@ export class IntegrationsService {
     /**
      * Sync order data to Super-Admin for analytics
      */
-    async syncOrderToSuperAdmin(orderData: { orderId: string; tenantId: string; total: number }) {
+    async syncOrderToSuperAdmin(orderData: { orderId: string; total: number }) {
         if (!this.superAdminApiUrl) {
             return null;
         }

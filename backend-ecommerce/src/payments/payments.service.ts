@@ -13,9 +13,9 @@ export class PaymentsService {
         private eventsGateway: EventsGateway
     ) { }
 
-    async initialize(dto: InitializePaymentDto, tenantId: string) {
+    async initialize(dto: InitializePaymentDto) {
         const order = await this.prisma.order.findFirst({
-            where: { id: dto.orderId, tenantId },
+            where: { id: dto.orderId },
         });
 
         if (!order) {
@@ -42,13 +42,13 @@ export class PaymentsService {
         };
     }
 
-    async submitManual(paymentId: string, dto: any, tenantId: string) {
+    async submitManual(paymentId: string, dto: any) {
         const payment = await this.prisma.payment.findUnique({
             where: { id: paymentId },
             include: { order: true }
         });
 
-        if (!payment || payment.order.tenantId !== tenantId) {
+        if (!payment) {
             throw new NotFoundException('Payment not found');
         }
 
@@ -67,18 +67,18 @@ export class PaymentsService {
         });
 
         // Emit WebSocket Event
-        this.eventsGateway.notifyOrderStatusUpdate(tenantId, payment.orderId, OrderStatus.PENDING_VERIFICATION);
+        this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.PENDING_VERIFICATION);
 
         return updatedPayment;
     }
 
-    async verify(paymentId: string, dto: any, tenantId: string) {
+    async verify(paymentId: string, dto: any) {
         const payment = await this.prisma.payment.findUnique({
             where: { id: paymentId },
             include: { order: true },
         });
 
-        if (!payment || payment.order.tenantId !== tenantId) {
+        if (!payment) {
             throw new NotFoundException('Payment not found');
         }
 
@@ -99,7 +99,7 @@ export class PaymentsService {
                 },
             });
 
-            this.eventsGateway.notifyOrderStatusUpdate(tenantId, payment.orderId, OrderStatus.CONFIRMED);
+            this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.CONFIRMED);
         } else {
             await this.prisma.payment.update({
                 where: { id: paymentId },
@@ -117,13 +117,13 @@ export class PaymentsService {
                 },
             });
 
-            this.eventsGateway.notifyOrderStatusUpdate(tenantId, payment.orderId, OrderStatus.PENDING);
+            this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.PENDING);
         }
 
         return { success: true };
     }
 
-    async confirm(paymentId: string, dto: ConfirmPaymentDto, tenantId: string) {
+    async confirm(paymentId: string, dto: ConfirmPaymentDto) {
         const payment = await this.prisma.payment.findUnique({
             where: { id: paymentId },
             include: { order: true },
@@ -153,19 +153,18 @@ export class PaymentsService {
         });
 
         // Trigger Automation
-        await this.automationService.trigger('PAYMENT_RECEIVED', updatedPayment, tenantId);
+        await this.automationService.trigger('PAYMENT_RECEIVED', updatedPayment);
 
         // Emit WebSocket Event
-        this.eventsGateway.notifyOrderStatusUpdate(tenantId, payment.orderId, OrderStatus.CONFIRMED);
+        this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.CONFIRMED);
 
         return updatedPayment;
     }
 
-    async getOrderPayments(orderId: string, tenantId: string) {
+    async getOrderPayments(orderId: string) {
         return this.prisma.payment.findMany({
             where: {
                 orderId,
-                order: { tenantId },
             },
             orderBy: { createdAt: 'desc' },
         });

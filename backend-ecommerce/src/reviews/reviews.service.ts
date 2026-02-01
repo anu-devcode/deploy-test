@@ -6,10 +6,10 @@ import { CreateReviewDto, UpdateReviewDto } from './dto';
 export class ReviewsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(customerId: string, dto: CreateReviewDto, tenantId: string) {
+    async create(customerId: string, dto: CreateReviewDto) {
         // Check if product exists
         const product = await this.prisma.product.findFirst({
-            where: { id: dto.productId, tenantId },
+            where: { id: dto.productId },
         });
 
         if (!product) {
@@ -34,15 +34,14 @@ export class ReviewsService {
             data: {
                 ...dto,
                 customerId,
-                tenantId,
                 status: 'PENDING',
             },
         });
     }
 
-    async findAll(productId: string, tenantId: string) {
+    async findAll(productId: string) {
         return this.prisma.review.findMany({
-            where: { productId, tenantId, status: 'APPROVED' },
+            where: { productId, status: 'APPROVED' },
             include: {
                 customer: {
                     select: { firstName: true, lastName: true },
@@ -52,9 +51,9 @@ export class ReviewsService {
         });
     }
 
-    async getProductStats(productId: string, tenantId: string) {
+    async getProductStats(productId: string) {
         const reviews = await this.prisma.review.findMany({
-            where: { productId, tenantId, status: 'APPROVED' },
+            where: { productId, status: 'APPROVED' },
             select: { rating: true },
         });
 
@@ -69,9 +68,9 @@ export class ReviewsService {
         return { averageRating, totalReviews };
     }
 
-    async update(id: string, customerId: string, dto: UpdateReviewDto, tenantId: string) {
+    async update(id: string, customerId: string, dto: UpdateReviewDto) {
         const review = await this.prisma.review.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!review) {
@@ -88,9 +87,9 @@ export class ReviewsService {
         });
     }
 
-    async remove(id: string, customerId: string, tenantId: string) {
+    async remove(id: string, customerId: string) {
         const review = await this.prisma.review.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!review) {
@@ -105,9 +104,9 @@ export class ReviewsService {
     }
 
     // Admin moderation methods
-    async getPendingReviews(tenantId: string) {
+    async getPendingReviews() {
         return this.prisma.review.findMany({
-            where: { tenantId, status: 'PENDING' },
+            where: { status: 'PENDING' },
             include: {
                 customer: { select: { firstName: true, lastName: true, email: true } },
                 product: { select: { id: true, name: true } },
@@ -116,8 +115,8 @@ export class ReviewsService {
         });
     }
 
-    async getAllReviewsAdmin(tenantId: string, status?: string) {
-        const where: any = { tenantId };
+    async getAllReviewsAdmin(status?: string) {
+        const where: any = {};
         if (status) where.status = status;
 
         return this.prisma.review.findMany({
@@ -130,9 +129,9 @@ export class ReviewsService {
         });
     }
 
-    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED', tenantId: string) {
+    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED') {
         const review = await this.prisma.review.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!review) {
@@ -145,9 +144,9 @@ export class ReviewsService {
         });
     }
 
-    async adminDeleteReview(id: string, tenantId: string) {
+    async adminDeleteReview(id: string) {
         const review = await this.prisma.review.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!review) {

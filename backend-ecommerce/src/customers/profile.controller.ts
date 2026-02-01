@@ -1,7 +1,7 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { UpdateCustomerDto } from './dto/customer.dto';
-import { TenantId, CurrentUser } from '../common/decorators';
+import { CurrentUser } from '../common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('profile')
@@ -10,26 +10,25 @@ export class ProfileController {
     constructor(private readonly customersService: CustomersService) { }
 
     @Get()
-    getProfile(@CurrentUser() user: any, @TenantId() tenantId: string) {
-        return this.customersService.getProfile(user.sub, tenantId);
+    getProfile(@CurrentUser() user: any) {
+        return this.customersService.getProfile(user.sub);
     }
 
     @Patch()
     updateProfile(
         @CurrentUser() user: any,
         @Body() dto: UpdateCustomerDto,
-        @TenantId() tenantId: string,
     ) {
-        return this.customersService.updateProfile(user.sub, dto, tenantId);
+        return this.customersService.updateProfile(user.sub, dto);
     }
 
     @Get('billing')
-    getBillingInfo(@CurrentUser() user: any, @TenantId() tenantId: string) {
-        return this.customersService.getBillingInfo(user.sub, tenantId);
+    getBillingInfo(@CurrentUser() user: any) {
+        return this.customersService.getBillingInfo(user.sub);
     }
 
     @Get('invoices')
-    getInvoices(@CurrentUser() user: any, @TenantId() tenantId: string) {
-        return this.customersService.getInvoices(user.sub, tenantId);
+    getInvoices(@CurrentUser() user: any) {
+        return this.customersService.getInvoices(user.sub);
     }
 }

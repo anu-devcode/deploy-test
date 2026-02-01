@@ -6,10 +6,10 @@ import { CreateDeliveryDto, UpdateDeliveryDto } from './dto';
 export class DeliveryService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(dto: CreateDeliveryDto, tenantId: string) {
-        // Verify order exists and belongs to tenant
+    async create(dto: CreateDeliveryDto) {
+        // Verify order exists
         const order = await this.prisma.order.findFirst({
-            where: { id: dto.orderId, tenantId },
+            where: { id: dto.orderId },
         });
         if (!order) {
             throw new NotFoundException('Order not found');
@@ -23,23 +23,21 @@ export class DeliveryService {
                 vehicleInfo: dto.vehicleInfo,
                 estimatedTime: dto.estimatedTime ? new Date(dto.estimatedTime) : undefined,
                 notes: dto.notes,
-                tenantId,
             },
             include: { order: true },
         });
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.delivery.findMany({
-            where: { tenantId },
             include: { order: { include: { customer: true } } },
             orderBy: { createdAt: 'desc' },
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const delivery = await this.prisma.delivery.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: { order: { include: { customer: true, items: { include: { product: true } } } } },
         });
         if (!delivery) {
@@ -48,15 +46,15 @@ export class DeliveryService {
         return delivery;
     }
 
-    async findByOrder(orderId: string, tenantId: string) {
+    async findByOrder(orderId: string) {
         return this.prisma.delivery.findFirst({
-            where: { orderId, tenantId },
+            where: { orderId },
             include: { order: true },
         });
     }
 
-    async update(id: string, dto: UpdateDeliveryDto, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async update(id: string, dto: UpdateDeliveryDto) {
+        await this.findOne(id);
 
         return this.prisma.delivery.update({
             where: { id },
@@ -73,8 +71,8 @@ export class DeliveryService {
         });
     }
 
-    async updateStatus(id: string, status: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async updateStatus(id: string, status: string) {
+        await this.findOne(id);
 
         const data: any = { status };
         if (status === 'DELIVERED') {

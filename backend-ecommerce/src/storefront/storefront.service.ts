@@ -6,7 +6,7 @@ export class StorefrontService {
     constructor(private readonly prisma: PrismaService) { }
 
     // Get published products with optional filtering
-    async getProducts(tenantId: string, options?: {
+    async getProducts(options?: {
         categoryId?: string;
         search?: string;
         tags?: string[];
@@ -19,7 +19,6 @@ export class StorefrontService {
         const { categoryId, search, tags, featured, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = options || {};
 
         const where: any = {
-            tenantId,
             isPublished: true,
         };
 
@@ -68,7 +67,7 @@ export class StorefrontService {
     }
 
     // Get single product by ID or SLUG
-    async getProduct(idOrSlug: string, tenantId: string) {
+    async getProduct(idOrSlug: string) {
         const isUuid = idOrSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 
         return this.prisma.product.findFirst({
@@ -77,7 +76,6 @@ export class StorefrontService {
                     { id: isUuid ? idOrSlug : undefined },
                     { slug: idOrSlug }
                 ],
-                tenantId,
                 isPublished: true
             },
             include: {
@@ -99,20 +97,20 @@ export class StorefrontService {
     }
 
     // Get featured products
-    async getFeaturedProducts(tenantId: string, limit = 8) {
+    async getFeaturedProducts(limit = 8) {
         return this.prisma.product.findMany({
-            where: { tenantId, isPublished: true, isFeatured: true },
+            where: { isPublished: true, isFeatured: true },
             take: limit,
             orderBy: { createdAt: 'desc' },
         });
     }
 
     // Get categories
-    async getCategories(tenantId: string) {
+    async getCategories() {
         const categories = await this.prisma.category.findMany({
             include: {
                 children: true,
-                _count: { select: { products: { where: { isPublished: true, tenantId } } } },
+                _count: { select: { products: { where: { isPublished: true } } } },
             },
             where: { parentId: null },
         });
@@ -121,25 +119,31 @@ export class StorefrontService {
     }
 
     // Get tenant storefront config (branding, etc.)
+    // Get tenant storefront config (branding, etc.) - Legacy Mock
     async getTenantConfig(tenantSlug: string) {
-        const tenant = await this.prisma.tenant.findUnique({
-            where: { slug: tenantSlug },
-            select: { id: true, name: true, slug: true, config: true },
-        });
-        return tenant;
+        // Return default config since multi-tenancy is removed
+        return {
+            id: 'default',
+            name: 'Storefront',
+            slug: 'default',
+            config: {
+                primaryColor: '#000000',
+                secondaryColor: '#ffffff'
+            }
+        };
     }
 
     // Get CMS pages (About, Contact, FAQ, etc.)
-    async getCmsPage(slug: string, tenantId: string) {
+    async getCmsPage(slug: string) {
         return this.prisma.cmsPage.findFirst({
-            where: { slug, tenantId, published: true },
+            where: { slug, published: true },
         });
     }
 
     // Product suggestions based on category or tags
-    async getProductSuggestions(productId: string, tenantId: string, limit = 4) {
+    async getProductSuggestions(productId: string, limit = 4) {
         const product = await this.prisma.product.findFirst({
-            where: { id: productId, tenantId },
+            where: { id: productId },
             select: { categoryId: true, tags: true },
         });
 
@@ -147,7 +151,6 @@ export class StorefrontService {
 
         return this.prisma.product.findMany({
             where: {
-                tenantId,
                 isPublished: true,
                 id: { not: productId },
                 OR: [

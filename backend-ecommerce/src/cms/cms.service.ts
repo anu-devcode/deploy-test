@@ -6,9 +6,9 @@ import { CreateCmsPageDto, UpdateCmsPageDto } from './dto';
 export class CmsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(dto: CreateCmsPageDto, tenantId: string) {
+    async create(dto: CreateCmsPageDto) {
         const existing = await this.prisma.cmsPage.findFirst({
-            where: { slug: dto.slug, tenantId },
+            where: { slug: dto.slug },
         });
 
         if (existing) {
@@ -18,21 +18,19 @@ export class CmsService {
         return this.prisma.cmsPage.create({
             data: {
                 ...dto,
-                tenantId,
             },
         });
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.cmsPage.findMany({
-            where: { tenantId },
             orderBy: { updatedAt: 'desc' },
         });
     }
 
-    async findOne(slug: string, tenantId: string) {
+    async findOne(slug: string) {
         const page = await this.prisma.cmsPage.findFirst({
-            where: { slug, tenantId },
+            where: { slug },
         });
 
         if (!page) {
@@ -42,9 +40,9 @@ export class CmsService {
         return page;
     }
 
-    async update(id: string, dto: UpdateCmsPageDto, tenantId: string) {
+    async update(id: string, dto: UpdateCmsPageDto) {
         const page = await this.prisma.cmsPage.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!page) {
@@ -57,9 +55,9 @@ export class CmsService {
         });
     }
 
-    async remove(id: string, tenantId: string) {
+    async remove(id: string) {
         const page = await this.prisma.cmsPage.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!page) {

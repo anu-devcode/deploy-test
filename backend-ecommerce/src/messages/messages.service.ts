@@ -6,9 +6,9 @@ import { HelpMessageStatus, MessageSenderRole } from '@prisma/client';
 export class MessagesService {
     constructor(private prisma: PrismaService) { }
 
-    async findAllForCustomer(customerId: string, tenantId: string) {
+    async findAllForCustomer(customerId: string) {
         return this.prisma.helpMessage.findMany({
-            where: { customerId, tenantId, parentId: null },
+            where: { customerId, parentId: null },
             include: {
                 replies: {
                     orderBy: { createdAt: 'asc' },
@@ -18,20 +18,19 @@ export class MessagesService {
         });
     }
 
-    async getUnreadCount(customerId: string, tenantId: string) {
+    async getUnreadCount(customerId: string) {
         return this.prisma.helpMessage.count({
             where: {
                 customerId,
-                tenantId,
                 isRead: false,
                 senderRole: 'ADMIN',
             },
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         return this.prisma.helpMessage.findUnique({
-            where: { id, tenantId },
+            where: { id },
             include: {
                 replies: {
                     orderBy: { createdAt: 'asc' },
@@ -48,9 +47,9 @@ export class MessagesService {
         });
     }
 
-    async findAllForAdmin(tenantId: string) {
+    async findAllForAdmin() {
         return this.prisma.helpMessage.findMany({
-            where: { tenantId, parentId: null },
+            where: { parentId: null },
             include: {
                 customer: {
                     select: {
@@ -69,7 +68,6 @@ export class MessagesService {
     }
 
     async create(data: {
-        tenantId: string;
         customerId: string;
         subject?: string;
         content: string;
@@ -97,19 +95,19 @@ export class MessagesService {
         });
     }
 
-    async updateStatus(id: string, status: HelpMessageStatus, tenantId: string) {
+    async updateStatus(id: string, status: HelpMessageStatus) {
         return this.prisma.helpMessage.update({
-            where: { id, tenantId },
+            where: { id },
             data: { status },
         });
     }
 
-    async markAsRead(id: string, customerId: string, tenantId: string) {
+    async markAsRead(id: string, customerId: string) {
         return this.prisma.helpMessage.updateMany({
             where: {
                 OR: [
-                    { id, customerId, tenantId },
-                    { parentId: id, customerId, tenantId }
+                    { id, customerId },
+                    { parentId: id, customerId }
                 ],
                 senderRole: 'ADMIN'
             },

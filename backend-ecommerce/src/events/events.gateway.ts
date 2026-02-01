@@ -27,10 +27,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const token = client.handshake.headers.authorization?.split(' ')[1];
             if (token) {
                 const payload = this.jwtService.verify(token);
-                // Join tenant room
-                if (payload.tenantId) {
-                    client.join(`tenant:${payload.tenantId}`);
-                }
                 // Join user room
                 if (payload.sub) {
                     client.join(`user:${payload.sub}`);
@@ -50,24 +46,25 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Method to emit events from other services
-    notifyOrderStatusUpdate(tenantId: string, orderId: string, status: string) {
-        this.server.to(`tenant:${tenantId}`).emit('order_updated', { orderId, status });
+    // Method to emit events from other services
+    notifyOrderStatusUpdate(orderId: string, status: string) {
+        this.server.emit('order_updated', { orderId, status });
         this.server.to(`order:${orderId}`).emit('order_status_changed', { orderId, status });
     }
 
-    notifyNewOrder(tenantId: string, order: any) {
-        this.server.to(`tenant:${tenantId}`).emit('new_order', order);
+    notifyNewOrder(order: any) {
+        this.server.emit('new_order', order);
     }
 
-    notifyProductUpdate(tenantId: string, product: any) {
-        this.server.to(`tenant:${tenantId}`).emit('product_updated', product);
+    notifyProductUpdate(product: any) {
+        this.server.emit('product_updated', product);
     }
 
-    notifyInventoryUpdate(tenantId: string, productId: string, stock: number) {
-        this.server.to(`tenant:${tenantId}`).emit('inventory_updated', { productId, stock });
+    notifyInventoryUpdate(productId: string, stock: number) {
+        this.server.emit('inventory_updated', { productId, stock });
     }
 
-    notifySystemAnnouncement(tenantId: string, announcement: any) {
-        this.server.to(`tenant:${tenantId}`).emit('system_announcement', announcement);
+    notifySystemAnnouncement(announcement: any) {
+        this.server.emit('system_announcement', announcement);
     }
 }

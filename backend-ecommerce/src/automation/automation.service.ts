@@ -8,49 +8,47 @@ export class AutomationService {
 
     constructor(private prisma: PrismaService) { }
 
-    async createRule(dto: CreateAutomationRuleDto, tenantId: string) {
+    async createRule(dto: CreateAutomationRuleDto) {
         return this.prisma.automationRule.create({
             data: {
                 ...dto,
-                tenantId
             }
         });
     }
 
-    async findAllRules(tenantId: string) {
+    async findAllRules() {
         return this.prisma.automationRule.findMany({
-            where: { tenantId },
             include: { _count: { select: { logs: true } } }
         });
     }
 
-    async findOneRule(id: string, tenantId: string) {
+    async findOneRule(id: string) {
         const rule = await this.prisma.automationRule.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: { logs: { take: 10, orderBy: { createdAt: 'desc' } } }
         });
         if (!rule) throw new NotFoundException('Rule not found');
         return rule;
     }
 
-    async updateRule(id: string, dto: UpdateAutomationRuleDto, tenantId: string) {
-        await this.findOneRule(id, tenantId);
+    async updateRule(id: string, dto: UpdateAutomationRuleDto) {
+        await this.findOneRule(id);
         return this.prisma.automationRule.update({
             where: { id },
             data: dto
         });
     }
 
-    async removeRule(id: string, tenantId: string) {
-        await this.findOneRule(id, tenantId);
+    async removeRule(id: string) {
+        await this.findOneRule(id);
         return this.prisma.automationRule.delete({ where: { id } });
     }
 
-    async trigger(event: string, payload: any, tenantId: string) {
-        this.logger.log(`Triggering automation event: ${event} for tenant: ${tenantId}`);
+    async trigger(event: string, payload: any) {
+        this.logger.log(`Triggering automation event: ${event}`);
 
         const rules = await this.prisma.automationRule.findMany({
-            where: { trigger: event, isActive: true, tenantId }
+            where: { trigger: event, isActive: true }
         });
 
         for (const rule of rules) {

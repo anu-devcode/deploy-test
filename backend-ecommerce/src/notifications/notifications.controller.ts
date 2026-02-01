@@ -9,17 +9,17 @@ export class NotificationsController {
 
     @Get()
     async findAll(@Request() req: any) {
-        return this.notificationsService.findAll(req.user.id, req.tenantId);
+        return this.notificationsService.findAll(req.user.id);
     }
 
     @Get('unread-count')
     async getUnreadCount(@Request() req: any) {
-        return { count: await this.notificationsService.getUnreadCount(req.user.id, req.tenantId) };
+        return { count: await this.notificationsService.getUnreadCount(req.user.id) };
     }
 
     @Get('recent')
     async findRecent(@Request() req: any) {
-        return this.notificationsService.findRecent(req.user.id, req.tenantId);
+        return this.notificationsService.findRecent(req.user.id);
     }
 
     @Patch(':id/read')

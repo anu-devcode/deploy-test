@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AnalyticsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async getDashboardStats(tenantId: string) {
+    async getDashboardStats() {
         const [
             totalProducts,
             totalOrders,
@@ -16,20 +16,19 @@ export class AnalyticsService {
             cartPulse,
             inventoryVelocity,
         ] = await Promise.all([
-            this.prisma.product.count({ where: { tenantId } }),
-            this.prisma.order.count({ where: { tenantId } }),
-            this.prisma.customer.count({ where: { tenantId } }),
-            this.prisma.order.count({ where: { tenantId, status: 'PENDING' } }),
+            this.prisma.product.count(),
+            this.prisma.order.count(),
+            this.prisma.customer.count(),
+            this.prisma.order.count({ where: { status: 'PENDING' } }),
             this.prisma.order.aggregate({
-                where: { tenantId, paymentStatus: 'COMPLETED' },
+                where: { paymentStatus: 'COMPLETED' },
                 _sum: { total: true },
             }),
-            this.prisma.product.count({ where: { tenantId, stock: { lte: 10 } } }),
-            this.prisma.cartItem.count({ where: { cart: { tenantId } } }),
+            this.prisma.product.count({ where: { stock: { lte: 10 } } }),
+            this.prisma.cartItem.count(),
             this.prisma.stockMovement.count({
                 where: {
                     createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-                    product: { tenantId }
                 }
             }),
         ]);
@@ -46,9 +45,8 @@ export class AnalyticsService {
         };
     }
 
-    async getRecentOrders(tenantId: string, limit = 10) {
+    async getRecentOrders(limit = 10) {
         return this.prisma.order.findMany({
-            where: { tenantId },
             orderBy: { createdAt: 'desc' },
             take: limit,
             include: {
@@ -58,13 +56,12 @@ export class AnalyticsService {
         });
     }
 
-    async getSalesOverTime(tenantId: string, days = 30) {
+    async getSalesOverTime(days = 30) {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
 
         const orders = await this.prisma.order.findMany({
             where: {
-                tenantId,
                 createdAt: { gte: startDate },
                 paymentStatus: 'COMPLETED',
             },
@@ -82,10 +79,9 @@ export class AnalyticsService {
         return Object.entries(salesByDay).map(([date, total]) => ({ date, total }));
     }
 
-    async getTopProducts(tenantId: string, limit = 5) {
+    async getTopProducts(limit = 5) {
         const orderItems = await this.prisma.orderItem.groupBy({
             by: ['productId'],
-            where: { order: { tenantId } },
             _sum: { quantity: true },
             orderBy: { _sum: { quantity: 'desc' } },
             take: limit,
@@ -103,19 +99,18 @@ export class AnalyticsService {
         }));
     }
 
-    async getOrderStatusBreakdown(tenantId: string) {
+    async getOrderStatusBreakdown() {
         const statuses = await this.prisma.order.groupBy({
             by: ['status'],
-            where: { tenantId },
             _count: true,
         });
 
         return statuses.map((s) => ({ status: s.status, count: s._count }));
     }
 
-    async getPendingReviews(tenantId: string) {
+    async getPendingReviews() {
         return this.prisma.review.count({
-            where: { tenantId, status: 'PENDING' },
+            where: { status: 'PENDING' },
         });
     }
 }

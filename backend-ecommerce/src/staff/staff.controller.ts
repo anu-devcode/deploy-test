@@ -4,7 +4,6 @@ import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { TenantId } from '../common/decorators';
 
 @Controller('staff')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,27 +12,27 @@ export class StaffController {
     constructor(private readonly staffService: StaffService) { }
 
     @Post()
-    create(@Body() dto: CreateStaffDto, @TenantId() tenantId: string) {
-        return this.staffService.create(dto, tenantId);
+    create(@Body() dto: CreateStaffDto) {
+        return this.staffService.create(dto);
     }
 
     @Get()
-    findAll(@TenantId() tenantId: string) {
-        return this.staffService.findAll(tenantId);
+    findAll() {
+        return this.staffService.findAll();
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.staffService.findOne(id, tenantId);
+    findOne(@Param('id') id: string) {
+        return this.staffService.findOne(id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: UpdateStaffDto, @TenantId() tenantId: string) {
-        return this.staffService.update(id, dto, tenantId);
+    update(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
+        return this.staffService.update(id, dto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.staffService.remove(id, tenantId);
+    remove(@Param('id') id: string) {
+        return this.staffService.remove(id);
     }
 }

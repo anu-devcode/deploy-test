@@ -4,7 +4,6 @@ import { CreateAutomationRuleDto, UpdateAutomationRuleDto } from './dto/automati
 import { RolesGuard, JwtAuthGuard } from '../auth/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { TenantId } from '../common/decorators';
 
 @Controller('automation')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,27 +12,27 @@ export class AutomationController {
     constructor(private readonly automationService: AutomationService) { }
 
     @Post('rules')
-    create(@Body() dto: CreateAutomationRuleDto, @TenantId() tenantId: string) {
-        return this.automationService.createRule(dto, tenantId);
+    create(@Body() dto: CreateAutomationRuleDto) {
+        return this.automationService.createRule(dto);
     }
 
     @Get('rules')
-    findAll(@TenantId() tenantId: string) {
-        return this.automationService.findAllRules(tenantId);
+    findAll() {
+        return this.automationService.findAllRules();
     }
 
     @Get('rules/:id')
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.automationService.findOneRule(id, tenantId);
+    findOne(@Param('id') id: string) {
+        return this.automationService.findOneRule(id);
     }
 
     @Patch('rules/:id')
-    update(@Param('id') id: string, @Body() dto: UpdateAutomationRuleDto, @TenantId() tenantId: string) {
-        return this.automationService.updateRule(id, dto, tenantId);
+    update(@Param('id') id: string, @Body() dto: UpdateAutomationRuleDto) {
+        return this.automationService.updateRule(id, dto);
     }
 
     @Delete('rules/:id')
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.automationService.removeRule(id, tenantId);
+    remove(@Param('id') id: string) {
+        return this.automationService.removeRule(id);
     }
 }

@@ -10,26 +10,23 @@ export class ProductsService {
         private eventsGateway: EventsGateway
     ) { }
 
-    async create(dto: CreateProductDto, tenantId: string) {
+    async create(dto: CreateProductDto) {
         const slug = dto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         return this.prisma.product.create({
             data: {
                 ...dto,
                 slug,
-                tenantId,
             },
         });
     }
 
-    async findAll(tenantId: string) {
-        return this.prisma.product.findMany({
-            where: { tenantId },
-        });
+    async findAll() {
+        return this.prisma.product.findMany();
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const product = await this.prisma.product.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
 
         if (!product) {
@@ -39,25 +36,25 @@ export class ProductsService {
         return product;
     }
 
-    async update(id: string, dto: UpdateProductDto, tenantId: string) {
-        await this.findOne(id, tenantId); // ensures product exists and belongs to tenant
+    async update(id: string, dto: UpdateProductDto) {
+        await this.findOne(id); // ensures product exists
         const product = await this.prisma.product.update({
             where: { id },
             data: dto,
         });
 
         // Emit WebSocket Events
-        this.eventsGateway.notifyProductUpdate(tenantId, product);
+        this.eventsGateway.notifyProductUpdate(product);
 
         if (dto.stock !== undefined) {
-            this.eventsGateway.notifyInventoryUpdate(tenantId, id, dto.stock);
+            this.eventsGateway.notifyInventoryUpdate(id, dto.stock);
         }
 
         return product;
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async remove(id: string) {
+        await this.findOne(id);
         return this.prisma.product.delete({ where: { id } });
     }
 }

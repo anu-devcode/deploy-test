@@ -7,46 +7,44 @@ import { PromotionTarget, PromotionType, PromoBusinessType } from '@prisma/clien
 export class PromotionsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(tenantId: string, dto: CreatePromotionDto) {
+    async create(dto: CreatePromotionDto) {
         return this.prisma.promotion.create({
             data: {
                 ...dto,
-                tenantId,
             },
         });
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.promotion.findMany({
-            where: { tenantId },
             orderBy: { createdAt: 'desc' },
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const promo = await this.prisma.promotion.findFirst({
-            where: { id, tenantId },
+            where: { id },
         });
         if (!promo) throw new NotFoundException('Promotion not found');
         return promo;
     }
 
-    async update(id: string, tenantId: string, dto: UpdatePromotionDto) {
-        await this.findOne(id, tenantId);
+    async update(id: string, dto: UpdatePromotionDto) {
+        await this.findOne(id);
         return this.prisma.promotion.update({
             where: { id },
             data: dto,
         });
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async remove(id: string) {
+        await this.findOne(id);
         return this.prisma.promotion.delete({
             where: { id },
         });
     }
 
-    async evaluate(tenantId: string, dto: EvaluatePromotionDto) {
+    async evaluate(dto: EvaluatePromotionDto) {
         const { code, items, businessType } = dto;
         const now = new Date();
 
@@ -56,7 +54,6 @@ export class PromotionsService {
             promo = await this.prisma.promotion.findFirst({
                 where: {
                     code,
-                    tenantId,
                     isActive: true,
                     OR: [
                         { startDate: null },

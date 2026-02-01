@@ -12,30 +12,29 @@ export class MessagesController {
 
     @Get()
     async findAll(@Request() req: any) {
-        return this.messagesService.findAllForCustomer(req.user.id, req.tenantId);
+        return this.messagesService.findAllForCustomer(req.user.id);
     }
 
     @Get('unread-count')
     async getUnreadCount(@Request() req: any) {
-        return { count: await this.messagesService.getUnreadCount(req.user.id, req.tenantId) };
+        return { count: await this.messagesService.getUnreadCount(req.user.id) };
     }
 
     @Get('admin')
     @UseGuards(RolesGuard)
     @Roles(Role.ADMIN, Role.STAFF)
     async findAllAdmin(@Request() req: any) {
-        return this.messagesService.findAllForAdmin(req.tenantId);
+        return this.messagesService.findAllForAdmin();
     }
 
     @Get(':id')
     async findOne(@Param('id') id: string, @Request() req: any) {
-        return this.messagesService.findOne(id, req.tenantId);
+        return this.messagesService.findOne(id);
     }
 
     @Post()
     async create(@Request() req: any, @Body() body: { subject?: string; content: string; parentId?: string }) {
         return this.messagesService.create({
-            tenantId: req.tenantId,
             customerId: req.user.id,
             subject: body.subject,
             content: body.content,
@@ -48,11 +47,10 @@ export class MessagesController {
     @UseGuards(RolesGuard)
     @Roles(Role.ADMIN, Role.STAFF)
     async adminReply(@Param('id') id: string, @Request() req: any, @Body() body: { content: string }) {
-        const parent = await this.messagesService.findOne(id, req.tenantId);
+        const parent = await this.messagesService.findOne(id);
         if (!parent) throw new NotFoundException('Parent message not found');
 
         return this.messagesService.create({
-            tenantId: req.tenantId,
             customerId: (parent as any).customerId,
             content: body.content,
             senderRole: 'ADMIN',
@@ -64,6 +62,6 @@ export class MessagesController {
     @UseGuards(RolesGuard)
     @Roles(Role.ADMIN, Role.STAFF)
     async updateStatus(@Param('id') id: string, @Request() req: any, @Body() body: { status: any }) {
-        return this.messagesService.updateStatus(id, body.status, req.tenantId);
+        return this.messagesService.updateStatus(id, body.status);
     }
 }

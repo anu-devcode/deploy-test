@@ -6,23 +6,23 @@ import { NotificationType } from '@prisma/client';
 export class NotificationsService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(customerId: string, tenantId: string) {
+    async findAll(customerId: string) {
         return this.prisma.notification.findMany({
-            where: { customerId, tenantId },
+            where: { customerId },
             orderBy: { createdAt: 'desc' },
             take: 50,
         });
     }
 
-    async getUnreadCount(customerId: string, tenantId: string) {
+    async getUnreadCount(customerId: string) {
         return this.prisma.notification.count({
-            where: { customerId, tenantId, isRead: false },
+            where: { customerId, isRead: false },
         });
     }
 
-    async findRecent(customerId: string, tenantId: string) {
+    async findRecent(customerId: string) {
         return this.prisma.notification.findMany({
-            where: { customerId, tenantId },
+            where: { customerId },
             orderBy: { createdAt: 'desc' },
             take: 5,
         });
@@ -44,7 +44,6 @@ export class NotificationsService {
     }
 
     async create(data: {
-        tenantId: string;
         customerId?: string;
         type: NotificationType;
         title: string;

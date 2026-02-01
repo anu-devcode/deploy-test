@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto';
-import { TenantId } from '../common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 import { OrderStatus } from '@prisma/client';
 
@@ -10,8 +9,9 @@ export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
     @Post()
-    create(@Body() dto: CreateOrderDto, @TenantId() tenantId: string) {
-        return this.ordersService.create(dto, tenantId);
+    @Post()
+    create(@Body() dto: CreateOrderDto) {
+        return this.ordersService.create(dto);
     }
 
     // Public tracking for guests
@@ -27,14 +27,16 @@ export class OrdersController {
 
     @Get()
     @UseGuards(AuthGuard('jwt'))
-    findAll(@TenantId() tenantId: string) {
-        return this.ordersService.findAll(tenantId);
+    @Get()
+    @UseGuards(AuthGuard('jwt'))
+    findAll() {
+        return this.ordersService.findAll();
     }
 
     @Get(':id')
     @UseGuards(AuthGuard('jwt'))
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.ordersService.findOne(id, tenantId);
+    findOne(@Param('id') id: string) {
+        return this.ordersService.findOne(id);
     }
 
     @Patch(':id/status')
@@ -42,14 +44,13 @@ export class OrdersController {
     updateStatus(
         @Param('id') id: string,
         @Body('status') status: OrderStatus,
-        @TenantId() tenantId: string,
     ) {
-        return this.ordersService.updateStatus(id, status, tenantId);
+        return this.ordersService.updateStatus(id, status);
     }
 
     @Delete(':id')
     @UseGuards(AuthGuard('jwt'))
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.ordersService.remove(id, tenantId);
+    remove(@Param('id') id: string) {
+        return this.ordersService.remove(id);
     }
 }

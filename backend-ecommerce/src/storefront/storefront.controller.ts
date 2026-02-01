@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { StorefrontService } from './storefront.service';
-import { TenantId } from '../common/decorators';
+
 
 @Controller('storefront')
 export class StorefrontController {
@@ -8,7 +8,6 @@ export class StorefrontController {
 
     @Get('products')
     getProducts(
-        @TenantId() tenantId: string,
         @Query('categoryId') categoryId?: string,
         @Query('search') search?: string,
         @Query('tags') tags?: string,
@@ -18,7 +17,7 @@ export class StorefrontController {
         @Query('sortBy') sortBy?: 'price' | 'createdAt' | 'name',
         @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     ) {
-        return this.storefrontService.getProducts(tenantId, {
+        return this.storefrontService.getProducts({
             categoryId,
             search,
             tags: tags ? tags.split(',') : undefined,
@@ -31,32 +30,31 @@ export class StorefrontController {
     }
 
     @Get('products/:id')
-    getProduct(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.storefrontService.getProduct(id, tenantId);
+    getProduct(@Param('id') id: string) {
+        return this.storefrontService.getProduct(id);
     }
 
     @Get('featured')
-    getFeaturedProducts(@TenantId() tenantId: string, @Query('limit') limit?: string) {
-        return this.storefrontService.getFeaturedProducts(tenantId, limit ? parseInt(limit) : 8);
+    getFeaturedProducts(@Query('limit') limit?: string) {
+        return this.storefrontService.getFeaturedProducts(limit ? parseInt(limit) : 8);
     }
 
     @Get('categories')
-    getCategories(@TenantId() tenantId: string) {
-        return this.storefrontService.getCategories(tenantId);
+    getCategories() {
+        return this.storefrontService.getCategories();
     }
 
     @Get('products/:id/suggestions')
     getProductSuggestions(
         @Param('id') id: string,
-        @TenantId() tenantId: string,
         @Query('limit') limit?: string,
     ) {
-        return this.storefrontService.getProductSuggestions(id, tenantId, limit ? parseInt(limit) : 4);
+        return this.storefrontService.getProductSuggestions(id, limit ? parseInt(limit) : 4);
     }
 
     @Get('pages/:slug')
-    getCmsPage(@Param('slug') slug: string, @TenantId() tenantId: string) {
-        return this.storefrontService.getCmsPage(slug, tenantId);
+    getCmsPage(@Param('slug') slug: string) {
+        return this.storefrontService.getCmsPage(slug);
     }
 
     @Get('config/:slug')

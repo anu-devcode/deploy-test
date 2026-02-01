@@ -27,7 +27,7 @@ export class OrdersService {
         return `${prefix}-${timestamp}-${random}`;
     }
 
-    async create(dto: CreateOrderDto, tenantId: string) {
+    async create(dto: CreateOrderDto) {
         // Validate: must have either customerId or guest info
         if (!dto.customerId && !dto.isGuest) {
             throw new BadRequestException('Either customerId or guest checkout is required');
@@ -42,7 +42,6 @@ export class OrdersService {
         const products = await this.prisma.product.findMany({
             where: {
                 id: { in: productIds },
-                tenantId,
             },
         });
 
@@ -71,7 +70,6 @@ export class OrdersService {
         const order = await this.prisma.order.create({
             data: {
                 orderNumber,
-                tenantId,
                 total,
                 subtotal: total,
                 // Guest checkout fields
@@ -117,24 +115,21 @@ export class OrdersService {
                     firstName,
                     lastName,
                     phone: dto.guestPhone, // Use guest phone as it's the most recent
-                    address: dto.shippingAddress,
-                    city: dto.shippingCity,
                 }
             });
         }
 
         // Trigger Automation
-        await this.automationService.trigger('ORDER_CREATED', order, tenantId);
+        await this.automationService.trigger('ORDER_CREATED', order);
 
         // Emit WebSocket Event
-        this.eventsGateway.notifyNewOrder(tenantId, order);
+        this.eventsGateway.notifyNewOrder(order);
 
         return order;
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.order.findMany({
-            where: { tenantId },
             include: {
                 items: {
                     include: {
@@ -147,9 +142,9 @@ export class OrdersService {
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const order = await this.prisma.order.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: {
                 items: {
                     include: {
@@ -245,21 +240,21 @@ export class OrdersService {
         };
     }
 
-    async updateStatus(id: string, status: OrderStatus, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async updateStatus(id: string, status: OrderStatus) {
+        await this.findOne(id);
         const order = await this.prisma.order.update({
             where: { id },
             data: { status },
         });
 
         // Emit WebSocket Event
-        this.eventsGateway.notifyOrderStatusUpdate(tenantId, id, status);
+        this.eventsGateway.notifyOrderStatusUpdate(id, status);
 
         return order;
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async remove(id: string) {
+        await this.findOne(id);
         // First delete order items
         await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
         return this.prisma.order.delete({ where: { id } });

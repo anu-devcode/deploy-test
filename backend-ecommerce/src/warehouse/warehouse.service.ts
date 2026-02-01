@@ -7,10 +7,10 @@ import { MovementType } from '@prisma/client';
 export class WarehouseService {
     constructor(private prisma: PrismaService) { }
 
-    async create(dto: CreateWarehouseDto, tenantId: string) {
+    async create(dto: CreateWarehouseDto) {
         // Check code uniqueness
         const existing = await this.prisma.warehouse.findFirst({
-            where: { code: dto.code, tenantId },
+            where: { code: dto.code },
         });
 
         if (existing) {
@@ -20,7 +20,7 @@ export class WarehouseService {
         // If this is marked as default, unset other defaults
         if (dto.isDefault) {
             await this.prisma.warehouse.updateMany({
-                where: { tenantId, isDefault: true },
+                where: { isDefault: true },
                 data: { isDefault: false },
             });
         }
@@ -28,14 +28,12 @@ export class WarehouseService {
         return this.prisma.warehouse.create({
             data: {
                 ...dto,
-                tenantId,
             },
         });
     }
 
-    async findAll(tenantId: string) {
+    async findAll() {
         return this.prisma.warehouse.findMany({
-            where: { tenantId },
             include: {
                 _count: {
                     select: { products: true, movements: true },
@@ -45,9 +43,9 @@ export class WarehouseService {
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOne(id: string) {
         const warehouse = await this.prisma.warehouse.findFirst({
-            where: { id, tenantId },
+            where: { id },
             include: {
                 products: {
                     select: {
@@ -76,12 +74,12 @@ export class WarehouseService {
         return warehouse;
     }
 
-    async update(id: string, dto: UpdateWarehouseDto, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async update(id: string, dto: UpdateWarehouseDto) {
+        await this.findOne(id);
 
         if (dto.isDefault) {
             await this.prisma.warehouse.updateMany({
-                where: { tenantId, isDefault: true, NOT: { id } },
+                where: { isDefault: true, NOT: { id } },
                 data: { isDefault: false },
             });
         }
@@ -92,8 +90,8 @@ export class WarehouseService {
         });
     }
 
-    async remove(id: string, tenantId: string) {
-        await this.findOne(id, tenantId);
+    async remove(id: string) {
+        await this.findOne(id);
 
         // Check if warehouse has products
         const productCount = await this.prisma.product.count({
@@ -107,11 +105,11 @@ export class WarehouseService {
         return this.prisma.warehouse.delete({ where: { id } });
     }
 
-    async adjustStock(warehouseId: string, dto: StockAdjustmentDto, tenantId: string) {
-        const warehouse = await this.findOne(warehouseId, tenantId);
+    async adjustStock(warehouseId: string, dto: StockAdjustmentDto) {
+        const warehouse = await this.findOne(warehouseId);
 
         const product = await this.prisma.product.findFirst({
-            where: { id: dto.productId, tenantId },
+            where: { id: dto.productId },
         });
 
         if (!product) {
@@ -144,8 +142,8 @@ export class WarehouseService {
         });
     }
 
-    async getStockMovements(warehouseId: string, tenantId: string) {
-        await this.findOne(warehouseId, tenantId);
+    async getStockMovements(warehouseId: string) {
+        await this.findOne(warehouseId);
 
         return this.prisma.stockMovement.findMany({
             where: { warehouseId },
@@ -159,12 +157,12 @@ export class WarehouseService {
         });
     }
 
-    async getInventorySummary(tenantId: string) {
+    async getInventorySummary() {
         const [totalProducts, lowStockProducts, outOfStockProducts, warehouses] = await Promise.all([
-            this.prisma.product.count({ where: { tenantId } }),
-            this.prisma.product.count({ where: { tenantId, stock: { lte: 10, gt: 0 } } }),
-            this.prisma.product.count({ where: { tenantId, stock: 0 } }),
-            this.prisma.warehouse.count({ where: { tenantId } }),
+            this.prisma.product.count(),
+            this.prisma.product.count({ where: { stock: { lte: 10, gt: 0 } } }),
+            this.prisma.product.count({ where: { stock: 0 } }),
+            this.prisma.warehouse.count(),
         ]);
 
         return {

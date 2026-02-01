@@ -6,29 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model Tenant {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  config      Json?    // Stores branding, taxes, workflow rules
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  users       User[]
-  products    Product[]
-  orders      Order[]
-  customers   Customer[]
-  warehouses  Warehouse[]
-  cmsPages    CmsPage[]
-  carts       Cart[]
-  reviews     Review[]
-  deliveries  Delivery[]
-  promotions  Promotion[]
-  wishlists   Wishlist[]
-  notifications Notification[]
-  helpMessages  HelpMessage[]
-  automationRules AutomationRule[]
-}
 
 model User {
   id             String   @id @default(uuid())
@@ -36,8 +13,6 @@ model User {
   password       String
   role           Role     @default(STAFF)
   isFirstLogin   Boolean  @default(true)
-  tenantId       String
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
   permissions    UserPermission[]
   passwordResetTokens PasswordResetToken[]
   createdAt      DateTime @default(now())
@@ -73,8 +48,6 @@ model Product {
   category       Category?   @relation(fields: [categoryId], references: [id])
   warehouseId    String?
   warehouse      Warehouse?  @relation(fields: [warehouseId], references: [id])
-  tenantId       String
-  tenant         Tenant      @relation(fields: [tenantId], references: [id])
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   orderItems     OrderItem[]
@@ -110,8 +83,6 @@ model Customer {
   // Addresses moved to separate model
   addresses CustomerAddress[]
   
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   orders    Order[]
   cart      Cart?
   reviews   Review[]
@@ -123,7 +94,7 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([email, tenantId])
+  @@unique([email])
 }
 
 model CustomerAddress {
@@ -146,8 +117,6 @@ model Cart {
   id         String     @id @default(uuid())
   customerId String     @unique
   customer   Customer   @relation(fields: [customerId], references: [id])
-  tenantId   String
-  tenant     Tenant     @relation(fields: [tenantId], references: [id])
   items      CartItem[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -170,8 +139,6 @@ model Wishlist {
   id         String   @id @default(uuid())
   customerId String   @unique
   customer   Customer @relation(fields: [customerId], references: [id])
-  tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
   items      WishlistItem[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -214,8 +181,6 @@ model Order {
   
   customerId      String?       // Optional for guest checkout
   customer        Customer?     @relation(fields: [customerId], references: [id])
-  tenantId        String
-  tenant          Tenant        @relation(fields: [tenantId], references: [id])
   items           OrderItem[]
   payments        Payment[]
   delivery        Delivery?
@@ -258,14 +223,12 @@ model Warehouse {
   city        String?
   country     String?
   isDefault   Boolean         @default(false)
-  tenantId    String
-  tenant      Tenant          @relation(fields: [tenantId], references: [id])
   products    Product[]
   movements   StockMovement[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  @@unique([code, tenantId])
+  @@unique([code])
 }
 
 model StockMovement {
@@ -287,12 +250,10 @@ model CmsPage {
   slug      String
   content   Json     // Rich content blocks
   published Boolean  @default(false)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([slug, tenantId])
+  @@unique([slug])
 }
 
 model Permission {
@@ -318,8 +279,6 @@ model AutomationRule {
   condition   Json?    // e.g., { "minAmount": 5000 }
   action      String   // e.g., "NOTIFY_ADMIN", "AUTO_CONFIRM"
   isActive    Boolean  @default(true)
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
   logs        AutomationLog[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -394,8 +353,6 @@ model Review {
   product     Product      @relation(fields: [productId], references: [id])
   customerId  String
   customer    Customer     @relation(fields: [customerId], references: [id])
-  tenantId    String
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -411,8 +368,6 @@ model Notification {
   isRead      Boolean          @default(false)
   customerId  String?          // Null for broadcast/system alerts
   customer    Customer?        @relation(fields: [customerId], references: [id])
-  tenantId    String
-  tenant      Tenant           @relation(fields: [tenantId], references: [id])
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -432,8 +387,6 @@ model HelpMessage {
 
   customerId  String
   customer    Customer          @relation(fields: [customerId], references: [id])
-  tenantId    String
-  tenant      Tenant            @relation(fields: [tenantId], references: [id])
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -470,8 +423,6 @@ model Delivery {
   estimatedTime   DateTime?
   actualDelivery  DateTime?
   notes           String?
-  tenantId        String
-  tenant          Tenant         @relation(fields: [tenantId], references: [id])
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -524,8 +475,6 @@ model Promotion {
   currentUsage   Int              @default(0)
   businessType   PromoBusinessType @default(BOTH)
   isActive       Boolean          @default(true)
-  tenantId       String
-  tenant         Tenant           @relation(fields: [tenantId], references: [id])
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
