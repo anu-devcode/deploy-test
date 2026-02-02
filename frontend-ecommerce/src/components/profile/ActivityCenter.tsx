@@ -25,7 +25,7 @@ export function ActivityCenter({ initialSection = 'messages' }: { initialSection
     }, [initialSection]);
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 pb-24">
             {/* Header / Sub-tabs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-4">
@@ -42,8 +42,8 @@ export function ActivityCenter({ initialSection = 'messages' }: { initialSection
                     <button
                         onClick={() => setActiveSection('messages')}
                         className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSection === 'messages'
-                                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
-                                : 'text-slate-400 hover:text-slate-600'
+                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
+                            : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         <MessageSquare className="w-3.5 h-3.5" />
@@ -52,8 +52,8 @@ export function ActivityCenter({ initialSection = 'messages' }: { initialSection
                     <button
                         onClick={() => setActiveSection('notifications')}
                         className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSection === 'notifications'
-                                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
-                                : 'text-slate-400 hover:text-slate-600'
+                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
+                            : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         <Bell className="w-3.5 h-3.5" />

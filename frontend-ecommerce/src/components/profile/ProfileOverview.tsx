@@ -18,52 +18,48 @@ export function ProfileOverview({ orders, loading, onViewAllOrders, onTabChange 
 
     return (
         <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
-            {/* Stats Grid - Premium Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
-                    {/* Background Decoration */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-emerald-50 transition-colors" />
-
-                    <div className="relative z-10 flex flex-col gap-6">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
-                            <Package className="w-6 h-6" />
+            {/* Stats Grid - Compact & Beautiful */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-emerald-200 transition-all group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-emerald-50/30 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 flex flex-col gap-4 md:gap-6">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
+                            <Package className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Orders</p>
+                            <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">
                                 {loading ? '...' : orders.length}
                             </h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-blue-50 transition-colors" />
-
-                    <div className="relative z-10 flex flex-col gap-6">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
-                            <TrendingUp className="w-6 h-6" />
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-blue-200 transition-all group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-blue-50/30 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 flex flex-col gap-4 md:gap-6">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm">
+                            <TrendingUp className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Spent</p>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Total Spent</p>
+                            <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">
                                 {loading ? '...' : `ETB ${totalSpent.toLocaleString()}`}
                             </h3>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:bg-amber-50 transition-colors" />
-
-                    <div className="relative z-10 flex flex-col gap-6">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
-                            <Clock className="w-6 h-6" />
+                <div className="col-span-2 md:col-span-1 bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-amber-200 transition-all group overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-amber-50/30 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 flex flex-col md:flex-col items-start gap-4 md:gap-6">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm">
+                            <Clock className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Loyalty Points</p>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                                {loading ? '...' : Math.floor(totalSpent / 100)}
+                            <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Loyalty Points</p>
+                            <h3 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">
+                                {loading ? '...' : Math.floor(totalSpent / 100)} <span className="text-[10px] md:text-sm text-slate-400 font-bold uppercase ml-1">Pts</span>
                             </h3>
                         </div>
                     </div>

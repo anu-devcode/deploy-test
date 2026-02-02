@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Menu, X, User, Zap, Store } from 'lucide-react';
+import { Search, ShoppingCart, Menu, X, User, Zap, Store, ChevronDown } from 'lucide-react';
 import { useCart, useBusiness, useNotifications } from '@/context';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
@@ -12,9 +12,10 @@ export function Navbar() {
     const { mode, toggleMode } = useBusiness();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isSearchActive, setIsSearchActive] = useState(false);
     const { itemCount, toggleCart } = useCart();
     const { unreadCount } = useNotifications();
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, logout } = useAuth();
     const pathname = usePathname();
     const isLandingPage = pathname === '/';
 
@@ -52,7 +53,7 @@ export function Navbar() {
                     : 'px-4 md:px-6 py-0 bg-transparent border-transparent scale-100'
                     }`}>
                     <div className="flex items-center justify-between">
-                        {/* Master Logo Logic */}
+                        {/* Master Logo Logic - Always Rendered, Covered by Search on Mobile */}
                         <Link href="/" className="group flex items-center gap-3 md:gap-5 hover:opacity-100 transition-all duration-500">
                             <div className="relative shrink-0">
                                 <div className="absolute -inset-4 bg-emerald-500/30 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700 opacity-0 group-hover:opacity-100"></div>
@@ -70,7 +71,8 @@ export function Navbar() {
                         </Link>
 
                         {/* Navigation - Ultra Minimalist till Interaction */}
-                        <nav className="hidden lg:flex items-center gap-16">
+                        <nav className={`hidden lg:flex items-center gap-16 transition-all duration-700 ${isSearchActive ? 'hidden w-0 opacity-0 pointer-events-none' : 'opacity-100 translate-x-0 scale-100 flex-1 justify-center'
+                            }`}>
                             {navLinks.map((item) => (
                                 <Link
                                     key={item.name}
@@ -85,45 +87,130 @@ export function Navbar() {
                             ))}
                         </nav>
 
-                        <div className="flex items-center gap-2 sm:gap-6 md:gap-10">
-                            <div className="flex">
-                                <SearchComponent />
+                        <div className={`flex items-center transition-all duration-700 ${isSearchActive ? 'gap-2 md:gap-4 md:flex-1 md:ml-20' : 'gap-2 sm:gap-6 md:gap-10'}`}>
+                            {/* Search Container: Absolute on Mobile, Static on Desktop */}
+                            <div className={`transition-all duration-700 ${isSearchActive
+                                ? 'absolute left-4 right-[160px] top-1/2 -translate-y-1/2 z-50 md:static md:inset-auto md:translate-y-0 md:flex-1'
+                                : ''}`}>
+                                <SearchComponent onToggle={setIsSearchActive} />
                             </div>
 
                             {/* Notifications / Profile */}
 
-                            {/* Account - Improved Visibility */}
-                            <Link
-                                href={isAuthenticated ? '/profile' : '/login'}
-                                className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-5 md:py-2 rounded-full transition-all duration-700 group relative ${isDarkText
-                                    ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                                    : 'bg-white/5 text-white hover:bg-white/10'
-                                    }`}
-                            >
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform relative">
-                                    {user?.avatar ? (
-                                        <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-[10px] md:text-xs font-black">{(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</span>
+                            {/* Account - Improved Visibility with Hover Dropdown */}
+                            <div className="relative group">
+                                <Link
+                                    href={isAuthenticated ? '/profile' : '/login'}
+                                    className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-4 md:py-2 rounded-full transition-all duration-700 group-hover:bg-emerald-100/10 ${isDarkText
+                                        ? 'bg-emerald-50 text-emerald-800'
+                                        : 'bg-white/5 text-white'
+                                        }`}
+                                >
+                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform relative">
+                                        {user?.avatar ? (
+                                            <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-[10px] md:text-xs font-black">{(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</span>
+                                        )}
+                                    </div>
+                                    {isAuthenticated && unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-rose-500 text-white text-[8px] md:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-bounce">
+                                            {unreadCount}
+                                        </span>
                                     )}
+                                    <div className="hidden sm:flex flex-col items-start -space-y-1 ml-1 mr-2">
+                                        <span className={`text-[9px] font-black uppercase tracking-widest opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-emerald-200'}`}>My Account</span>
+                                        <span className="text-xs font-black truncate max-w-[100px]">
+                                            {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Member'}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`w-3 h-3 transition-transform duration-500 group-hover:rotate-180 opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-white'}`} />
+                                </Link>
+
+                                {/* Dropdown Menu */}
+                                <div className="absolute top-full right-0 mt-2 w-64 pt-2 opacity-0 translate-y-4 scale-95 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 z-50">
+                                    <div className="bg-white/95 backdrop-blur-3xl rounded-[2.5rem] border border-emerald-100/50 shadow-[0_30px_70px_-15px_rgba(2,44,34,0.2)] overflow-hidden">
+                                        <div className="p-6 bg-gradient-to-br from-emerald-50/50 to-white/50 border-b border-emerald-100/30">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Account Info</p>
+                                            <p className="text-sm font-black text-slate-900 truncate">{user?.email || 'Guest Session'}</p>
+                                        </div>
+                                        <div className="p-3">
+                                            {isAuthenticated ? (
+                                                <>
+                                                    <Link href="/profile" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white group-hover/item:scale-110 transition-transform">
+                                                            <User className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">Profile</span>
+                                                            <span className="text-[10px] font-bold text-slate-500">View Dashboard</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/track-order" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                            <ShoppingCart className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">Track Order</span>
+                                                            <span className="text-[10px] font-bold text-slate-500">Shipment Status</span>
+                                                        </div>
+                                                    </Link>
+                                                    {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN' || user?.role === 'STAFF') && (
+                                                        <Link href="/admin" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-amber-50 transition-all group/item outline-none">
+                                                            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                                <Store className="w-5 h-5" />
+                                                            </div>
+                                                            <div className="flex flex-col text-left">
+                                                                <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">Admin Panel</span>
+                                                                <span className="text-[10px] font-bold text-slate-500">Management</span>
+                                                            </div>
+                                                        </Link>
+                                                    )}
+                                                    <div className="h-px bg-emerald-100/50 my-2 mx-4" />
+                                                    <button
+                                                        onClick={() => logout()}
+                                                        className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-rose-50 transition-all group/item text-rose-600 outline-none"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center group-hover/item:scale-110 transition-transform">
+                                                            <X className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[11px] font-black uppercase tracking-wider">Logout</span>
+                                                            <span className="text-[10px] font-bold opacity-60">Sign Out</span>
+                                                        </div>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Link href="/login" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white group-hover/item:scale-110 transition-transform">
+                                                            <User className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">Login</span>
+                                                            <span className="text-[10px] font-bold text-slate-500">Welcome Back</span>
+                                                        </div>
+                                                    </Link>
+                                                    <Link href="/register" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center group-hover/item:scale-110 transition-transform shadow-lg shadow-emerald-200">
+                                                            <Zap className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">Register</span>
+                                                            <span className="text-[10px] font-bold text-slate-500">Create Account</span>
+                                                        </div>
+                                                    </Link>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                {isAuthenticated && unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-rose-500 text-white text-[8px] md:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-bounce">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                                <div className="hidden sm:flex flex-col items-start -space-y-1">
-                                    <span className={`text-[9px] font-black uppercase tracking-widest opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-emerald-200'}`}>My Account</span>
-                                    <span className="text-xs font-black truncate max-w-[100px]">
-                                        {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Member'}
-                                    </span>
-                                </div>
-                            </Link>
+                            </div>
 
                             {/* Cart */}
                             <button
                                 onClick={toggleCart}
-                                className={`relative flex items-center justify-center w-10 h-10 md:w-14 md:h-14 lg:w-40 lg:h-14 rounded-full font-black text-[11px] tracking-[0.3em] uppercase transition-all duration-700 active:scale-90 ${isDarkText
+                                className={`relative flex items-center justify-center h-10 w-10 md:h-14 md:w-14 lg:w-40 rounded-full font-black text-[11px] tracking-[0.3em] uppercase transition-all duration-700 active:scale-90 ${isDarkText
                                     ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/30'
                                     : 'bg-white text-slate-950 shadow-2xl hover:bg-emerald-50'
                                     }`}

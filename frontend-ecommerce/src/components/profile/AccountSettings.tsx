@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { ArrowLeft, ChevronRight, Lock, Mail, Bell, CheckCircle2, Shield, Smartphone, UserCircle, Camera, Trash2, Laptop } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Lock, Mail, Bell, CheckCircle2, Shield, Smartphone, UserCircle, Camera, Trash2, Laptop, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import SecuritySettings from './SecuritySettings';
 
@@ -23,6 +23,9 @@ export function AccountSettings() {
     });
 
     const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+    const [showCurrent, setShowCurrent] = useState(false);
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const [notifications, setNotifications] = useState({
         email: true,
@@ -76,32 +79,37 @@ export function AccountSettings() {
     };
 
     const sections = [
-        { id: 'profile' as Section, label: 'Personal Information', desc: 'Avatar, Name, Phone & Region', icon: UserCircle, color: 'bg-slate-900', textColor: 'text-white' },
-        { id: 'security' as Section, label: 'Security & Password', desc: 'Password & Authentication', icon: Lock, color: 'bg-rose-50', textColor: 'text-rose-500' },
-        { id: 'sessions' as Section, label: 'Login Security', desc: 'Active Sessions & Devices', icon: Laptop, color: 'bg-blue-50', textColor: 'text-blue-500' },
-        { id: 'notifications' as Section, label: 'Notifications', desc: 'Email & SMS Preferences', icon: Bell, color: 'bg-amber-50', textColor: 'text-amber-500' }
+        { id: 'profile' as Section, label: 'Profile Details', desc: 'Manage your avatar, name, and contact info', icon: UserCircle, color: 'bg-emerald-50', textColor: 'text-emerald-600' },
+        { id: 'security' as Section, label: 'Change Password', desc: 'Secure your account with a new password', icon: Lock, color: 'bg-rose-50', textColor: 'text-rose-600' },
+        { id: 'sessions' as Section, label: 'Login Security', desc: 'Manage devices and two-factor authentication', icon: Shield, color: 'bg-blue-50', textColor: 'text-blue-600' },
+        { id: 'notifications' as Section, label: 'Notifications', desc: 'Configure email and messaging alerts', icon: Bell, color: 'bg-amber-50', textColor: 'text-amber-600' }
     ];
 
     if (!activeSection) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 max-w-4xl">
+                <div className="mb-6 px-2">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic">Account Settings</h2>
+                    <p className="text-sm font-bold text-slate-400 mt-1">Select a task to manage your account</p>
+                </div>
+
                 {sections.map((section) => {
                     const Icon = section.icon;
                     return (
                         <button
                             key={section.id}
                             onClick={() => setActiveSection(section.id)}
-                            className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200 transition-all group flex flex-col items-start text-left"
+                            className="bg-white p-5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 shadow-sm hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200 transition-all group flex items-center text-left gap-4 md:gap-6"
                         >
-                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl ${section.color} ${section.textColor} flex items-center justify-center mb-6 md:mb-8 shadow-lg group-hover:scale-110 transition-transform`}>
+                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl md:rounded-[1.25rem] ${section.color} ${section.textColor} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
                                 <Icon className="w-5 h-5 md:w-6 md:h-6" />
                             </div>
-                            <div className="flex-1 w-full">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">{section.label}</h3>
-                                    <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">{section.desc}</p>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg md:text-xl font-black text-slate-900 tracking-tight leading-tight">{section.label}</h3>
+                                <p className="text-[10px] md:text-xs font-bold text-slate-400 mt-0.5 truncate uppercase tracking-widest">{section.desc}</p>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-inner">
+                                <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                             </div>
                         </button>
                     );
@@ -119,7 +127,7 @@ export function AccountSettings() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
             <button
                 onClick={() => setActiveSection(null)}
                 className="flex items-center gap-2 text-sm font-black text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest group"
@@ -135,7 +143,7 @@ export function AccountSettings() {
                             <UserCircle className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Personal Information</h3>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Profile Details</h3>
                             <p className="text-sm font-bold text-slate-400">Manage your basic details and preferences</p>
                         </div>
                     </div>
@@ -263,42 +271,69 @@ export function AccountSettings() {
                             <Lock className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Security & Password</h3>
-                            <p className="text-sm font-bold text-slate-400">Protect your account with a strong password</p>
+                            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Change Password</h2>
+                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Update your login credentials</p>
                         </div>
                     </div>
 
                     <form onSubmit={handlePasswordChange} className="max-w-xl space-y-8">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Current Password</label>
-                            <input
-                                type="password"
-                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all"
-                                placeholder="••••••••"
-                                value={passwordData.current}
-                                onChange={e => setPasswordData({ ...passwordData, current: e.target.value })}
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showCurrent ? 'text' : 'password'}
+                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all pr-14"
+                                    placeholder="••••••••"
+                                    value={passwordData.current}
+                                    onChange={e => setPasswordData({ ...passwordData, current: e.target.value })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCurrent(!showCurrent)}
+                                    className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors"
+                                >
+                                    {showCurrent ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">New Password</label>
-                                <input
-                                    type="password"
-                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all"
-                                    placeholder="Enter new"
-                                    value={passwordData.new}
-                                    onChange={e => setPasswordData({ ...passwordData, new: e.target.value })}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showNew ? 'text' : 'password'}
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all pr-14"
+                                        placeholder="Enter new"
+                                        value={passwordData.new}
+                                        onChange={e => setPasswordData({ ...passwordData, new: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNew(!showNew)}
+                                        className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors"
+                                    >
+                                        {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Confirm New</label>
-                                <input
-                                    type="password"
-                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all"
-                                    placeholder="Confirm new"
-                                    value={passwordData.confirm}
-                                    onChange={e => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showConfirm ? 'text' : 'password'}
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:border-rose-500 focus:bg-white font-bold transition-all pr-14"
+                                        placeholder="Confirm new"
+                                        value={passwordData.confirm}
+                                        onChange={e => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirm(!showConfirm)}
+                                        className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors"
+                                    >
+                                        {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <button

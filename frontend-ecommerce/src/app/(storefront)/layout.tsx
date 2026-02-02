@@ -2,6 +2,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { SideCart } from "@/components/cart/SideCart";
 import { LiveAnnouncements } from "@/components/layout/LiveAnnouncements";
+import { BottomNav } from "@/components/profile/BottomNav";
 
 export default function StorefrontLayout({
     children,
@@ -16,6 +17,7 @@ export default function StorefrontLayout({
             <main className="min-h-screen">
                 {children}
             </main>
+            <BottomNav />
             <Footer />
         </div>
     );

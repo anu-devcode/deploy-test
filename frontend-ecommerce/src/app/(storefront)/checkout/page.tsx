@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/context';
 import { useAuth } from '@/context/AuthContext';
-import { MapPin, CreditCard, PackageCheck, Check, ChevronRight, ArrowLeft, Upload, QrCode, ShieldCheck, Info, X, AlertCircle } from 'lucide-react';
+import { MapPin, CreditCard, PackageCheck, Check, ChevronRight, ArrowLeft, Upload, QrCode, ShieldCheck, Info, X, AlertCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, Badge } from '@/components';
 import { api } from '@/lib/api';
@@ -34,7 +34,10 @@ export default function CheckoutPage() {
     const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+    const [savedPaymentMethods, setSavedPaymentMethods] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
+    const [savePaymentToProfile, setSavePaymentToProfile] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,12 +48,14 @@ export default function CheckoutPage() {
 
             const fetchData = async () => {
                 try {
-                    const [profile, addresses] = await Promise.all([
+                    const [profile, addresses, billingInfo] = await Promise.all([
                         api.getProfile(),
-                        api.getAddresses()
+                        api.getAddresses(),
+                        api.getBillingInfo()
                     ]);
 
                     setSavedAddresses(addresses);
+                    setSavedPaymentMethods(billingInfo.savedMethods);
 
                     // Pre-fill from profile/default address
                     const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
@@ -71,6 +76,15 @@ export default function CheckoutPage() {
                             name: profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : (profile.name || prev.name),
                             email: profile.email || prev.email,
                             phone: profile.phone || prev.phone,
+                        }));
+                    }
+                    // Pre-fill payment method if default exists
+                    const defaultPay = billingInfo.savedMethods.find((m: any) => m.isDefault);
+                    if (defaultPay) {
+                        setSelectedPaymentMethodId(defaultPay.id);
+                        setFormData(prev => ({
+                            ...prev,
+                            paymentMethod: defaultPay.type.toLowerCase()
                         }));
                     }
                 } catch (e) {
@@ -120,6 +134,8 @@ export default function CheckoutPage() {
                 shippingCity: formData.city,
                 paymentMethod: formData.paymentMethod,
                 saveAddressToProfile: isAuthenticated && saveToProfile,
+                savedPaymentMethodId: selectedPaymentMethodId,
+                savePaymentMethodToProfile: isAuthenticated && savePaymentToProfile,
                 items: items.map(i => ({ productId: i.productId, quantity: i.quantity }))
             };
 
@@ -445,15 +461,63 @@ export default function CheckoutPage() {
                             <div className="grid lg:grid-cols-5 gap-10">
                                 {/* selection */}
                                 <div className="lg:col-span-3 space-y-4">
+                                    {isAuthenticated && savedPaymentMethods.length > 0 && (
+                                        <div className="space-y-4 mb-8">
+                                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Saved Methods</h3>
+                                            <div className="grid gap-3">
+                                                {savedPaymentMethods.map((method: any) => (
+                                                    <button
+                                                        key={method.id}
+                                                        onClick={() => {
+                                                            setSelectedPaymentMethodId(method.id);
+                                                            setFormData({ ...formData, paymentMethod: method.type.toLowerCase() });
+                                                            setReceiptUrl(null); // Reset receipt if switch to saved
+                                                        }}
+                                                        className={`p-5 rounded-2xl border-2 text-left transition-all flex items-center justify-between group ${selectedPaymentMethodId === method.id ? 'border-emerald-600 bg-emerald-50/30 shadow-lg shadow-emerald-500/5' : 'border-slate-50 bg-white hover:border-emerald-200'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`p-2 rounded-xl ${selectedPaymentMethodId === method.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                <CreditCard className="w-4 h-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{method.brand || method.type} {method.last4 && `•••• ${method.last4}`}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{method.type}</p>
+                                                            </div>
+                                                        </div>
+                                                        {selectedPaymentMethodId === method.id && (
+                                                            <div className="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center">
+                                                                <Check className="w-3 h-3 text-white" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedPaymentMethodId(null);
+                                                        setFormData({ ...formData, paymentMethod: 'telebirr' });
+                                                    }}
+                                                    className={`p-5 rounded-2xl border-2 border-dashed text-left transition-all flex items-center gap-4 ${!selectedPaymentMethodId ? 'border-emerald-600 bg-emerald-50/30' : 'border-slate-200 hover:border-emerald-500'}`}
+                                                >
+                                                    <div className={`p-2 rounded-xl ${!selectedPaymentMethodId ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                        <Plus className="w-4 h-4" />
+                                                    </div>
+                                                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Use New Method</p>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-4">{isAuthenticated && savedPaymentMethods.length > 0 && !selectedPaymentMethodId ? 'New Payment Method' : 'Payment Method'}</h3>
                                     {[
                                         { id: 'telebirr', name: 'Telebirr', desc: 'Secure Mobile Pay', icon: '📱' },
                                         { id: 'cbe', name: 'CBE', desc: 'Bank Transfer', icon: '🏦' },
                                         { id: 'cash', name: 'Cash', desc: 'Pay on Delivery', icon: '🚚' },
                                         { id: 'online', name: 'Online', desc: 'Coming Soon', icon: '💳', comingSoon: true }
-                                    ].map(method => (
+                                    ].filter(m => !selectedPaymentMethodId || m.id === formData.paymentMethod).map(method => (
                                         <div key={method.id} className="relative">
                                             <button
-                                                disabled={method.comingSoon}
+                                                disabled={method.comingSoon || (selectedPaymentMethodId !== null)}
                                                 onClick={() => {
                                                     setFormData({ ...formData, paymentMethod: method.id });
                                                     if (method.id === 'cash') setReceiptUrl(null);
@@ -515,6 +579,18 @@ export default function CheckoutPage() {
                                             )}
                                         </div>
                                     ))}
+
+                                    {!selectedPaymentMethodId && isAuthenticated && (
+                                        <div className="flex items-center gap-3 p-6 rounded-[2rem] bg-slate-50 border border-slate-100 mt-6 group cursor-pointer hover:border-emerald-200 transition-all" onClick={() => setSavePaymentToProfile(!savePaymentToProfile)}>
+                                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${savePaymentToProfile ? 'bg-slate-900 border-slate-900 shadow-lg' : 'border-slate-200 group-hover:border-slate-400'}`}>
+                                                {savePaymentToProfile && <Check className="w-4 h-4 text-white" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">Save payment method</p>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Securely save to my profile for next time</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Side: Summary & Action */}

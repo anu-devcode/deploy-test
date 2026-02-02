@@ -10,6 +10,8 @@ datasource db {
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
+  firstName      String?
+  lastName       String?
   password       String
   role           Role     @default(CUSTOMER)
   isFirstLogin   Boolean  @default(true)
@@ -113,6 +115,7 @@ model Customer {
   wishlist  Wishlist?
   notifications Notification[]
   helpMessages  HelpMessage[]
+  savedPaymentMethods SavedPaymentMethod[]
   adminNotes String?
   flags      String[] @default([])
   createdAt DateTime @default(now())
@@ -135,6 +138,23 @@ model CustomerAddress {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedPaymentMethod {
+  id            String        @id @default(uuid())
+  type          PaymentMethod
+  brand         String?       // e.g. "Visa", "Mastercard", "Telebirr"
+  last4         String?       // Last 4 digits for cards
+  expiry        String?       // Expiry date for cards
+  phone         String?       // For Telebirr/M-Pesa
+  accountNumber String?       // For Bank Transfer
+  isDefault     Boolean       @default(false)
+  
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Cart {

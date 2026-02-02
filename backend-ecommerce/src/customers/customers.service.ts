@@ -137,6 +137,16 @@ export class CustomersService {
             lastName = parts.slice(1).join(' ') || '';
         }
 
+        // Update User model FIRST to ensure sync
+        await this.prisma.user.update({
+            where: { id: customerId },
+            data: {
+                firstName: firstName !== undefined ? firstName : undefined,
+                lastName: lastName !== undefined ? lastName : undefined,
+            } as any
+        });
+
+        // Then update Customer model
         return this.prisma.customer.update({
             where: { id: customerId },
             data: {
@@ -203,20 +213,79 @@ export class CustomersService {
     }
 
     async getBillingInfo(customerId: string) {
-        const customer = await this.getProfile(customerId);
+        const [customer, savedMethods] = await Promise.all([
+            this.getProfile(customerId),
+            this.getSavedPaymentMethods(customerId)
+        ]);
+
         const defaultAddress = customer.addresses?.find((a: any) => a.isDefault) || customer.addresses?.[0];
 
-        // Mocking billing info as requested
         return {
-            savedMethods: [
-                { id: 'm1', type: 'CARD', brand: 'visa', last4: '4242', expiry: '12/26', isDefault: true }
-            ],
+            savedMethods,
             billingAddress: {
                 address: defaultAddress?.street || '',
                 city: defaultAddress?.city || '',
-                country: 'Ethiopia', // Hardcoded or from address if we add it
+                country: 'Ethiopia',
             }
         };
+    }
+
+    // Payment Method Management
+    async getSavedPaymentMethods(customerId: string) {
+        return this.prisma.savedPaymentMethod.findMany({
+            where: { customerId },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async addSavedPaymentMethod(customerId: string, dto: any) {
+        const count = await this.prisma.savedPaymentMethod.count({ where: { customerId } });
+        const isDefault = count === 0 ? true : (dto.isDefault || false);
+
+        if (isDefault) {
+            await this.prisma.savedPaymentMethod.updateMany({
+                where: { customerId, isDefault: true },
+                data: { isDefault: false }
+            });
+        }
+
+        return this.prisma.savedPaymentMethod.create({
+            data: {
+                ...dto,
+                isDefault,
+                customerId
+            }
+        });
+    }
+
+    async deleteSavedPaymentMethod(customerId: string, methodId: string) {
+        const method = await this.prisma.savedPaymentMethod.findFirst({
+            where: { id: methodId, customerId }
+        });
+
+        if (!method) throw new NotFoundException('Payment method not found');
+
+        return this.prisma.savedPaymentMethod.delete({
+            where: { id: methodId }
+        });
+    }
+
+    async setSavedPaymentMethodDefault(customerId: string, methodId: string) {
+        const method = await this.prisma.savedPaymentMethod.findFirst({
+            where: { id: methodId, customerId }
+        });
+
+        if (!method) throw new NotFoundException('Payment method not found');
+
+        await this.prisma.savedPaymentMethod.updateMany({
+            where: { customerId, isDefault: true },
+            data: { isDefault: false }
+        });
+
+        return this.prisma.savedPaymentMethod.update({
+            where: { id: methodId },
+            data: { isDefault: true }
+        });
     }
 
     async getInvoices(customerId: string) {

@@ -20,14 +20,11 @@ export function ProfileHeader() {
                 </div>
 
                 <div className="text-center md:text-left space-y-1">
-                    <p className="text-[10px] md:text-xs font-black text-emerald-600 uppercase tracking-[0.2em]">Customer Account</p>
+                    <p className="text-[10px] md:text-xs font-black text-emerald-600 uppercase tracking-[0.2em] italic">Account Hub</p>
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-                        {user?.name || user?.email?.split('@')[0] || 'Member'}
+                        Welcome back, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Member'}
                     </h1>
-                    <p className="text-slate-500 font-medium text-sm md:text-base">
-                        {user?.email}
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] uppercase">
                             {user?.role || 'Customer'}
                         </span>

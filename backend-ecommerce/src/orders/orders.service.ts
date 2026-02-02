@@ -99,24 +99,48 @@ export class OrdersService {
         });
 
         // 1.5 Sync Profile if requested
-        if (dto.saveAddressToProfile && dto.customerId) {
-            let firstName: string | undefined;
-            let lastName: string | undefined;
+        // 1.5 Sync Profile if requested
+        if (dto.customerId) {
+            if (dto.saveAddressToProfile) {
+                let firstName: string | undefined;
+                let lastName: string | undefined;
 
-            if (dto.guestName) {
-                const parts = dto.guestName.trim().split(/\s+/);
-                firstName = parts[0];
-                lastName = parts.slice(1).join(' ') || '';
+                if (dto.guestName) {
+                    const parts = dto.guestName.trim().split(/\s+/);
+                    firstName = parts[0];
+                    lastName = parts.slice(1).join(' ') || '';
+                }
+
+                await this.prisma.customer.update({
+                    where: { id: dto.customerId },
+                    data: {
+                        firstName: firstName || undefined,
+                        lastName: lastName || undefined,
+                        phone: dto.guestPhone || undefined,
+                    }
+                });
             }
 
-            await this.prisma.customer.update({
-                where: { id: dto.customerId },
-                data: {
-                    firstName,
-                    lastName,
-                    phone: dto.guestPhone, // Use guest phone as it's the most recent
+            if (dto.savePaymentMethodToProfile && dto.paymentMethod) {
+                // Check if this method already saved (simple check by type and brand/last4)
+                const existing = await this.prisma.savedPaymentMethod.findFirst({
+                    where: {
+                        customerId: dto.customerId,
+                        type: dto.paymentMethod as any,
+                        // Add more specific checks if available in dto
+                    }
+                });
+
+                if (!existing) {
+                    await this.prisma.savedPaymentMethod.create({
+                        data: {
+                            customerId: dto.customerId,
+                            type: dto.paymentMethod as any,
+                            isDefault: true, // Make newly saved method default
+                        }
+                    });
                 }
-            });
+            }
         }
 
         // Trigger Automation

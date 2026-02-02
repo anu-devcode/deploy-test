@@ -254,8 +254,14 @@ class ApiClient {
         return response.data; // Returned object is { user: { ... } }
     }
 
-    async register(email: string, password: string, role?: string) {
-        const response = await this.client.post('/auth/register', { email, password, role });
+    async register(email: string, password: string, firstName?: string, lastName?: string, role: string = 'CUSTOMER') {
+        const response = await this.client.post('/auth/register', {
+            email,
+            password,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            role: role || 'CUSTOMER'
+        });
         return response.data;
     }
 
@@ -329,7 +335,23 @@ class ApiClient {
     }
 
     async getInvoices() {
-        return this.client.get('/profile/invoices').then(r => r.data);
+        return this.client.get('/profile/billing/invoices').then(r => r.data);
+    }
+
+    async getBillingMethods() {
+        return this.client.get('/profile/billing/methods').then(r => r.data);
+    }
+
+    async addBillingMethod(data: any) {
+        return this.client.post('/profile/billing/methods', data).then(r => r.data);
+    }
+
+    async deleteBillingMethod(id: string) {
+        return this.client.delete(`/profile/billing/methods/${id}`).then(r => r.data);
+    }
+
+    async setBillingMethodDefault(id: string) {
+        return this.client.patch(`/profile/billing/methods/${id}/default`).then(r => r.data);
     }
 
 
@@ -349,6 +371,10 @@ class ApiClient {
         if (params.sortBy) queryParams.append('sortBy', params.sortBy);
         // Add others as needed
         return this.client.get(`/storefront/products?${queryParams.toString()}`).then(r => r.data);
+    }
+
+    async globalSearch(query: string) {
+        return this.client.get('/storefront/search', { params: { q: query } }).then(r => r.data);
     }
 
     async searchProducts(query: string) {

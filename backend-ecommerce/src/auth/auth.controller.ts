@@ -9,6 +9,7 @@ export class AuthController {
 
     @Post('register')
     async register(@Body() dto: RegisterDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+        console.log('Register DTO received:', dto);
         const userAgent = req.headers['user-agent'];
         const ipAddress = req.ip;
         const result = await this.authService.register(dto, userAgent, ipAddress);

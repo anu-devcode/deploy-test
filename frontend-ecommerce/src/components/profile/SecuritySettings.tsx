@@ -82,9 +82,8 @@ export default function SecuritySettings() {
     };
 
     const handleDeleteAccount = async () => {
-        const confirmed = confirm('CRITICAL: This will permanently delete your account and all associated data. This action cannot be undone. Are you absolutely sure?');
+        const confirmed = confirm('CRITICAL: This will permanently delete your account. Are you sure?');
         if (!confirmed) return;
-
         setIsDeleting(true);
         try {
             await deleteAccount();
@@ -97,40 +96,20 @@ export default function SecuritySettings() {
     if (isLoading) return <div className="p-8 text-center text-slate-500">Loading security settings...</div>;
 
     const twoFactorMethods = [
-        {
-            id: 'email',
-            label: 'Email Verification',
-            desc: 'Receive a verification code via email when logging in',
-            icon: Mail,
-            color: 'bg-blue-50 text-blue-500'
-        },
-        {
-            id: 'authenticator',
-            label: 'Authenticator App',
-            desc: 'Use Google Authenticator, Authy, or similar apps',
-            icon: Smartphone,
-            color: 'bg-purple-50 text-purple-500'
-        },
-        {
-            id: 'sms',
-            label: 'SMS Verification',
-            desc: 'Receive a verification code via SMS (requires phone number)',
-            icon: Key,
-            color: 'bg-emerald-50 text-emerald-500'
-        }
+        { id: 'email', label: 'Email Verification', desc: 'Receive a verification code via email', icon: Mail, color: 'bg-blue-50 text-blue-500' },
+        { id: 'authenticator', label: 'Authenticator App', desc: 'Use Google Authenticator or Authy', icon: Smartphone, color: 'bg-purple-50 text-purple-500' },
+        { id: 'sms', label: 'SMS Verification', desc: 'Receive a code via SMS', icon: Key, color: 'bg-emerald-50 text-emerald-500' }
     ];
 
     return (
         <div className="space-y-8">
-            {/* Two-Factor Authentication Section */}
+            {/* Two-Factor Authentication */}
             <section className="space-y-4">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                        <Shield size={20} />
-                    </div>
+                    <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600"><Shield size={20} /></div>
                     <div>
                         <h3 className="font-bold text-slate-900">Two-Factor Authentication</h3>
-                        <p className="text-xs text-slate-500">Add an extra layer of security to your account</p>
+                        <p className="text-xs text-slate-500">Add extra security to your account</p>
                     </div>
                 </div>
 
@@ -138,33 +117,18 @@ export default function SecuritySettings() {
                     {twoFactorMethods.map((method) => {
                         const Icon = method.icon;
                         const isActive = twoFactorSettings.twoFactorMethod === method.id;
-
                         return (
-                            <div
-                                key={method.id}
-                                className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActive
-                                        ? 'bg-indigo-50/50 border-indigo-200'
-                                        : 'bg-slate-50 border-slate-100 hover:border-slate-200'
-                                    }`}
-                            >
+                            <div key={method.id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActive ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-100'}`}>
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-xl ${method.color}`}>
-                                        <Icon size={18} />
-                                    </div>
+                                    <div className={`p-2 rounded-xl ${method.color}`}><Icon size={18} /></div>
                                     <div>
                                         <h4 className="font-bold text-slate-800 text-sm">{method.label}</h4>
-                                        <p className="text-[10px] text-slate-500 font-medium">{method.desc}</p>
+                                        <p className="text-[10px] text-slate-500">{method.desc}</p>
                                     </div>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked={isActive}
-                                        disabled={is2FALoading}
-                                        onChange={() => handleToggle2FA(method.id)}
-                                    />
-                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                                    <input type="checkbox" className="sr-only peer" checked={isActive} disabled={is2FALoading} onChange={() => handleToggle2FA(method.id)} />
+                                    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                                 </label>
                             </div>
                         );
@@ -173,77 +137,56 @@ export default function SecuritySettings() {
 
                 {twoFactorSettings.twoFactorEnabled && (
                     <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-xs font-medium">
-                        <Shield size={16} />
-                        Two-factor authentication is enabled via {twoFactorSettings.twoFactorMethod}
+                        <Shield size={16} /> 2FA enabled via {twoFactorSettings.twoFactorMethod}
                     </div>
                 )}
             </section>
 
             <hr className="border-slate-100" />
 
-            {/* Active Sessions Section */}
+            {/* Active Sessions */}
             <section className="space-y-4">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                        <Laptop size={20} />
-                    </div>
+                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600"><Laptop size={20} /></div>
                     <div>
                         <h3 className="font-bold text-slate-900">Active Sessions</h3>
-                        <p className="text-xs text-slate-500">Devices currently logged into your account</p>
+                        <p className="text-xs text-slate-500">Devices logged into your account</p>
                     </div>
                 </div>
 
                 <div className="space-y-3">
                     {sessions.map((session) => (
-                        <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white transition-colors">
+                        <div key={session.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
                             <div className="flex items-center gap-4">
-                                <div className={`p-2 rounded-lg ${session.isPrimary ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
-                                    <Laptop size={18} />
-                                </div>
+                                <div className={`p-2 rounded-lg ${session.isPrimary ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}><Laptop size={18} /></div>
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <p className="font-semibold text-slate-800 text-sm">
-                                            {session.userAgent ? (session.userAgent.includes('Windows') ? 'Windows PC' : session.userAgent.includes('Mac') ? 'Mac' : session.userAgent.includes('iPhone') ? 'iPhone' : 'Mobile Device') : 'Unknown Device'}
+                                            {session.userAgent?.includes('Windows') ? 'Windows PC' : session.userAgent?.includes('Mac') ? 'Mac' : 'Device'}
                                         </p>
-                                        {session.isPrimary && (
-                                            <span className="text-[9px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-bold uppercase tracking-wider">Primary</span>
-                                        )}
+                                        {session.isPrimary && <span className="text-[9px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-bold uppercase">Primary</span>}
                                     </div>
-                                    <p className="text-[10px] text-slate-500">{session.ipAddress || 'IP Hidden'} • Joined {new Date(session.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-[10px] text-slate-500">{session.ipAddress || 'IP Hidden'} • {new Date(session.createdAt).toLocaleDateString()}</p>
                                 </div>
                             </div>
-
                             {!session.isPrimary && user?.isPrimary && (
-                                <button
-                                    onClick={() => handleRevokeSession(session.id)}
-                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                    title="Revoke Access"
-                                >
-                                    <LogOut size={18} />
-                                </button>
+                                <button onClick={() => handleRevokeSession(session.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><LogOut size={18} /></button>
                             )}
                         </div>
                     ))}
                 </div>
 
                 {user?.isPrimary && (
-                    <button
-                        onClick={handleLogoutAll}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 text-sm"
-                    >
-                        <LogOut size={18} />
-                        Logout from all other devices
+                    <button onClick={handleLogoutAll} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 flex items-center justify-center gap-2 text-sm">
+                        <LogOut size={18} /> Logout from all devices
                     </button>
                 )}
             </section>
 
-            {/* Authority Info Card */}
             {!user?.isPrimary && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-800">
                     <Info size={20} className="shrink-0" />
-                    <p className="text-xs">
-                        <b>Limited Authority:</b> This is not your primary device. Management features like revoking other sessions or deleting the account are only available from your first device.
-                    </p>
+                    <p className="text-xs"><b>Limited Authority:</b> Management features only available from primary device.</p>
                 </div>
             )}
 
@@ -251,29 +194,17 @@ export default function SecuritySettings() {
             {user?.isPrimary && (
                 <section className="bg-red-50/50 border border-red-100 rounded-2xl p-5">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-red-100 text-red-600">
-                            <Trash2 size={20} />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-red-900">Danger Zone</h3>
-                            <p className="text-xs text-red-600/70">Proceed with extreme caution</p>
-                        </div>
+                        <div className="p-2 rounded-lg bg-red-100 text-red-600"><Trash2 size={20} /></div>
+                        <div><h3 className="font-bold text-red-900">Danger Zone</h3></div>
                     </div>
-
-                    <div className="bg-white border border-red-100 rounded-xl p-5">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                                <h4 className="font-bold text-slate-900 text-sm">Delete Account</h4>
-                                <p className="text-xs text-slate-500">Order history, addresses, and wishlist cannot be recovered.</p>
-                            </div>
-                            <button
-                                onClick={handleDeleteAccount}
-                                disabled={isDeleting}
-                                className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
-                            >
-                                {isDeleting ? 'Deleting...' : 'Delete Account'}
-                            </button>
+                    <div className="bg-white border border-red-100 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h4 className="font-bold text-slate-900 text-sm">Delete Account</h4>
+                            <p className="text-xs text-slate-500">This action cannot be undone.</p>
                         </div>
+                        <button onClick={handleDeleteAccount} disabled={isDeleting} className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 disabled:opacity-50 text-sm">
+                            {isDeleting ? 'Deleting...' : 'Delete Account'}
+                        </button>
                     </div>
                 </section>
             )}

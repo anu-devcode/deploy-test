@@ -66,4 +66,9 @@ export class StorefrontController {
     getPromotions() {
         return this.storefrontService.getPromotions();
     }
+
+    @Get('search')
+    globalSearch(@Query('q') query: string) {
+        return this.storefrontService.globalSearch(query);
+    }
 }

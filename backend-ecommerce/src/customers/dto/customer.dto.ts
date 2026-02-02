@@ -59,6 +59,14 @@ export class UpdateCustomerDto {
     name?: string;
 
     @IsOptional()
+    @IsString()
+    language?: string;
+
+    @IsOptional()
+    @IsString()
+    timezone?: string;
+
+    @IsOptional()
     @IsString({ each: true })
     flags?: string[];
 }

@@ -20,11 +20,26 @@ export class AuthService {
             data: {
                 email: dto.email,
                 password: hashedPassword,
+                firstName: dto.firstName,
+                lastName: dto.lastName,
                 role: (dto.role || Role.CUSTOMER) as any,
             },
         });
 
-        return this.generateTokens(user.id, user.email, user.role, [], user.email, userAgent, ipAddress);
+        // Also create a Customer profile if the role is CUSTOMER
+        if (user.role === Role.CUSTOMER) {
+            await this.prisma.customer.create({
+                data: {
+                    id: user.id, // Use same ID as user for 1:1 link
+                    email: user.email,
+                    firstName: dto.firstName,
+                    lastName: dto.lastName,
+                }
+            });
+        }
+
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+        return this.generateTokens(user.id, user.email, user.role, [], fullName, userAgent, ipAddress);
     }
 
     async login(dto: LoginDto, userAgent?: string, ipAddress?: string) {
@@ -60,7 +75,8 @@ export class AuthService {
         }
 
         const permissionNames = (user as any).permissions.map((p: any) => p.permission.name);
-        return this.generateTokens(user.id, user.email, user.role, permissionNames, user.email, userAgent, ipAddress);
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+        return this.generateTokens(user.id, user.email, user.role, permissionNames, fullName, userAgent, ipAddress);
     }
 
     async refresh(refreshToken: string, userAgent?: string, ipAddress?: string) {
@@ -90,7 +106,8 @@ export class AuthService {
         const permissionNames = (user as any).permissions.map((p: any) => p.permission.name);
         // Carry over primary status if the refreshing token was primary? 
         // Or handle it in generateTokens by checking existing active sessions.
-        return this.generateTokens(user.id, user.email, user.role, permissionNames, user.email, userAgent, ipAddress);
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+        return this.generateTokens(user.id, user.email, user.role, permissionNames, fullName, userAgent, ipAddress);
     }
 
     async logout(refreshToken: string) {
@@ -277,16 +294,17 @@ export class AuthService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-        // Check if this is the first active session
-        const activeSessionsCount = await (this.prisma as any).refreshToken.count({
+        // Check if there's any other active primary session
+        const activePrimary = await (this.prisma as any).refreshToken.findFirst({
             where: {
                 userId,
                 isRevoked: false,
+                isPrimary: true,
                 expiresAt: { gt: new Date() }
             }
         });
 
-        const isPrimary = activeSessionsCount === 0;
+        const isPrimary = !activePrimary;
 
         await (this.prisma as any).refreshToken.create({
             data: {

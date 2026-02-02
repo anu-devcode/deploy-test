@@ -1,6 +1,7 @@
 'use client';
 
-import { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
+import { LucideIcon, Eye, EyeOff } from 'lucide-react';
 
 interface AuthInputProps {
     label: string;
@@ -29,7 +30,11 @@ export default function AuthInput({
     hasError = false,
     rightElement
 }: AuthInputProps) {
+    const [showPassword, setShowPassword] = useState(false);
     const showError = hasError || !!error;
+
+    const isPasswordType = type === 'password';
+    const inputType = isPasswordType ? (showPassword ? 'text' : 'password') : type;
 
     return (
         <div className="space-y-3">
@@ -44,10 +49,10 @@ export default function AuthInput({
                 <div className="relative">
                     <Icon className={`absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${showError ? 'text-red-400/50 group-focus-within:text-red-400' : 'text-emerald-100/20 group-focus-within:text-emerald-400'}`} />
                     <input
-                        type={type}
+                        type={inputType}
                         required={required}
                         placeholder={placeholder}
-                        className={`w-full bg-white/[0.04] border rounded-2xl py-5 pl-14 pr-6 text-white text-sm font-medium placeholder:text-emerald-100/10 focus:outline-none focus:ring-1 transition-all duration-300 shadow-inner ${showError
+                        className={`w-full bg-white/[0.04] border rounded-2xl py-5 pl-14 pr-14 text-white text-sm font-medium placeholder:text-emerald-100/10 focus:outline-none focus:ring-1 transition-all duration-300 shadow-inner ${showError
                             ? 'border-red-500/50 focus:ring-red-500/30 focus:border-red-500/50'
                             : 'border-white/10 focus:ring-emerald-500/30 focus:bg-white/[0.06]'
                             }`}
@@ -55,6 +60,15 @@ export default function AuthInput({
                         onChange={onChange}
                         onBlur={onBlur}
                     />
+                    {isPasswordType && (
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-6 top-1/2 -translate-y-1/2 text-emerald-100/20 hover:text-emerald-400 transition-colors duration-300"
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                    )}
                 </div>
             </div>
             {error && <p className="text-[9px] text-red-400 font-black uppercase tracking-widest ml-4 transition-all animate-bounce">{error}</p>}

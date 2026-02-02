@@ -87,9 +87,9 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                     <span className="text-slate-900 line-clamp-1">{product.name}</span>
                 </nav>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 xl:gap-24 mb-24">
-                    {/* Visual Section */}
-                    <div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 xl:gap-24 mb-24 relative">
+                    {/* Visual Section - Sticky on Desktop */}
+                    <div className="lg:sticky lg:top-24 h-fit self-start transition-all duration-500">
                         <ProductGallery images={product.images || []} productName={product.name} />
 
                         {/* Inventory Breakdown - Premium Feature */}
@@ -101,27 +101,27 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                                 </h4>
                                 <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Live Stock</span>
                             </div>
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-1 gap-2">
                                 {(product.warehouseStock || [
                                     { warehouse: { name: 'Addis Ababa Central', city: 'Addis Ababa' }, stock: 450 },
                                     { warehouse: { name: 'Nazreth Hub', city: 'Adama' }, stock: 120 },
                                     { warehouse: { name: 'Mekelle Storage', city: 'Mekelle' }, stock: 0 },
                                 ]).map((wh: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{wh.warehouse.name}</span>
                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{wh.warehouse.city}</span>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             {wh.stock > 0 ? (
                                                 <>
-                                                    <span className="text-xs font-black text-slate-900">{wh.stock} <span className="text-[8px] text-slate-400">{displayUnit}s</span></span>
-                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                    <span className="text-[10px] font-black text-slate-900">{wh.stock} <span className="text-[8px] text-slate-400">{displayUnit}s</span></span>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Out of Stock</span>
-                                                    <div className="w-2 h-2 rounded-full bg-slate-200" />
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Empty</span>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                                                 </>
                                             )}
                                         </div>
@@ -136,7 +136,7 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                     </div>
 
                     {/* Content Section */}
-                    <div className="flex flex-col">
+                    <div className="flex flex-col pb-24 md:pb-0">
                         <div className="mb-8">
                             <div className="flex items-center gap-3 mb-4">
                                 <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase tracking-wider inline-block border border-emerald-100">
@@ -203,9 +203,9 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                                 {product.description}
                             </p>
 
-                            {/* Purchase Area */}
-                            <div className="pt-10 border-t border-slate-100 space-y-8">
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
+                            {/* Desktop Purchase Area */}
+                            <div className="hidden lg:block pt-10 border-t border-slate-100 space-y-8">
+                                <div className="flex items-center gap-6">
                                     {/* Integrated Quantity Control */}
                                     <div className="flex items-center justify-between px-8 py-5 bg-slate-900 rounded-3xl border border-slate-800 min-w-[200px] shadow-2xl shadow-slate-900/40">
                                         <button
@@ -263,6 +263,44 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Mobile Sticky Action Bar */}
+                <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white/90 backdrop-blur-xl border-t border-slate-200 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-40 animate-in slide-in-from-bottom-full duration-500">
+                    <div className="flex items-center gap-4 max-w-lg mx-auto">
+                        <div className="flex items-center bg-slate-100 rounded-2xl p-1">
+                            <button
+                                onClick={() => cartItem ? updateQuantity(product.id, Math.max(minOrder, cartItem.quantity - minOrder)) : setQuantity(Math.max(minOrder, quantity - minOrder))}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm active:scale-90 transition-transform"
+                            >
+                                <Minus className="w-4 h-4 text-slate-900" />
+                            </button>
+                            <span className="w-12 text-center font-black text-slate-900 text-sm">
+                                {cartItem ? cartItem.quantity : quantity}
+                            </span>
+                            <button
+                                onClick={() => cartItem ? updateQuantity(product.id, cartItem.quantity + minOrder) : setQuantity(quantity + minOrder)}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm active:scale-90 transition-transform"
+                            >
+                                <Plus className="w-4 h-4 text-slate-900" />
+                            </button>
+                        </div>
+
+                        {cartItem ? (
+                            <Link href="/cart" className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
+                                Checkout
+                                <ShoppingBag className="w-4 h-4" />
+                            </Link>
+                        ) : (
+                            <button
+                                onClick={() => addToCart(product.id, quantity)}
+                                className={`flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all ${isBulk ? 'bg-amber-500 text-slate-950 shadow-amber-500/20' : 'bg-slate-900 text-white shadow-slate-900/20'}`}
+                            >
+                                {isBulk ? 'Rsrv Bulk' : 'Add to Cart'}
+                                <Zap className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
 

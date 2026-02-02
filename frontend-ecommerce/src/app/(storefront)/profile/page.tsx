@@ -13,10 +13,10 @@ import { AccountSettings } from '@/components/profile/AccountSettings';
 import { Wallet } from '@/components/profile/Wallet';
 import { Billing } from '@/components/profile/Billing';
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
-import { BottomNav } from '@/components/profile/BottomNav';
 import { Wishlist } from '@/components/profile/Wishlist';
 import { ActivityCenter } from '@/components/profile/ActivityCenter';
 import SecuritySettings from '@/components/profile/SecuritySettings';
+import { MobileAccountHub } from '@/components/profile/MobileAccountHub';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -26,7 +26,8 @@ import {
     CreditCard,
     Heart,
     MessageSquare,
-    Shield
+    Shield,
+    ArrowLeft
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -46,9 +47,27 @@ export default function ProfilePage() {
     useEffect(() => {
         const tab = searchParams.get('tab');
         const section = searchParams.get('section');
+
+        // Mobile-only check for Hub
+        if (tab === 'menu' && window.innerWidth >= 1024) {
+            router.replace('/profile?tab=overview');
+            return;
+        }
+
         if (tab) setActiveTab(tab);
         if (section) setActiveSection(section);
-    }, [searchParams]);
+    }, [searchParams, router]);
+
+    // Handle screen resize to close Hub if user expands window
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1024 && activeTab === 'menu') {
+                handleTabChange('overview');
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [activeTab]);
 
     const handleTabChange = (tab: string, section?: string) => {
         setActiveTab(tab);
@@ -103,6 +122,8 @@ export default function ProfilePage() {
                 return <Wishlist />;
             case 'inbox':
                 return <ActivityCenter initialSection={activeSection} />;
+            case 'menu':
+                return <MobileAccountHub onTabChange={handleTabChange} />;
             default:
                 return <ProfileOverview orders={orders} loading={loading} onViewAllOrders={() => handleTabChange('orders')} onTabChange={handleTabChange} />;
         }
@@ -160,6 +181,19 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
+                        {/* Mobile Back Button - Contextual */}
+                        {activeTab !== 'menu' && (
+                            <div className="lg:hidden mb-2">
+                                <button
+                                    onClick={() => handleTabChange('menu')}
+                                    className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors px-2 py-1"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Back to Hub
+                                </button>
+                            </div>
+                        )}
+
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-white/50 backdrop-blur-sm rounded-[2rem] md:rounded-[2.5rem] md:p-1">
                                 {renderContent()}
@@ -168,9 +202,6 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </main>
-
-            {/* Mobile Bottom Navigation */}
-            <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
     );
 }

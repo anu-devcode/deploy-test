@@ -169,4 +169,54 @@ export class StorefrontService {
             orderBy: { createdAt: 'desc' },
         });
     }
+
+    async globalSearch(query: string) {
+        if (!query || query.length < 2) return { products: [], categories: [], pages: [], promotions: [] };
+
+        const [products, categories, pages, promotions] = await Promise.all([
+            this.prisma.product.findMany({
+                where: {
+                    isPublished: true,
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { description: { contains: query, mode: 'insensitive' } },
+                        { slug: { contains: query, mode: 'insensitive' } },
+                    ],
+                },
+                include: { category: { select: { name: true } } },
+                take: 5,
+            }),
+            this.prisma.category.findMany({
+                where: {
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { slug: { contains: query, mode: 'insensitive' } },
+                    ],
+                },
+                take: 3,
+            }),
+            this.prisma.cmsPage.findMany({
+                where: {
+                    published: true,
+                    OR: [
+                        { title: { contains: query, mode: 'insensitive' } },
+                        { slug: { contains: query, mode: 'insensitive' } },
+                    ],
+                },
+                take: 3,
+            }),
+            this.prisma.promotion.findMany({
+                where: {
+                    isActive: true,
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { code: { contains: query, mode: 'insensitive' } },
+                    ],
+                },
+                take: 2,
+            }),
+        ]);
+
+        return { products, categories, pages, promotions };
+    }
 }
