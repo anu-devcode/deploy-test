@@ -22,32 +22,40 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     return (
         <div className="space-y-6">
             {/* Main Image */}
-            <div className="aspect-square bg-white rounded-3xl border border-slate-100 overflow-hidden relative shadow-sm hover:shadow-md transition-shadow duration-500">
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50/50 to-white">
-                    <img
-                        src={selectedImage}
-                        alt={productName}
-                        className="max-w-[85%] max-h-[85%] object-contain hover:scale-105 transition-transform duration-700"
-                    />
+            <div className="aspect-square bg-white rounded-[2rem] border border-slate-100 overflow-hidden relative shadow-sm hover:shadow-2xl hover:shadow-emerald-900/5 transition-all duration-500 group">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 via-white to-slate-50/20" />
+                <div className="w-full h-full flex items-center justify-center relative z-10 p-8">
+                    <div key={selectedImage} className="relative w-full h-full animate-in fade-in zoom-in-95 duration-500">
+                        <Image
+                            src={selectedImage}
+                            alt={productName}
+                            fill
+                            priority
+                            className="object-contain hover:scale-110 transition-transform duration-700 ease-out"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Thumbnails */}
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
                 {images.map((image, index) => (
                     <button
                         key={index}
                         onClick={() => setSelectedImage(image)}
-                        className={`w-20 h-20 flex-shrink-0 rounded-2xl border transition-all duration-300 overflow-hidden ${selectedImage === image
-                                ? 'border-emerald-500 bg-emerald-50/30'
-                                : 'border-slate-100 bg-white hover:border-slate-300'
+                        className={`relative w-24 h-24 flex-shrink-0 rounded-2xl border transition-all duration-300 overflow-hidden snap-start ${selectedImage === image
+                            ? 'border-emerald-500 ring-4 ring-emerald-500/10 shadow-lg'
+                            : 'border-slate-100 bg-white hover:border-emerald-200 opacity-60 hover:opacity-100'
                             }`}
                     >
-                        <div className="w-full h-full flex items-center justify-center p-2">
-                            <img
+                        <div className="w-full h-full relative p-2">
+                            <Image
                                 src={image}
                                 alt={`${productName} view ${index + 1}`}
-                                className="w-full h-full object-contain"
+                                fill
+                                className="object-contain"
+                                sizes="96px"
                             />
                         </div>
                     </button>

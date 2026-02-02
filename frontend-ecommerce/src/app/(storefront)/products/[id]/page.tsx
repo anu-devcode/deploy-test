@@ -17,16 +17,22 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const { mode } = useBusiness();
+    const isBulk = mode === 'BULK'; // Derived state
+
+    // Moved here to access 'isBulk'
+    const [selectedColor, setSelectedColor] = useState('Midnight Black');
+    const [selectedConfig, setSelectedConfig] = useState('Standard');
+
+    // Derived state for price impact (Mocking logic)
+    const currentPrice = product && isBulk ? product.bulk?.price : product?.retail?.price;
+    const priceAdjustment = selectedConfig === 'Pro Bundle (+ETB 500)' ? 500 : selectedConfig === 'Enterprise (+ETB 1200)' ? 1200 : 0;
+    const finalDisplayPrice = (currentPrice || 0) + priceAdjustment;
+
     const [quantity, setQuantity] = useState(1);
-
-    const { addToCart, items, updateQuantity } = useCart();
-    const cartItem = (items || []).find(i => i.productId === product?.id);
-
-    // Context-aware logic
-    const isBulk = mode === 'BULK' && product?.bulk?.enabled;
-    const displayPrice = (isBulk ? product?.bulk?.price : (product?.retail?.price || product?.price)) || 0;
-    const displayUnit = isBulk ? (product?.bulk?.unit || 'Bulk') : (product?.retail?.unit || 'ea');
+    const { addToCart, updateQuantity, items } = useCart();
+    const cartItem = product ? items.find(item => item.productId === product.id) : null;
     const minOrder = isBulk ? (product?.bulk?.minOrder || 1) : (product?.retail?.minOrder || 1);
+    const displayUnit = isBulk ? (product?.bulk?.unit || 'unit') : (product?.retail?.unit || 'unit');
 
     useEffect(() => {
         if (product && !cartItem) setQuantity(minOrder);
@@ -137,94 +143,167 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
 
                     {/* Content Section */}
                     <div className="flex flex-col pb-24 md:pb-0">
-                        <div className="mb-8">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase tracking-wider inline-block border border-emerald-100">
+                        {/* Header & Badges */}
+                        <div className="mb-10">
+                            <div className="flex flex-wrap items-center gap-3 mb-6">
+                                <span className="px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] uppercase tracking-wider border border-emerald-100 shadow-sm">
                                     {formatCategory(product.category)}
                                 </span>
                                 {isBulk && (
-                                    <span className="px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-amber-500/20 flex items-center gap-1.5">
-                                        <Zap className="w-3 h-3" />
-                                        Wholesale Business Mode
+                                    <span className="px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 font-black text-[11px] uppercase tracking-widest flex items-center gap-2 border border-amber-200 shadow-sm animate-pulse">
+                                        <Zap className="w-3.5 h-3.5 text-amber-600" />
+                                        Wholesale Mode Active
                                     </span>
                                 )}
                             </div>
-                            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none mb-6">
+
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-tight mb-8 text-balance">
                                 {product.name}
                             </h1>
 
-                            <div className="flex items-center gap-6 mb-10">
-                                <div className="flex items-center gap-1">
-                                    <div className="flex text-amber-400">
+                            {/* Rating & Stock Status */}
+                            <div className="flex items-center gap-8 mb-10 pb-10 border-b border-slate-100">
+                                <div className="flex items-center gap-2 group cursor-pointer">
+                                    <div className="flex text-amber-400 gap-0.5">
                                         {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(product.avgRating || 0) ? 'fill-current' : 'text-slate-200'}`} />
+                                            <Star key={i} className={`w-4 h-4 ${i < Math.round(product.avgRating || 0) ? 'fill-current' : 'text-slate-200'}`} />
                                         ))}
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{product.reviewCount || 0} reviews</span>
+                                    <span className="text-xs font-bold text-slate-400 group-hover:text-amber-500 transition-colors underline decoration-dotted underline-offset-4 ml-2">
+                                        {product.reviewCount || 0} Verified Reviews
+                                    </span>
                                 </div>
-                                <div className="w-px h-4 bg-slate-100" />
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                    <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Secure Stock Ready</span>
+                                <div className="flex items-center gap-2.5 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100/50">
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                    </span>
+                                    <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">In Stock & Ready</span>
                                 </div>
                             </div>
 
+                            {/* Pricing Hero */}
+                            <div className="flex items-baseline gap-4 mb-4">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 pl-1">
+                                        {isBulk ? 'Wholesale Price per Unit' : 'Retail Price'}
+                                    </span>
+                                    <span className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter">
+                                        <sup className="text-2xl text-slate-400 font-medium mr-1">ETB</sup>
+                                        {Number(finalDisplayPrice).toLocaleString()}
+                                    </span>
+                                </div>
+                                {isBulk && product.price > finalDisplayPrice && (
+                                    <div className="flex flex-col items-start bg-emerald-600 px-4 py-3 rounded-2xl shadow-xl shadow-emerald-600/20 -mt-2 rotate-2 transform hover:rotate-0 transition-transform">
+                                        <p className="text-[9px] font-black text-emerald-100 uppercase tracking-widest">You Save</p>
+                                        <p className="text-2xl font-black text-white tracking-tight">ETB {(product.price - finalDisplayPrice).toLocaleString()}</p>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-sm font-medium text-slate-400 mb-10 pl-1">
+                                Price includes VAT. <span className="underline decoration-dotted cursor-help">Shipping calculated at checkout.</span>
+                            </p>
+
+                            {/* Description */}
+                            <p className="text-lg text-slate-600 font-medium leading-relaxed mb-12 max-w-2xl">
+                                {product.description}
+                            </p>
+
+                            {/* MOCK VARIANTS (Simulating "Filtering") */}
+                            <div className="space-y-8 mb-12">
+                                {/* Color Variant */}
+                                <div className="space-y-3">
+                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Select Color</span>
+                                    <div className="flex flex-wrap gap-3">
+                                        {['Midnight Black', 'Emerald Green', 'Arctic White'].map((color, idx) => (
+                                            <button key={idx} className="group relative w-12 h-12 rounded-full border border-slate-200 hover:scale-110 transition-all focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                                                <div className={`absolute inset-1 rounded-full ${idx === 0 ? 'bg-slate-900' : idx === 1 ? 'bg-emerald-600' : 'bg-slate-100'}`} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Size/Option Variant */}
+                                <div className="space-y-3">
+                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Configuration</span>
+                                    <div className="flex flex-wrap gap-3">
+                                        {['Standard', 'Pro Bundle (+ETB 500)', 'Enterprise'].map((opt, idx) => (
+                                            <button key={idx} className={`px-6 py-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all ${idx === 0 ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Trust Badges Grid */}
+                            <div className="grid grid-cols-3 gap-4 mb-12">
+                                <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-50 border border-slate-100 text-center gap-3 transition-colors hover:bg-slate-100 hover:border-slate-200 group">
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400 group-hover:text-emerald-500 group-hover:shadow-md transition-all">
+                                        <ShieldCheck className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">Certeifed</span>
+                                        <span className="text-[9px] text-slate-400 font-medium leading-tight">100% Authentic Product</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-50 border border-slate-100 text-center gap-3 transition-colors hover:bg-slate-100 hover:border-slate-200 group">
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400 group-hover:text-blue-500 group-hover:shadow-md transition-all">
+                                        <Truck className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">Global Ship</span>
+                                        <span className="text-[9px] text-slate-400 font-medium leading-tight">Fast 2-Day Delivery</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-50 border border-slate-100 text-center gap-3 transition-colors hover:bg-slate-100 hover:border-slate-200 group">
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400 group-hover:text-amber-500 group-hover:shadow-md transition-all">
+                                        <Warehouse className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">Store Pickup</span>
+                                        <span className="text-[9px] text-slate-400 font-medium leading-tight">Available in 3 Hubs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bulk Banner */}
                             {isBulk && (
-                                <div className="mb-10 p-6 rounded-[2rem] bg-amber-50 border border-amber-100 flex items-center gap-6">
-                                    <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/20 shrink-0">
+                                <div className="mb-10 p-6 rounded-[2.5rem] bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 flex items-center gap-6 relative overflow-hidden group">
+                                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-amber-100/50 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                                    <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-amber-500 shadow-xl shadow-amber-900/5 shrink-0 relative z-10">
                                         <Zap className="w-8 h-8 font-black" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Bulk Purchase Benefits</h4>
-                                        <p className="text-xs font-bold text-amber-800 leading-relaxed uppercase tracking-widest opacity-80">
-                                            Minimum Order: {minOrder} {displayUnit}s • Priority Logistics • Tax Invoice Ready
+                                    <div className="space-y-1 relative z-10">
+                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Wholesale Benefits Active</h4>
+                                        <p className="text-xs font-bold text-amber-800/80 leading-relaxed uppercase tracking-widest">
+                                            Minimum Order: {minOrder} {displayUnit}s • <span className="underline decoration-dotted cursor-pointer hover:text-amber-900">Download Tax Invoice</span>
                                         </p>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="flex items-baseline gap-4 mb-10">
-                                <div className="flex flex-col">
-                                    {isBulk && <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-1">Business Price</span>}
-                                    <span className="text-5xl font-black text-slate-900 tracking-tighter">
-                                        ETB {Number(displayPrice).toLocaleString()}
-                                        <span className="text-lg font-bold text-slate-400 ml-2 uppercase tracking-tight italic">/ {displayUnit}</span>
-                                    </span>
-                                </div>
-                                {isBulk && product.price > displayPrice && (
-                                    <div className="text-center px-4 py-2 bg-emerald-500 rounded-2xl border-2 border-white shadow-xl shadow-emerald-500/20 translate-y-[-10px]">
-                                        <p className="text-[10px] font-black text-white uppercase tracking-widest">Saving</p>
-                                        <p className="text-xl font-black text-white">ETB {(product.price - displayPrice).toLocaleString()}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <p className="text-xl text-slate-500 font-medium leading-relaxed mb-10 border-l-4 border-slate-100 pl-6 italic">
-                                {product.description}
-                            </p>
-
                             {/* Desktop Purchase Area */}
                             <div className="hidden lg:block pt-10 border-t border-slate-100 space-y-8">
                                 <div className="flex items-center gap-6">
                                     {/* Integrated Quantity Control */}
-                                    <div className="flex items-center justify-between px-8 py-5 bg-slate-900 rounded-3xl border border-slate-800 min-w-[200px] shadow-2xl shadow-slate-900/40">
+                                    <div className="flex items-center justify-between px-8 py-5 bg-slate-900 rounded-[2rem] border border-slate-800 min-w-[240px] shadow-2xl shadow-slate-900/40 hover:shadow-slate-900/60 transition-all duration-300">
                                         <button
                                             onClick={() => cartItem ? updateQuantity(product.id, Math.max(minOrder, cartItem.quantity - minOrder)) : setQuantity(Math.max(minOrder, quantity - minOrder))}
-                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-800 text-white shadow-sm hover:bg-emerald-600 transition-all group"
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/10 text-white shadow-none hover:bg-white/20 active:scale-90 transition-all group"
                                         >
-                                            <Minus className="w-5 h-5 group-active:scale-90" />
+                                            <Minus className="w-5 h-5 group-hover:text-emerald-400 transition-colors" />
                                         </button>
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-2xl font-black text-white">
+                                        <div className="flex flex-col items-center px-4">
+                                            <span className="text-3xl font-black text-white tracking-tight">
                                                 {cartItem ? cartItem.quantity : quantity}
                                             </span>
-                                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">{displayUnit}s</span>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">{displayUnit}s</span>
                                         </div>
                                         <button
                                             onClick={() => cartItem ? updateQuantity(product.id, cartItem.quantity + minOrder) : setQuantity(quantity + minOrder)}
-                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-800 text-white shadow-sm hover:bg-emerald-600 transition-all group"
+                                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/10 text-white shadow-none hover:bg-white/20 active:scale-90 transition-all group"
                                         >
-                                            <Plus className="w-5 h-5 group-active:scale-90" />
+                                            <Plus className="w-5 h-5 group-hover:text-emerald-400 transition-colors" />
                                         </button>
                                     </div>
 
@@ -232,35 +311,24 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                                     {cartItem ? (
                                         <Link
                                             href="/cart"
-                                            className="flex-1 flex items-center justify-center gap-4 px-10 py-5 bg-emerald-600 text-white rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] hover:bg-emerald-700 transition-all shadow-2xl shadow-emerald-600/30 hover:-translate-y-1 active:scale-95"
+                                            className="flex-1 flex items-center justify-center gap-4 px-10 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.25em] hover:bg-emerald-500 transition-all shadow-2xl shadow-emerald-600/30 hover:-translate-y-1 active:scale-95 group"
                                         >
-                                            <ShoppingBag className="w-6 h-6" />
+                                            <ShoppingBag className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                                             Go to Checkout
                                         </Link>
                                     ) : (
                                         <button
                                             onClick={() => addToCart(product.id, quantity)}
-                                            className={`flex-1 flex items-center justify-center gap-4 px-10 py-5 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] transition-all shadow-2xl hover:-translate-y-1 active:scale-95 ${isBulk ? 'bg-amber-500 text-slate-950 shadow-amber-500/30 hover:bg-amber-600' : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-black'}`}
+                                            className={`flex-1 flex items-center justify-center gap-4 px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.25em] transition-all shadow-2xl hover:-translate-y-1 active:scale-95 group ${isBulk ? 'bg-amber-500 text-slate-950 shadow-amber-500/30 hover:bg-amber-400' : 'bg-slate-900 text-white shadow-slate-900/30 hover:bg-black'}`}
                                         >
-                                            <Zap className="w-6 h-6" />
+                                            <Zap className="w-6 h-6 group-hover:fill-current transition-colors" />
                                             Reserve {isBulk ? 'Wholesale' : 'Order'}
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-center gap-10">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <ShieldCheck className="w-5 h-5 text-slate-200" />
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Insured</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Truck className="w-5 h-5 text-slate-200" />
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Global Export</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Leaf className="w-5 h-5 text-slate-200" />
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ISO Certified</span>
-                                    </div>
-                                </div>
+                                <p className="text-center text-[10px] text-slate-400 font-medium">
+                                    Secure checkout powered by Stripe. 30-day money-back guarantee.
+                                </p>
                             </div>
                         </div>
                     </div>
