@@ -24,6 +24,8 @@ export interface StaffMember {
 
 export interface Category { id: string; name: string; slug: string; description?: string; _count?: { products: number }; }
 
+export type ProductStatus = 'active' | 'archived' | 'unknown';
+
 export interface Product {
     id: string;
     name: string;
@@ -31,19 +33,19 @@ export interface Product {
     description?: string;
     price: number;
     stock: number;
-    inventory: { available: number; reserved: number; damaged: number };
+    inventory?: { available: number; reserved: number; damaged: number };
     sku?: string;
     categoryId?: string;
     category?: Category;
-    status?: string;
-    retail: { enabled: boolean; price: number; unit: string; minOrder: number };
-    bulk: { enabled: boolean; price: number; unit: string; minOrder: number };
+    status?: ProductStatus;
+    retail?: { enabled: boolean; price: number; unit: string; minOrder: number };
+    bulk?: { enabled: boolean; price: number; unit: string; minOrder: number };
     images?: string[];
     avgRating?: number;
     reviewCount?: number;
     compareAtPrice?: number;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
     [key: string]: any;
 }
 
@@ -580,6 +582,27 @@ class ApiClient {
 
     async getCartMetrics() {
         return this.client.get('/admin/analytics/cart-metrics').then(r => r.data);
+    }
+
+    // --- AUTOMATION RULES ---
+    async getAutomationRules(): Promise<AutomationRule[]> {
+        return this.client.get('/automations/rules').then(r => r.data).catch(() => []);
+    }
+
+    async getAutomationLogs(): Promise<AutomationLog[]> {
+        return this.client.get('/automations/logs').then(r => r.data).catch(() => []);
+    }
+
+    async createAutomationRule(data: Partial<AutomationRule>): Promise<AutomationRule> {
+        return this.client.post('/automations/rules', data).then(r => r.data);
+    }
+
+    async updateAutomationRule(id: string, data: Partial<AutomationRule>): Promise<AutomationRule> {
+        return this.client.patch(`/automations/rules/${id}`, data).then(r => r.data);
+    }
+
+    async deleteAutomationRule(id: string): Promise<void> {
+        return this.client.delete(`/automations/rules/${id}`).then(r => r.data);
     }
 
     // --- PROMOTIONS ---
