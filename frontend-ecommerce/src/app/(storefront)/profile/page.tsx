@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Footer } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -32,7 +32,7 @@ import {
     Ticket
 } from 'lucide-react';
 
-export default function ProfilePage() {
+function ProfileContent() {
     const { user, isAuthenticated } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -208,5 +208,17 @@ export default function ProfilePage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+        }>
+            <ProfileContent />
+        </Suspense>
     );
 }
