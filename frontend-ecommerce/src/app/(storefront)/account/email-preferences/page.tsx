@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 export default function EmailPreferencesPage() {
     const { user } = useAuth();
