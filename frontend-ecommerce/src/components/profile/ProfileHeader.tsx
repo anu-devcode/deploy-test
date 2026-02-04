@@ -29,7 +29,7 @@ export function ProfileHeader() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] uppercase">
                             {user?.role || 'Customer'}
                         </span>
-                        {user?.isEmailVerified ? (
+                        {!!user?.isEmailVerified ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase">
                                 Verified
                             </span>
