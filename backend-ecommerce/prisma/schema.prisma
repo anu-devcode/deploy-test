@@ -29,6 +29,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   refreshTokens  RefreshToken[]
+  reviewedCancellationRequests CancellationRequest[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -119,6 +120,7 @@ model Customer {
   notifications Notification[]
   helpMessages  HelpMessage[]
   savedPaymentMethods SavedPaymentMethod[]
+  cancellationRequests CancellationRequest[]
   adminNotes String?
   flags      String[] @default([])
   createdAt DateTime @default(now())
@@ -233,6 +235,7 @@ model Order {
   items           OrderItem[]
   payments        Payment[]
   delivery        Delivery?
+  cancellationRequests CancellationRequest[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -638,4 +641,32 @@ enum MarketingAssetType {
   BANNER
   SOCIAL_POST
   QR_ONLY
+}
+
+// Order Cancellation Request System
+model CancellationRequest {
+  id            String                    @id @default(uuid())
+  orderId       String
+  order         Order                     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      Customer?                 @relation(fields: [customerId], references: [id])
+  reason        String                    // Customer's reason for cancellation
+  status        CancellationRequestStatus @default(PENDING)
+  reviewedBy    String?                   // Admin/Staff user ID who reviewed
+  reviewedByUser User?                    @relation(fields: [reviewedBy], references: [id])
+  staffFeedback String?                   // Staff's response/feedback
+  requestedAt   DateTime                  @default(now())
+  reviewedAt    DateTime?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@index([customerId])
+}
+
+enum CancellationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

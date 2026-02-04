@@ -31,7 +31,8 @@ import {
     Tag,
     Zap,
     Mail,
-    Menu
+    Menu,
+    Ban
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -183,6 +184,7 @@ export default function AdminLayout({
             label: 'Sales & Fulfilment',
             items: [
                 { label: 'Orders', icon: ShoppingBag, href: '/admin/orders', permission: 'VIEW_ORDERS' },
+                { label: 'Cancellations', icon: Ban, href: '/admin/cancellation-requests', permission: 'VIEW_ORDERS' },
                 { label: 'Deliveries', icon: Truck, href: '/admin/deliveries', permission: 'VIEW_ORDERS' },
                 { label: 'Payments', icon: CreditCard, href: '/admin/payments', permission: 'VIEW_PAYMENTS' },
             ].filter(item => hasPermission(item.permission))

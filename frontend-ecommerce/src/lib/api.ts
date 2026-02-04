@@ -505,6 +505,24 @@ class ApiClient {
         return this.client.delete(`/orders/${id}`).then(r => r.data);
     }
 
+    // --- CANCELLATION REQUESTS ---
+    async requestOrderCancellation(orderId: string, reason: string) {
+        return this.client.post('/cancellation-requests', { orderId, reason }).then(r => r.data);
+    }
+
+    async getMyCancellationRequests() {
+        return this.client.get('/cancellation-requests/my-requests').then(r => r.data);
+    }
+
+    async getCancellationRequests(status?: string) {
+        const params = status ? { status } : {};
+        return this.client.get('/cancellation-requests', { params }).then(r => r.data);
+    }
+
+    async reviewCancellationRequest(requestId: string, decision: 'APPROVED' | 'REJECTED', feedback?: string) {
+        return this.client.patch(`/cancellation-requests/${requestId}/review`, { decision, feedback }).then(r => r.data);
+    }
+
     // --- PAYMENTS ---
     async getPayments() {
         return this.client.get('/payments').then(r => r.data);

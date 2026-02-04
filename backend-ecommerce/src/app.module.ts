@@ -27,6 +27,7 @@ import { MessagesModule } from './messages/messages.module';
 import { EventsModule } from './events';
 import { EmailModule } from './email/email.module';
 import { MarketingModule } from './marketing/marketing.module';
+import { CancellationRequestsModule } from './cancellation-requests/cancellation-requests.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { MarketingModule } from './marketing/marketing.module';
     EventsModule,
     EmailModule,
     MarketingModule,
+    CancellationRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

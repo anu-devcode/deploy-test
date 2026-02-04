@@ -1,10 +1,20 @@
 'use client';
 
 import api, { Order } from '@/lib/api';
-import { Package, Search, Calendar, MapPin, ChevronDown, ChevronUp, Download, CreditCard, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Package, Search, Calendar, MapPin, ChevronDown, ChevronUp, Download, CreditCard, CheckCircle2, Clock, AlertCircle, X, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSocket } from '@/context';
+
+interface CancellationRequest {
+    id: string;
+    orderId: string;
+    reason: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    staffFeedback?: string;
+    requestedAt: string;
+    reviewedAt?: string;
+}
 
 interface OrderHistoryProps {
     orders: Order[];
@@ -14,6 +24,10 @@ interface OrderHistoryProps {
 export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryProps) {
     const [orders, setOrders] = useState<Order[]>(initialOrders);
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+    const [cancellationRequests, setCancellationRequests] = useState<CancellationRequest[]>([]);
+    const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
+    const [cancelReason, setCancelReason] = useState('');
+    const [submitting, setSubmitting] = useState(false);
     const { socket, subscribe, emit } = useSocket();
 
     // Sync state when props change
@@ -21,11 +35,23 @@ export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryPro
         setOrders(initialOrders);
     }, [initialOrders]);
 
+    // Fetch cancellation requests
+    useEffect(() => {
+        const fetchRequests = async () => {
+            try {
+                const requests = await api.getMyCancellationRequests();
+                setCancellationRequests(requests);
+            } catch (e) {
+                console.error('Failed to fetch cancellation requests:', e);
+            }
+        };
+        fetchRequests();
+    }, []);
+
     const toggleOrder = (orderId: string) => {
         const isOpening = expandedOrder !== orderId;
         setExpandedOrder(isOpening ? orderId : null);
 
-        // Join the specific order room for focused updates
         if (isOpening && socket) {
             emit('subscribe_order', { orderId });
         }
@@ -55,21 +81,35 @@ export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryPro
     }, [socket, subscribe]);
 
     const handleDownloadInvoice = (orderNumber: string) => {
-        // Mock download logic
         console.log(`Downloading invoice for order ${orderNumber}`);
         alert(`Your invoice for order ${orderNumber} is being prepared for download.`);
     };
 
-    const handleCancelOrder = async (orderId: string) => {
-        if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+    const getCancellationRequest = (orderId: string): CancellationRequest | undefined => {
+        return cancellationRequests.find(r => r.orderId === orderId);
+    };
 
+    const canRequestCancellation = (order: Order): boolean => {
+        const cancellableStatuses = ['PENDING', 'PROCESSING', 'PENDING_VERIFICATION', 'CONFIRMED'];
+        const existingRequest = getCancellationRequest(order.id);
+        return cancellableStatuses.includes(order.status) && !existingRequest;
+    };
+
+    const handleRequestCancellation = async () => {
+        if (!showCancelModal || cancelReason.length < 10) return;
+
+        setSubmitting(true);
         try {
-            await api.cancelOrder(orderId);
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
-            alert('Order cancelled successfully.');
-        } catch (error) {
-            console.error('Failed to cancel order:', error);
-            alert('Failed to cancel order. Please contact support.');
+            const request = await api.requestOrderCancellation(showCancelModal, cancelReason);
+            setCancellationRequests(prev => [...prev, request]);
+            setShowCancelModal(null);
+            setCancelReason('');
+            alert('Cancellation request submitted successfully! Our team will review it shortly.');
+        } catch (error: any) {
+            console.error('Failed to request cancellation:', error);
+            alert(error.message || 'Failed to submit cancellation request. Please try again.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -101,169 +141,280 @@ export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryPro
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-24 md:pb-0">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Order History</h2>
-                    <p className="text-sm font-bold text-slate-400">Track and manage your past purchases</p>
+        <>
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-24 md:pb-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Order History</h2>
+                        <p className="text-sm font-bold text-slate-400">Track and manage your past purchases</p>
+                    </div>
+                    <div className="relative w-full md:w-64">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by order #"
+                            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold focus:border-slate-900 outline-none transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Search by order #"
-                        className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-bold focus:border-slate-900 outline-none transition-all"
-                    />
-                </div>
-            </div>
 
-            <div className="space-y-4">
-                {orders.map((order) => {
-                    const isExpanded = expandedOrder === order.id;
-                    return (
-                        <div
-                            key={order.id}
-                            className={`bg-white rounded-[1.5rem] md:rounded-[2rem] border transition-all overflow-hidden ${isExpanded ? 'border-slate-900 ring-1 ring-slate-900 shadow-xl shadow-slate-200' : 'border-slate-100 shadow-sm hover:border-slate-300'
-                                }`}
-                        >
-                            {/* Order Header */}
+                <div className="space-y-4">
+                    {orders.map((order) => {
+                        const isExpanded = expandedOrder === order.id;
+                        const cancellationRequest = getCancellationRequest(order.id);
+
+                        return (
                             <div
-                                onClick={() => toggleOrder(order.id)}
-                                className="p-5 md:p-8 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                                key={order.id}
+                                className={`bg-white rounded-[1.5rem] md:rounded-[2rem] border transition-all overflow-hidden ${isExpanded ? 'border-slate-900 ring-1 ring-slate-900 shadow-xl shadow-slate-200' : 'border-slate-100 shadow-sm hover:border-slate-300'
+                                    }`}
                             >
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-lg shadow-slate-200">
-                                            <Package className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                <h3 className="font-black text-slate-900 text-lg tracking-tight">Order {order.orderNumber}</h3>
-                                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border ${order.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                                    order.status === 'SHIPPED' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                        'bg-amber-50 text-amber-700 border-amber-100'
-                                                    }`}>
-                                                    {order.status}
-                                                </span>
-                                                {/* Payment Status Badge */}
-                                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-1.5 ${order.paymentStatus === 'PAID' ? 'bg-emerald-500 text-white border-emerald-400' :
-                                                    'bg-slate-100 text-slate-500 border-slate-200'
-                                                    }`}>
-                                                    {order.paymentStatus === 'PAID' ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
-                                                    {order.paymentStatus || 'PENDING'}
-                                                </span>
+                                {/* Order Header */}
+                                <div
+                                    onClick={() => toggleOrder(order.id)}
+                                    className="p-5 md:p-8 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shrink-0 shadow-lg shadow-slate-200">
+                                                <Package className="w-6 h-6" />
                                             </div>
-                                            <div className="flex items-center gap-4 mt-1.5 text-xs font-bold text-slate-400">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Calendar className="w-3.5 h-3.5" />
-                                                    {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                                                </span>
-                                                <span className="w-1 h-1 rounded-full bg-slate-200" />
-                                                <span className="flex items-center gap-1.5">
-                                                    {order.items.length} {order.items.length === 1 ? 'Item' : 'Items'}
-                                                </span>
+                                            <div>
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <h3 className="font-black text-slate-900 text-lg tracking-tight">Order {order.orderNumber}</h3>
+                                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border ${order.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                        order.status === 'SHIPPED' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                            order.status === 'CANCELLED' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                                                'bg-amber-50 text-amber-700 border-amber-100'
+                                                        }`}>
+                                                        {order.status}
+                                                    </span>
+                                                    {/* Cancellation Request Badge */}
+                                                    {cancellationRequest && (
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-1.5 ${cancellationRequest.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                            cancellationRequest.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                                'bg-rose-50 text-rose-700 border-rose-200'
+                                                            }`}>
+                                                            <MessageSquare className="w-2.5 h-2.5" />
+                                                            {cancellationRequest.status === 'PENDING' ? 'Cancel Pending' :
+                                                                cancellationRequest.status === 'APPROVED' ? 'Cancelled' : 'Cancel Rejected'}
+                                                        </span>
+                                                    )}
+                                                    {/* Payment Status Badge */}
+                                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border flex items-center gap-1.5 ${order.paymentStatus === 'PAID' ? 'bg-emerald-500 text-white border-emerald-400' :
+                                                        'bg-slate-100 text-slate-500 border-slate-200'
+                                                        }`}>
+                                                        {order.paymentStatus === 'PAID' ? <CheckCircle2 className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
+                                                        {order.paymentStatus || 'PENDING'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-1.5 text-xs font-bold text-slate-400">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-200" />
+                                                    <span className="flex items-center gap-1.5">
+                                                        {order.items.length} {order.items.length === 1 ? 'Item' : 'Items'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 pt-4 md:pt-0">
-                                        <div className="text-left md:text-right">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Grand Total</p>
-                                            <p className="text-lg md:text-xl font-black text-slate-900">ETB {order.total.toLocaleString()}</p>
-                                        </div>
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-400'}`}>
-                                            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                        <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 pt-4 md:pt-0">
+                                            <div className="text-left md:text-right">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Grand Total</p>
+                                                <p className="text-lg md:text-xl font-black text-slate-900">ETB {order.total.toLocaleString()}</p>
+                                            </div>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isExpanded ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-400'}`}>
+                                                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Expanded Details */}
-                            {isExpanded && (
-                                <div className="px-5 md:px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
-                                    <div className="pt-6 md:pt-8 border-t border-slate-100 grid md:grid-cols-2 gap-8 md:gap-12">
-                                        <div className="space-y-6">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Order Summary</h4>
-                                                <span className="text-[10px] font-bold text-slate-300">#{order.id.slice(-6).toUpperCase()}</span>
-                                            </div>
-                                            <div className="space-y-4">
-                                                {order.items.map((item: any, idx: number) => (
-                                                    <div key={idx} className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl grayscale hover:grayscale-0 transition-all">
-                                                                {item.product?.imageToken || '📦'}
+                                {/* Expanded Details */}
+                                {isExpanded && (
+                                    <div className="px-5 md:px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
+                                        <div className="pt-6 md:pt-8 border-t border-slate-100 grid md:grid-cols-2 gap-8 md:gap-12">
+                                            <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Order Summary</h4>
+                                                    <span className="text-[10px] font-bold text-slate-300">#{order.id.slice(-6).toUpperCase()}</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {order.items.map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl grayscale hover:grayscale-0 transition-all">
+                                                                    {item.product?.imageToken || '📦'}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-black text-slate-900 text-sm">{item.product?.name || item.name}</p>
+                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} × ETB {item.price.toLocaleString()}</p>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="font-black text-slate-900 text-sm">{item.product?.name || item.name}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} × ETB {item.price.toLocaleString()}</p>
-                                                            </div>
+                                                            <span className="font-black text-slate-900 text-sm">ETB {((item.price || 0) * item.quantity).toLocaleString()}</span>
                                                         </div>
-                                                        <span className="font-black text-slate-900 text-sm">ETB {((item.price || 0) * item.quantity).toLocaleString()}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
-                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
-                                                <span className="font-black text-slate-600">ETB {order.total.toLocaleString()}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-8">
-                                            <div className="space-y-4">
-                                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Shipping Details</h4>
-                                                <div className="p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] bg-slate-50 border border-slate-100 space-y-4">
-                                                    <div className="flex items-start gap-4">
-                                                        <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-                                                        <div className="space-y-1">
-                                                            <p className="text-sm font-black text-slate-900">Delivery Address</p>
-                                                            <p className="text-xs font-bold text-slate-500 leading-relaxed">
-                                                                {order.shippingAddress || 'No address provided'}
-                                                                <br />
-                                                                {order.shippingCity || 'Addis Ababa'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                    ))}
+                                                </div>
+                                                <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subtotal</span>
+                                                    <span className="font-black text-slate-600">ETB {order.total.toLocaleString()}</span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-col sm:flex-row gap-4">
-                                                {order.trackingToken && (
-                                                    <Link
-                                                        href={`/track-order?orderNumber=${order.orderNumber}&email=${order.guestEmail || order.customer?.email}`}
-                                                        className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-center text-sm font-black hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
-                                                    >
-                                                        <Search className="w-4 h-4" />
-                                                        Track Shipment
-                                                    </Link>
-                                                )}
-                                                <button
-                                                    onClick={() => handleDownloadInvoice(order.orderNumber)}
-                                                    className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl text-center text-sm font-black hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                    Download Invoice
-                                                </button>
+                                            <div className="space-y-8">
+                                                <div className="space-y-4">
+                                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Shipping Details</h4>
+                                                    <div className="p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] bg-slate-50 border border-slate-100 space-y-4">
+                                                        <div className="flex items-start gap-4">
+                                                            <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
+                                                            <div className="space-y-1">
+                                                                <p className="text-sm font-black text-slate-900">Delivery Address</p>
+                                                                <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                                                                    {order.shippingAddress || 'No address provided'}
+                                                                    <br />
+                                                                    {order.shippingCity || 'Addis Ababa'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-                                                {order.status === 'PENDING' && (
-                                                    <button
-                                                        onClick={() => handleCancelOrder(order.id)}
-                                                        className="flex-1 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-center text-sm font-black hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <AlertCircle className="w-4 h-4" />
-                                                        Cancel Order
-                                                    </button>
+                                                {/* Cancellation Request Feedback */}
+                                                {cancellationRequest && cancellationRequest.status === 'REJECTED' && cancellationRequest.staffFeedback && (
+                                                    <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 space-y-2">
+                                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">Cancellation Declined</h4>
+                                                        <p className="text-sm font-bold text-rose-700">{cancellationRequest.staffFeedback}</p>
+                                                    </div>
                                                 )}
+
+                                                {cancellationRequest && cancellationRequest.status === 'PENDING' && (
+                                                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100 space-y-2">
+                                                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Cancellation Request Pending</h4>
+                                                        <p className="text-sm font-bold text-amber-700">Your request is being reviewed by our team. We'll notify you once a decision is made.</p>
+                                                        <p className="text-xs font-bold text-amber-500">Reason: {cancellationRequest.reason}</p>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex flex-col sm:flex-row gap-4">
+                                                    {order.trackingToken && (
+                                                        <Link
+                                                            href={`/track-order?orderNumber=${order.orderNumber}&email=${order.guestEmail || order.customer?.email}`}
+                                                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-center text-sm font-black hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                                                        >
+                                                            <Search className="w-4 h-4" />
+                                                            Track Shipment
+                                                        </Link>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDownloadInvoice(order.orderNumber)}
+                                                        className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl text-center text-sm font-black hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                        Download Invoice
+                                                    </button>
+
+                                                    {canRequestCancellation(order) && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setShowCancelModal(order.id);
+                                                            }}
+                                                            className="flex-1 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-center text-sm font-black hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <AlertCircle className="w-4 h-4" />
+                                                            Request Cancellation
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                )
+                                }
+                            </div>
+                        );
+                    })}
+                </div>
+            </div >
+
+            {/* Cancellation Request Modal */}
+            {showCancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-6 md:p-8 border-b border-slate-100">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Request Cancellation</h3>
+                                    <p className="text-sm font-bold text-slate-400 mt-1">Your request will be reviewed by our team</p>
                                 </div>
-                            )
-                            }
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(null);
+                                        setCancelReason('');
+                                    }}
+                                    className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
-                    );
-                })}
-            </div>
-        </div >
+
+                        <div className="p-6 md:p-8 space-y-6">
+                            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                                <p className="text-sm font-bold text-amber-700">
+                                    <AlertCircle className="w-4 h-4 inline mr-2" />
+                                    Cancellation requests are subject to review. Orders that have already been shipped cannot be cancelled.
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
+                                    Reason for Cancellation *
+                                </label>
+                                <textarea
+                                    value={cancelReason}
+                                    onChange={(e) => setCancelReason(e.target.value)}
+                                    placeholder="Please explain why you'd like to cancel this order (minimum 10 characters)..."
+                                    className="w-full px-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold focus:border-slate-900 outline-none transition-all h-32 resize-none"
+                                    minLength={10}
+                                />
+                                <p className={`text-xs font-bold ml-1 ${cancelReason.length < 10 ? 'text-rose-500' : 'text-slate-400'}`}>
+                                    {cancelReason.length}/10 characters minimum
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(null);
+                                        setCancelReason('');
+                                    }}
+                                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRequestCancellation}
+                                    disabled={cancelReason.length < 10 || submitting}
+                                    className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black hover:bg-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        'Submit Request'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

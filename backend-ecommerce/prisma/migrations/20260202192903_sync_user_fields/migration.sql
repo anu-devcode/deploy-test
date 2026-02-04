@@ -15,8 +15,7 @@ ADD COLUMN     "lastName" TEXT,
 ADD COLUMN     "twoFactorBackupCodes" TEXT[],
 ADD COLUMN     "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false,
 ADD COLUMN     "twoFactorMethod" TEXT,
-ADD COLUMN     "twoFactorSecret" TEXT,
-ALTER COLUMN "role" SET DEFAULT 'CUSTOMER';
+ADD COLUMN     "twoFactorSecret" TEXT;
 
 -- CreateTable
 CREATE TABLE "SavedPaymentMethod" (
