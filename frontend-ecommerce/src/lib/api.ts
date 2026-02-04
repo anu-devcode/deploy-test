@@ -105,6 +105,8 @@ export interface Delivery {
     driverPhone?: string;
     estimatedTime?: string;
     actualDelivery?: string;
+    vehicleInfo?: string;
+    notes?: string;
     createdAt: string;
 }
 
