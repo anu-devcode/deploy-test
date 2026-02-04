@@ -69,6 +69,20 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleDispatchOrder = async (orderId: string) => {
+        try {
+            setLoading(true);
+            await api.createDelivery({ orderId });
+            alert('Order dispatched successfully. Check Deliveries for details.');
+            fetchOrders(); // Refresh to show new status
+        } catch (error) {
+            console.error('Failed to dispatch order:', error);
+            alert('Dispatch failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleDeleteOrder = async (orderId: string) => {
         if (!confirm('Are you sure you want to permanently delete this order record? This action cannot be undone.')) return;
         try {
@@ -97,25 +111,29 @@ export default function AdminOrdersPage() {
     ];
 
     const getStatusStyles = (status: string) => {
-        const s = status.toLowerCase();
+        const s = status.toUpperCase();
         switch (s) {
-            case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-            case 'pending_verification': return 'bg-purple-50 text-purple-600 border-purple-100';
-            case 'paid': case 'confirmed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-            case 'fulfilled': case 'delivered': return 'bg-blue-50 text-blue-600 border-blue-100';
-            case 'cancelled': return 'bg-rose-50 text-rose-600 border-rose-100';
+            case 'PENDING': return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'PENDING_VERIFICATION': return 'bg-purple-50 text-purple-600 border-purple-100';
+            case 'PAID': case 'CONFIRMED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'PROCESSING': case 'PACKED': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+            case 'SHIPPED': return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'FULFILLED': case 'DELIVERED': return 'bg-slate-50 text-slate-400 border-slate-100';
+            case 'CANCELLED': return 'bg-rose-50 text-rose-600 border-rose-100';
             default: return 'bg-slate-50 text-slate-600 border-slate-100';
         }
     };
 
     const getStatusIcon = (status: string) => {
-        const s = status.toLowerCase();
+        const s = status.toUpperCase();
         switch (s) {
-            case 'pending': return <Clock className="w-3 h-3" />;
-            case 'pending_verification': return <AlertCircle className="w-3 h-3" />;
-            case 'paid': case 'confirmed': return <CheckCircle2 className="w-3 h-3" />;
-            case 'fulfilled': case 'delivered': return <Truck className="w-3 h-3" />;
-            case 'cancelled': return <XCircle className="w-3 h-3" />;
+            case 'PENDING': return <Clock className="w-3 h-3" />;
+            case 'PENDING_VERIFICATION': return <AlertCircle className="w-3 h-3" />;
+            case 'PAID': case 'CONFIRMED': return <CheckCircle2 className="w-3 h-3" />;
+            case 'PROCESSING': case 'PACKED': return <Package className="w-3 h-3" />;
+            case 'SHIPPED': return <Truck className="w-3 h-3" />;
+            case 'FULFILLED': case 'DELIVERED': return <CheckCircle2 className="w-3 h-3" />;
+            case 'CANCELLED': return <XCircle className="w-3 h-3" />;
             default: return null;
         }
     };
@@ -187,6 +205,7 @@ export default function AdminOrdersPage() {
                                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Info</th>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Placement Date</th>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Grand Total</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Payment</th>
                                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Current Status</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -232,12 +251,35 @@ export default function AdminOrdersPage() {
                                             ETB {total.toLocaleString()}
                                         </td>
                                         <td className="px-6 py-5">
+                                            <div className="flex flex-col gap-1">
+                                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{(order as any).paymentMethod || 'N/A'}</p>
+                                                {(() => {
+                                                    const pStatus = (order as any).payments?.[0]?.status || 'PENDING';
+                                                    return (
+                                                        <span className={`text-[8px] font-bold uppercase tracking-widest ${pStatus === 'COMPLETED' ? 'text-emerald-500' : pStatus === 'FAILED' ? 'text-rose-500' : 'text-purple-500'
+                                                            }`}>
+                                                            {pStatus}
+                                                        </span>
+                                                    )
+                                                })()}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
                                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusStyles(order.status)}`}>
                                                 {getStatusIcon(order.status)} {order.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {(order.status === 'CONFIRMED' || order.status === 'PROCESSING') && (
+                                                    <button
+                                                        onClick={() => handleDispatchOrder(order.id)}
+                                                        className="p-2 hover:bg-amber-50 text-slate-400 hover:text-amber-600 rounded-lg transition-all"
+                                                        title="Dispatch Order"
+                                                    >
+                                                        <Truck className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => setSelectedOrder(order)}
                                                     className="p-2 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-lg transition-all"
@@ -287,7 +329,7 @@ export default function AdminOrdersPage() {
 
                         {/* Modal Content */}
                         <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Status Card */}
                                 <div className="p-6 rounded-2xl bg-slate-50 space-y-4">
                                     <div className="flex items-center gap-2 text-slate-400 uppercase font-black text-[10px] tracking-widest">
@@ -327,86 +369,98 @@ export default function AdminOrdersPage() {
                             </div>
 
                             {/* Manual Payment Verification */}
-                            {(selectedOrder.status === 'PENDING_VERIFICATION' || (selectedOrder as any).receiptUrl) && (
-                                <div className="p-8 rounded-[2rem] bg-purple-50 border border-purple-100 space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 rounded-xl bg-purple-600 text-white">
-                                                <CreditCard className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Manual Payment Verification</p>
-                                                <p className="text-[10px] text-purple-600 font-bold uppercase tracking-widest">Awaiting Admin Signature</p>
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-purple-200 text-purple-800 border-none font-black text-[9px] uppercase">Review Required</Badge>
-                                    </div>
+                            {(() => {
+                                const relevantPayment = (selectedOrder as any).payments?.find((p: any) =>
+                                    p.status === 'PROCESSING' || p.status === 'PENDING'
+                                ) || (selectedOrder as any).payments?.[0];
 
-                                    <div className="grid md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Receipt</p>
-                                            <div className="aspect-[4/5] bg-white rounded-2xl border-2 border-dashed border-purple-200 flex items-center justify-center overflow-hidden group cursor-zoom-in">
-                                                {(selectedOrder as any).receiptUrl ? (
-                                                    <img src={(selectedOrder as any).receiptUrl} alt="Receipt" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
-                                                ) : (
-                                                    <div className="text-center p-4">
-                                                        <Package className="w-10 h-10 text-purple-200 mx-auto mb-2" />
-                                                        <p className="text-[10px] font-bold text-purple-300">RECEIPT_NOT_LOADED</p>
-                                                    </div>
-                                                )}
+                                if (!relevantPayment && !(selectedOrder.status === 'PENDING_VERIFICATION')) return null;
+
+                                return (
+                                    <div className="p-8 rounded-[2rem] bg-purple-50 border border-purple-100 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 rounded-xl bg-purple-600 text-white">
+                                                    <CreditCard className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Manual Payment Verification</p>
+                                                    <p className="text-[10px] text-purple-600 font-bold uppercase tracking-widest">
+                                                        {relevantPayment?.status || 'Awaiting Admin Signature'}
+                                                    </p>
+                                                </div>
                                             </div>
+                                            <Badge className="bg-purple-200 text-purple-800 border-none font-black text-[9px] uppercase">Review Required</Badge>
                                         </div>
-                                        <div className="space-y-6">
-                                            <div className="p-5 bg-white rounded-2xl border border-purple-100">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Verification Ledger</p>
-                                                <textarea
-                                                    placeholder="Add verification notes (e.g. Reference confirmed...)"
-                                                    className="w-full h-24 bg-slate-50 border-none rounded-xl p-3 text-xs font-bold text-slate-900 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
-                                                />
+
+                                        <div className="grid md:grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Receipt</p>
+                                                <div className="aspect-[4/5] bg-white rounded-2xl border-2 border-dashed border-purple-200 flex items-center justify-center overflow-hidden group cursor-zoom-in">
+                                                    {relevantPayment?.receiptUrl ? (
+                                                        <img src={relevantPayment.receiptUrl} alt="Receipt" className="w-full h-full object-cover group-hover:scale-110 transition-all" />
+                                                    ) : (
+                                                        <div className="text-center p-4">
+                                                            <Package className="w-10 h-10 text-purple-200 mx-auto mb-2" />
+                                                            <p className="text-[10px] font-bold text-purple-300 uppercase">NO RECEIPTS UPLOADED</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col gap-3">
-                                                <button
-                                                    onClick={async () => {
-                                                        const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
-                                                        setLoading(true);
-                                                        try {
-                                                            await api.verifyPayment((selectedOrder as any).paymentId || selectedOrder.id, true, note);
-                                                            fetchOrders();
-                                                            setSelectedOrder(null);
-                                                        } catch (e) {
-                                                            alert('Verification failed');
-                                                        } finally {
-                                                            setLoading(false);
-                                                        }
-                                                    }}
-                                                    className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <CheckCircle2 className="w-4 h-4" /> Approve & Confirm Order
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
-                                                        if (!note) return alert('Please provide a reason for rejection');
-                                                        setLoading(true);
-                                                        try {
-                                                            await api.verifyPayment((selectedOrder as any).paymentId || selectedOrder.id, false, note);
-                                                            fetchOrders();
-                                                            setSelectedOrder(null);
-                                                        } catch (e) {
-                                                            alert('Rejection failed');
-                                                        } finally {
-                                                            setLoading(false);
-                                                        }
-                                                    }}
-                                                    className="w-full py-4 bg-white border border-rose-200 text-rose-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <XCircle className="w-4 h-4" /> Reject Payment
-                                                </button>
+                                            <div className="space-y-6">
+                                                <div className="p-5 bg-white rounded-2xl border border-purple-100">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Verification Ledger</p>
+                                                    <textarea
+                                                        placeholder="Add verification notes (e.g. Reference confirmed...)"
+                                                        className="w-full h-24 bg-slate-50 border-none rounded-xl p-3 text-xs font-bold text-slate-900 focus:ring-1 focus:ring-purple-500 transition-all resize-none"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-3">
+                                                    <button
+                                                        onClick={async () => {
+                                                            const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
+                                                            setLoading(true);
+                                                            try {
+                                                                const paymentId = relevantPayment?.id || (selectedOrder as any).paymentId || selectedOrder.id;
+                                                                await api.verifyPayment(paymentId, true, note);
+                                                                fetchOrders();
+                                                                setSelectedOrder(null);
+                                                            } catch (e) {
+                                                                alert('Verification failed');
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }}
+                                                        className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <CheckCircle2 className="w-4 h-4" /> Approve & Confirm Order
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const note = (document.querySelector('textarea') as HTMLTextAreaElement).value;
+                                                            if (!note) return alert('Please provide a reason for rejection');
+                                                            setLoading(true);
+                                                            try {
+                                                                const paymentId = relevantPayment?.id || (selectedOrder as any).paymentId || selectedOrder.id;
+                                                                await api.verifyPayment(paymentId, false, note);
+                                                                fetchOrders();
+                                                                setSelectedOrder(null);
+                                                            } catch (e) {
+                                                                alert('Rejection failed');
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }}
+                                                        className="w-full py-4 bg-white border border-rose-200 text-rose-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <XCircle className="w-4 h-4" /> Reject Payment
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             {/* Action Control */}
                             <div className="pt-6 border-t border-slate-100 flex gap-4">

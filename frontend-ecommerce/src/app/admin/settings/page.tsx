@@ -48,7 +48,7 @@ export default function SettingsPage() {
     return (
         <div className="max-w-5xl space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex items-end justify-between border-b border-slate-100 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-100 pb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Global Configuration</h1>
                     <p className="text-sm text-slate-500">Master controls for your e-commerce ecosystem.</p>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${saved
+                    className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg ${saved
                         ? 'bg-emerald-500 text-white shadow-emerald-500/20'
                         : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
                         }`}
@@ -74,12 +74,12 @@ export default function SettingsPage() {
 
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Sidebar Tabs */}
-                <div className="w-full md:w-64 space-y-1">
+                <div className="w-full md:w-64 flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 scrollbar-hide">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id
+                            className={`flex-shrink-0 md:flex-shrink md:w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === tab.id
                                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                                 : 'text-slate-500 hover:bg-slate-50 border border-transparent'
                                 }`}

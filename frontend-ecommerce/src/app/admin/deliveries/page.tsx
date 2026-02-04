@@ -52,12 +52,33 @@ export default function DeliveriesPage() {
 
     const fetchDeliveries = async () => {
         try {
+            setLoading(true);
             const data = await api.getDeliveries();
             setDeliveries(data as Delivery[]);
         } catch (error) {
             console.error('Failed to fetch deliveries:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateStatus = async (id: string, status: string) => {
+        try {
+            await api.updateDeliveryStatus(id, status);
+            fetchDeliveries();
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            alert('Failed to update status');
+        }
+    };
+
+    const handleAssignDriver = async (id: string, driverData: any) => {
+        try {
+            await api.updateDelivery(id, driverData);
+            fetchDeliveries();
+        } catch (error) {
+            console.error('Failed to assign driver:', error);
+            alert('Failed to assign driver');
         }
     };
 
@@ -189,10 +210,32 @@ export default function DeliveriesPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-all" title="View Map">
-                                                <Navigation className="w-4 h-4" />
-                                            </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {delivery.status === 'PENDING' && (
+                                                <button
+                                                    onClick={() => {
+                                                        const name = prompt('Driver Name:');
+                                                        const phone = prompt('Driver Phone:');
+                                                        if (name) handleAssignDriver(delivery.id, { driverName: name, driverPhone: phone, status: 'ASSIGNED' });
+                                                    }}
+                                                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-700 transition-all"
+                                                >
+                                                    Assign
+                                                </button>
+                                            )}
+                                            {delivery.status !== 'DELIVERED' && delivery.status !== 'FAILED' && delivery.status !== 'PENDING' && (
+                                                <select
+                                                    className="bg-white border border-slate-200 rounded-lg py-1 px-2 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all"
+                                                    value={delivery.status}
+                                                    onChange={(e) => handleUpdateStatus(delivery.id, e.target.value)}
+                                                >
+                                                    <option value="ASSIGNED">Assigned</option>
+                                                    <option value="PICKED_UP">Picked Up</option>
+                                                    <option value="IN_TRANSIT">In Transit</option>
+                                                    <option value="DELIVERED">Delivered</option>
+                                                    <option value="FAILED">Failed</option>
+                                                </select>
+                                            )}
                                             <button className="p-2 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-all">
                                                 <MoreVertical className="w-4 h-4" />
                                             </button>

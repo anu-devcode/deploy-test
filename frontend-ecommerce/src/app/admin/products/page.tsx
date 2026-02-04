@@ -36,13 +36,15 @@ import {
     AlertCircle,
     ChevronLeft,
     ChevronRight,
-    Edit
+    Edit,
+    Warehouse
 } from 'lucide-react';
 import { Product, Category } from '@/types';
 
 export default function AdminProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -54,9 +56,14 @@ export default function AdminProductsPage() {
         name: '',
         description: '',
         price: '',
+        compareAtPrice: '',
         stock: '',
         sku: '',
         categoryId: '',
+        warehouseId: '',
+        tags: '',
+        isPublished: true,
+        isFeatured: false,
         categoryName: 'Pulses & Grains',
         images: [] as string[],
         retail: { enabled: true, price: '', unit: 'kg', minOrder: '1' },
@@ -88,11 +95,21 @@ export default function AdminProductsPage() {
         }
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
-        const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-        setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+
+        setLoading(true);
+        try {
+            const uploadPromises = Array.from(files).map(file => api.uploadImage(file));
+            const results = await Promise.all(uploadPromises);
+            const newImageUrls = results.map(r => r.url);
+            setFormData(prev => ({ ...prev, images: [...prev.images, ...newImageUrls] }));
+        } catch (error) {
+            console.error('Failed to upload images:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const removeImage = (index: number) => {
@@ -108,22 +125,27 @@ export default function AdminProductsPage() {
             name: product.name,
             description: product.description || '',
             price: product.price.toString(),
+            compareAtPrice: product.compareAtPrice?.toString() || '',
             stock: product.stock.toString(),
             sku: product.sku || '',
             categoryId: product.categoryId || '',
-            categoryName: (product as any).category || 'Pulses & Grains',
+            warehouseId: product.warehouseId || '',
+            tags: product.tags?.join(', ') || '',
+            isPublished: product.isPublished || false,
+            isFeatured: product.isFeatured || false,
+            categoryName: (product as any).category?.name || 'Pulses & Grains',
             images: product.images || [],
             retail: {
-                enabled: product.retail.enabled,
-                price: product.retail.price.toString(),
-                unit: product.retail.unit,
-                minOrder: product.retail.minOrder.toString()
+                enabled: product.retail?.enabled ?? true,
+                price: product.retail?.price?.toString() || '',
+                unit: product.retail?.unit || 'kg',
+                minOrder: product.retail?.minOrder?.toString() || '1'
             },
             bulk: {
-                enabled: product.bulk.enabled,
-                price: product.bulk.price.toString(),
-                unit: product.bulk.unit,
-                minOrder: product.bulk.minOrder.toString()
+                enabled: product.bulk?.enabled ?? false,
+                price: product.bulk?.price?.toString() || '',
+                unit: product.bulk?.unit || 'Quintal',
+                minOrder: product.bulk?.minOrder?.toString() || '5'
             }
         });
         setShowForm(true);
@@ -138,22 +160,24 @@ export default function AdminProductsPage() {
                 name: formData.name,
                 description: formData.description,
                 price: parseFloat(formData.price) || 0,
+                compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : undefined,
                 stock: parseInt(formData.stock) || 0,
                 sku: formData.sku || undefined,
                 categoryId: formData.categoryId || undefined,
+                warehouseId: formData.warehouseId || undefined,
+                tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+                isPublished: formData.isPublished,
+                isFeatured: formData.isFeatured,
                 images: formData.images,
-                retail: {
-                    enabled: formData.retail.enabled,
-                    price: parseFloat(formData.retail.price) || 0,
-                    unit: formData.retail.unit,
-                    minOrder: parseInt(formData.retail.minOrder) || 1
-                },
-                bulk: {
-                    enabled: formData.bulk.enabled,
-                    price: parseFloat(formData.bulk.price) || 0,
-                    unit: formData.bulk.unit,
-                    minOrder: parseInt(formData.bulk.minOrder) || 1
-                }
+                // Flatten Dual Pricing fields for DTO
+                retailEnabled: formData.retail.enabled,
+                retailPrice: parseFloat(formData.retail.price) || 0,
+                retailUnit: formData.retail.unit,
+                retailMinOrder: parseInt(formData.retail.minOrder) || 1,
+                bulkEnabled: formData.bulk.enabled,
+                bulkPrice: parseFloat(formData.bulk.price) || 0,
+                bulkUnit: formData.bulk.unit,
+                bulkMinOrder: parseInt(formData.bulk.minOrder) || 1
             };
 
             if (isEditing) {
@@ -176,7 +200,9 @@ export default function AdminProductsPage() {
         setShowForm(false);
         setIsEditing(null);
         setFormData({
-            name: '', description: '', price: '', stock: '', sku: '', categoryId: '', categoryName: 'Pulses & Grains', images: [],
+            name: '', description: '', price: '', compareAtPrice: '', stock: '', sku: '', categoryId: '', warehouseId: '', tags: '',
+            isPublished: true, isFeatured: false,
+            categoryName: 'Pulses & Grains', images: [],
             retail: { enabled: true, price: '', unit: 'kg', minOrder: '1' },
             bulk: { enabled: false, price: '', unit: 'Quintal', minOrder: '5' }
         });
@@ -200,26 +226,26 @@ export default function AdminProductsPage() {
 
     const stats = [
         { label: 'Total Stock', value: products.reduce((acc, p) => acc + p.stock, 0), icon: Box, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { label: 'Inventory Value', value: 'ETB ' + products.reduce((acc, p) => acc + (p.retail.enabled ? p.retail.price * p.stock : 0), 0).toLocaleString(), icon: Globe, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { label: 'Inventory Value', value: 'ETB ' + products.reduce((acc, p) => acc + (p.retail?.enabled ? p.retail.price * p.stock : 0), 0).toLocaleString(), icon: Globe, color: 'text-rose-600', bg: 'bg-rose-50' },
         { label: 'Live Units', value: products.length, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     ];
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Unit Management</h1>
                     <p className="text-sm text-slate-500">Logistical oversight for SKU inventory and wholesale/retail configurations.</p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                    <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
                         <Download className="w-4 h-4" />
-                        Export Logistics
+                        <span className="hidden sm:inline">Export Logistics</span><span className="sm:hidden">Export</span>
                     </button>
                     <button
                         onClick={() => showForm ? resetForm() : setShowForm(true)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg active:scale-95 ${showForm ? 'bg-slate-200 text-slate-600' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg active:scale-95 ${showForm ? 'bg-slate-200 text-slate-600' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'}`}
                     >
                         {showForm ? 'Cancel Operation' : <><Plus className="w-4 h-4" /> Add Unit</>}
                     </button>
@@ -227,7 +253,7 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {stats.map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${stat.bg}`}>
@@ -275,7 +301,7 @@ export default function AdminProductsPage() {
                                     <input type="file" multiple hidden ref={fileInputRef} onChange={handleImageUpload} accept="image/*" />
                                 </div>
                                 {formData.images.length > 0 && (
-                                    <div className="grid grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         {formData.images.map((src, i) => (
                                             <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 group shadow-sm">
                                                 <img src={src} alt="" className="w-full h-full object-cover" />
@@ -303,6 +329,37 @@ export default function AdminProductsPage() {
                                         required
                                     />
                                 </div>
+
+                                <div className="space-y-2.5">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Discovery Tags</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Lentils, Organic, High Protein..."
+                                        value={formData.tags}
+                                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-2.5">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Global Discovery & Visibility</label>
+                                    <div className="flex gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(p => ({ ...p, isPublished: !p.isPublished }))}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all border ${formData.isPublished ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                        >
+                                            <Globe className="w-3.5 h-3.5" /> {formData.isPublished ? 'Publicly Listed' : 'Draft Only'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(p => ({ ...p, isFeatured: !p.isFeatured }))}
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all border ${formData.isFeatured ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                        >
+                                            <Zap className="w-3.5 h-3.5" /> {formData.isFeatured ? 'Featured Asset' : 'Standard Asset'}
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="space-y-2.5">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Taxonomy Category</label>
                                     <div className="relative">
@@ -315,6 +372,20 @@ export default function AdminProductsPage() {
                                             {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                                         </select>
                                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2.5">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Primary Logistical Hub</label>
+                                    <div className="relative">
+                                        <select
+                                            value={formData.warehouseId}
+                                            onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 appearance-none outline-none transition-all"
+                                        >
+                                            <option value="">Global Centralized</option>
+                                            {warehouses.map(wh => (<option key={wh.id} value={wh.id}>{wh.name} ({wh.city})</option>))}
+                                        </select>
+                                        <Warehouse className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                     </div>
                                 </div>
                                 <div className="space-y-2.5">
@@ -353,6 +424,19 @@ export default function AdminProductsPage() {
                                         />
                                     </div>
                                 </div>
+                                <div className="space-y-2.5">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Compare-at Price (Sale)</label>
+                                    <div className="relative">
+                                        <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                                        <input
+                                            type="number"
+                                            value={formData.compareAtPrice}
+                                            onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-5 py-4 text-sm font-black focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -380,7 +464,7 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 {formData.retail.enabled && (
-                                    <div className="grid grid-cols-2 gap-5 animate-in slide-in-from-bottom-3 duration-400">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in slide-in-from-bottom-3 duration-400">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Price / Unit</label>
                                             <input
@@ -427,7 +511,7 @@ export default function AdminProductsPage() {
                                 </div>
 
                                 {formData.bulk.enabled && (
-                                    <div className="grid grid-cols-2 gap-5 animate-in slide-in-from-bottom-3 duration-400">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-in slide-in-from-bottom-3 duration-400">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bulk Price</label>
                                             <input
@@ -453,11 +537,11 @@ export default function AdminProductsPage() {
                             </div>
                         </div>
 
-                        <div className="pt-6 flex gap-4 sticky bottom-0 bg-white/80 backdrop-blur-sm py-4 border-t border-slate-50">
-                            <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4.5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-3">
+                        <div className="pt-6 flex flex-col sm:flex-row gap-4 sticky bottom-0 bg-white/80 backdrop-blur-sm py-4 border-t border-slate-50 z-20">
+                            <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 lg:px-10 py-4.5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-emerald-500/10 active:scale-95 flex items-center justify-center gap-3">
                                 <CheckCircle2 className="w-5 h-5" /> {isEditing ? 'Commit Changes' : 'Publish Asset to Inventory'}
                             </button>
-                            <button type="button" onClick={resetForm} className="bg-slate-100 hover:bg-slate-200 text-slate-500 px-10 py-4.5 rounded-2xl text-sm font-black transition-all">
+                            <button type="button" onClick={resetForm} className="sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-500 px-6 lg:px-10 py-4.5 rounded-2xl text-sm font-black transition-all">
                                 Discard Operation
                             </button>
                         </div>
@@ -511,13 +595,13 @@ export default function AdminProductsPage() {
                                     </td>
                                     <td className="px-6 py-6">
                                         <div className="flex flex-col gap-2.5">
-                                            {p.retail.enabled && (
+                                            {p.retail?.enabled && (
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-5 h-5 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm"><ShoppingCart className="w-3 h-3" /></div>
                                                     <p className="text-xs font-black text-slate-700">ETB {p.retail.price.toLocaleString()} <span className="text-slate-400 font-bold tracking-tight">/ {p.retail.unit}</span></p>
                                                 </div>
                                             )}
-                                            {p.bulk.enabled && (
+                                            {p.bulk?.enabled && (
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-sm"><Truck className="w-3 h-3" /></div>
                                                     <p className="text-xs font-black text-slate-700">ETB {p.bulk.price.toLocaleString()} <span className="text-slate-400 font-bold tracking-tight">/ {p.bulk.unit}</span></p>
@@ -537,13 +621,18 @@ export default function AdminProductsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-6">
-                                        {p.stock < 20 ? (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-wider border border-rose-100">
-                                                <AlertTriangle className="w-3 h-3" /> Critical Stock
+                                        {p.isPublished ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider border border-emerald-100">
+                                                <Globe className="w-3 h-3" /> Published
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider border border-emerald-100">
-                                                <CheckCircle2 className="w-3 h-3" /> Optimized
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                <Edit className="w-3 h-3" /> Draft Mode
+                                            </span>
+                                        )}
+                                        {p.isFeatured && (
+                                            <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-wider border border-amber-100">
+                                                <Zap className="w-3 h-3" /> Featured
                                             </span>
                                         )}
                                     </td>

@@ -35,6 +35,9 @@ export default function PromotionsPage() {
         value: 0,
         minAmount: 0,
         businessType: 'BOTH',
+        usageLimit: undefined,
+        startDate: undefined,
+        endDate: undefined,
         isActive: true
     });
 
@@ -44,7 +47,8 @@ export default function PromotionsPage() {
 
     const fetchPromotions = async () => {
         try {
-            const data = await api.getPromotions();
+            setLoading(true);
+            const data = await api.getAdminPromotions();
             setPromotions(data);
         } catch (error) {
             console.error('Failed to fetch promotions:', error);
@@ -55,29 +59,53 @@ export default function PromotionsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app we'd call api.createPromotion
-        const newPromo: Promotion = {
-            ...formData as Promotion,
-            id: Math.random().toString(36).substr(2, 9),
-            currentUsage: 0,
-            createdAt: new Date().toISOString()
-        };
-        setPromotions([newPromo, ...promotions]);
-        setShowForm(false);
-        setFormData({ name: '', description: '', code: '', type: 'PERCENTAGE', target: 'CART', value: 0, minAmount: 0, businessType: 'BOTH', isActive: true });
+        try {
+            setLoading(true);
+            const payload = { ...formData };
+            if (payload.startDate) payload.startDate = new Date(payload.startDate as any).toISOString();
+            if (payload.endDate) payload.endDate = new Date(payload.endDate as any).toISOString();
+
+            await api.createPromotion(payload);
+            await fetchPromotions();
+            setShowForm(false);
+            setFormData({ name: '', description: '', code: '', type: 'PERCENTAGE', target: 'CART', value: 0, minAmount: 0, businessType: 'BOTH', isActive: true });
+        } catch (error) {
+            console.error('Failed to create promotion:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this campaign?')) return;
+        try {
+            await api.deletePromotion(id);
+            setPromotions(promotions.filter(p => p.id !== id));
+        } catch (error) {
+            console.error('Failed to delete promotion:', error);
+        }
+    };
+
+    const handleToggle = async (promo: Promotion) => {
+        try {
+            await api.updatePromotion(promo.id, { isActive: !promo.isActive });
+            setPromotions(promotions.map(p => p.id === promo.id ? { ...p, isActive: !p.isActive } : p));
+        } catch (error) {
+            console.error('Failed to update promotion:', error);
+        }
     };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Marketing & Promotions</h1>
                     <p className="text-sm text-slate-500">Create campaigns to drive sales across retail and bulk segments.</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20"
                 >
                     {showForm ? 'Cancel' : <><Plus className="w-4 h-4" /> New Campaign</>}
                 </button>
@@ -165,6 +193,37 @@ export default function PromotionsPage() {
                             />
                         </div>
 
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">Usage Limit (Total)</label>
+                            <input
+                                type="number"
+                                placeholder="Unlimited"
+                                value={formData.usageLimit || ''}
+                                onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value ? Number(e.target.value) : undefined })}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">Start Date</label>
+                            <input
+                                type="date"
+                                value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-slate-700">End Date</label>
+                            <input
+                                type="date"
+                                value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                            />
+                        </div>
+
                         <div className="flex items-end">
                             <button
                                 type="submit"
@@ -186,13 +245,18 @@ export default function PromotionsPage() {
                                 <Ticket className="w-6 h-6" />
                             </div>
                             <div className="flex gap-2">
-                                <button className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                                <button
+                                    onClick={() => handleDelete(promo.id)}
+                                    className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                                >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
-                                {promo.isActive ?
-                                    <ToggleRight className="w-6 h-6 text-emerald-500 cursor-pointer" /> :
-                                    <ToggleLeft className="w-6 h-6 text-slate-300 cursor-pointer" />
-                                }
+                                <button onClick={() => handleToggle(promo)}>
+                                    {promo.isActive ?
+                                        <ToggleRight className="w-6 h-6 text-emerald-500" /> :
+                                        <ToggleLeft className="w-6 h-6 text-slate-300" />
+                                    }
+                                </button>
                             </div>
                         </div>
 
@@ -232,12 +296,12 @@ export default function PromotionsPage() {
                             Brolf's deterministic engine ensures audit safety. All discounts are calculated exactly the same on frontend and backend, preventing checkout discrepancies.
                         </p>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 text-center min-w-[120px]">
+                    <div className="flex flex-wrap justify-center md:justify-end gap-4 w-full md:w-auto">
+                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 text-center min-w-[120px] flex-1 md:flex-none">
                             <p className="text-2xl font-black text-indigo-400">{promotions.length}</p>
                             <p className="text-[10px] uppercase tracking-widest text-slate-500">Active</p>
                         </div>
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 text-center min-w-[120px]">
+                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 text-center min-w-[120px] flex-1 md:flex-none">
                             <p className="text-2xl font-black text-emerald-400">2.4k</p>
                             <p className="text-[10px] uppercase tracking-widest text-slate-500">Redeemed</p>
                         </div>

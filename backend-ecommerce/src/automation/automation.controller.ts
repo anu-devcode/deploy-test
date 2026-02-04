@@ -5,7 +5,7 @@ import { RolesGuard, JwtAuthGuard } from '../auth/guards';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
-@Controller('automation')
+@Controller('automations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPERADMIN)
 export class AutomationController {
@@ -19,6 +19,11 @@ export class AutomationController {
     @Get('rules')
     findAll() {
         return this.automationService.findAllRules();
+    }
+
+    @Get('logs')
+    findAllLogs() {
+        return this.automationService.findAllLogs();
     }
 
     @Get('rules/:id')

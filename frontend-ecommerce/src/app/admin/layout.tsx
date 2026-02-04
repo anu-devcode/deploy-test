@@ -10,6 +10,7 @@ import {
     ShoppingBag,
     Package,
     FolderTree,
+    LayoutGrid,
     Truck,
     CreditCard,
     Users,
@@ -28,7 +29,9 @@ import {
     User,
     Layers,
     Tag,
-    Zap
+    Zap,
+    Mail,
+    Menu
 } from 'lucide-react';
 
 export default function AdminLayout({
@@ -36,7 +39,7 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { isAuthenticated, user, logout } = useAuth();
+    const { isAdminAuthenticated, adminUser, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -53,12 +56,12 @@ export default function AdminLayout({
         // Skip check for login page to avoid redirect loops
         if (pathname === '/admin/login') return;
 
-        if (!isAuthenticated) {
+        if (!isAdminAuthenticated) {
             router.push('/admin/login');
             return;
         }
 
-        if (user?.requiresPasswordChange) {
+        if (adminUser?.requiresPasswordChange) {
             router.push('/admin/login');
             return;
         }
@@ -76,11 +79,11 @@ export default function AdminLayout({
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isAuthenticated, pathname, router, user]);
+    }, [isAdminAuthenticated, pathname, router, adminUser]);
 
     const fetchNotifications = async () => {
         try {
-            const data = await api.getNotifications();
+            const data = await api.getAdminNotifications();
             setNotifications(data);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
@@ -95,6 +98,24 @@ export default function AdminLayout({
         setNotifications([]);
         setIsNotificationOpen(false);
     };
+
+    // Responsive Sidebar Logic
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setIsSidebarOpen(false);
+            } else {
+                setIsSidebarOpen(true);
+            }
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (window.innerWidth < 1024) setIsSidebarOpen(false);
+    }, [pathname]);
 
     const { subscribe, socket } = useSocket();
 
@@ -152,9 +173,9 @@ export default function AdminLayout({
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const hasPermission = (permission: string) => {
-        if (!user || !user.permissions) return false;
-        if (user.permissions.includes('ALL')) return true;
-        return user.permissions.includes(permission as any);
+        if (!adminUser || !adminUser.permissions) return false;
+        if (adminUser.permissions.includes('ALL')) return true;
+        return adminUser.permissions.includes(permission as any);
     };
 
     const navGroups = [
@@ -176,15 +197,28 @@ export default function AdminLayout({
             ].filter(item => hasPermission(item.permission))
         },
         {
-            label: 'Relationship & Mgmt',
+            label: 'CRM & Engagement',
             items: [
                 { label: 'Customers', icon: Users, href: '/admin/customers', permission: 'VIEW_ORDERS' },
-                { label: 'Messages', icon: Bell, href: '/admin/messages', permission: 'VIEW_ORDERS' },
                 { label: 'Promotions', icon: Tag, href: '/admin/promotions', permission: 'MANAGE_PRODUCTS' },
                 { label: 'Content CMS', icon: Layers, href: '/admin/cms', permission: 'MANAGE_PRODUCTS' },
+            ].filter(item => hasPermission(item.permission))
+        },
+        {
+            label: 'Communications',
+            items: [
+                { label: 'Inbox', icon: Mail, href: '/admin/messages', permission: 'VIEW_ORDERS' },
+                { label: 'Notifications', icon: Bell, href: '/admin/notifications', permission: 'VIEW_ORDERS' },
+                { label: 'Marketing', icon: Zap, href: '/admin/marketing', permission: 'MANAGE_PRODUCTS' },
+                { label: 'Marketing Assets', icon: LayoutGrid, href: '/admin/marketing/assets', permission: 'MANAGE_PRODUCTS' },
+            ].filter(item => hasPermission(item.permission))
+        },
+        {
+            label: 'Global Configuration',
+            items: [
+                { label: 'Staff Access', icon: UserCog, href: '/admin/staff', permission: 'MANAGE_STAFF' },
                 { label: 'Automations', icon: Zap, href: '/admin/automations', permission: 'ALL' },
-                { label: 'Staff', icon: UserCog, href: '/admin/staff', permission: 'MANAGE_STAFF' },
-                { label: 'Settings', icon: Settings, href: '/admin/settings', permission: 'ALL' },
+                { label: 'System Settings', icon: Settings, href: '/admin/settings', permission: 'ALL' },
             ].filter(item => hasPermission(item.permission))
         }
     ];
@@ -204,21 +238,32 @@ export default function AdminLayout({
     }
 
     // 2. Handle Unauthorized / Reset Required (Redirect State)
-    if (!isAuthenticated || user?.requiresPasswordChange) {
+    if (!isAdminAuthenticated || adminUser?.requiresPasswordChange) {
         return <div className="min-h-screen bg-[#F8FAFC]" />;
     }
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+        <div className="h-screen bg-[#F8FAFC] flex font-sans overflow-hidden">
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 bg-[#0F172A] text-white flex flex-col fixed h-full z-50">
-                <div className="p-6">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] text-white flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+                <div className="p-6 flex items-center justify-between">
                     <Link href="/admin" className="flex items-center gap-2 group">
                         <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
                             <Package className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-xl font-bold tracking-tight">Brolf<span className="text-emerald-400">Admin</span></span>
                     </Link>
+                    <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
+                        <X className="w-6 h-6" />
+                    </button>
                 </div>
 
                 <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto custom-scrollbar">
@@ -259,14 +304,14 @@ export default function AdminLayout({
                 <div className="p-4 bg-slate-900/50 border-t border-slate-800/50">
                     <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/20 rounded-xl">
                         <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                            <span className="text-emerald-400 font-bold text-xs">{user?.email?.[0].toUpperCase()}</span>
+                            <span className="text-emerald-400 font-bold text-xs">{adminUser?.email?.[0].toUpperCase()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-white truncate">{user?.email}</p>
-                            <p className="text-[10px] text-emerald-400/80 font-medium uppercase tracking-tighter">{user?.role}</p>
+                            <p className="text-xs font-semibold text-white truncate">{adminUser?.email}</p>
+                            <p className="text-[10px] text-emerald-400/80 font-medium uppercase tracking-tighter">{adminUser?.role}</p>
                         </div>
                         <button
-                            onClick={logout}
+                            onClick={() => logout('ADMIN')}
                             className="p-1.5 text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/5 rounded-lg transition-all"
                         >
                             <LogOut className="w-4 h-4" />
@@ -276,19 +321,28 @@ export default function AdminLayout({
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col pl-64">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Header */}
-                <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 flex items-center justify-between">
-                    <div className="relative w-96 max-w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search orders, products..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                        />
+                <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg lg:hidden"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+
+                        <div className="relative w-full max-w-[200px] lg:max-w-96 hidden sm:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 lg:gap-4">
                         {/* Notification Bell with Dropdown */}
                         <div className="relative" ref={notificationRef}>
                             <button
@@ -326,11 +380,16 @@ export default function AdminLayout({
                                                     className={`p-4 flex gap-3 hover:bg-slate-50 cursor-pointer transition-all relative group ${!n.read ? 'bg-indigo-50/30' : ''}`}
                                                 >
                                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${n.type === 'SECURITY' ? 'bg-rose-100 text-rose-600' :
-                                                        n.type === 'INVENTORY' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'
+                                                        n.type === 'INVENTORY' ? 'bg-amber-100 text-amber-600' :
+                                                            n.type === 'FINANCE' ? 'bg-emerald-100 text-emerald-600' :
+                                                                n.type === 'LOGISTICS' ? 'bg-blue-100 text-blue-600' :
+                                                                    'bg-indigo-100 text-indigo-600'
                                                         }`}>
                                                         {n.type === 'SECURITY' && <ShieldAlert className="w-5 h-5" />}
                                                         {n.type === 'INVENTORY' && <AlertCircle className="w-5 h-5" />}
-                                                        {n.type === 'SYSTEM' && <Info className="w-5 h-5" />}
+                                                        {n.type === 'FINANCE' && <CreditCard className="w-5 h-5" />}
+                                                        {n.type === 'LOGISTICS' && <Truck className="w-5 h-5" />}
+                                                        {(n.type === 'SYSTEM' || n.type === 'ORDER_STATUS') && <Info className="w-5 h-5" />}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className={`text-xs font-bold leading-tight ${!n.read ? 'text-slate-900' : 'text-slate-600'}`}>{n.title}</p>
@@ -351,7 +410,7 @@ export default function AdminLayout({
                             )}
                         </div>
 
-                        <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                        <div className="h-8 w-[1px] bg-slate-200 mx-1 lg:mx-2"></div>
 
                         {/* User Account Dropdown */}
                         <div className="relative" ref={accountRef}>
@@ -360,11 +419,11 @@ export default function AdminLayout({
                                 className={`flex items-center gap-2 cursor-pointer p-1.5 rounded-2xl transition-all duration-300 ${isAccountOpen ? 'bg-slate-100 ring-2 ring-slate-200' : 'hover:bg-slate-50'}`}
                             >
                                 <div className="w-8 h-8 rounded-xl bg-indigo-600 border border-indigo-500 shadow-md flex items-center justify-center text-white text-xs font-black">
-                                    {user?.email?.[0].toUpperCase()}
+                                    {adminUser?.email?.[0].toUpperCase()}
                                 </div>
                                 <div className="hidden md:block text-left mr-1">
-                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none">{user?.email?.split('@')[0]}</p>
-                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">{user?.role}</p>
+                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-tighter leading-none">{adminUser?.email?.split('@')[0]}</p>
+                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">{adminUser?.role}</p>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isAccountOpen ? 'rotate-180' : ''}`} />
                             </div>
@@ -375,7 +434,7 @@ export default function AdminLayout({
                                     <div className="p-5 bg-indigo-900 text-white relative overflow-hidden">
                                         <div className="relative z-10">
                                             <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-none">Command Entity</p>
-                                            <p className="text-sm font-black mt-1 truncate">{user?.email}</p>
+                                            <p className="text-sm font-black mt-1 truncate">{adminUser?.email}</p>
                                             <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 rounded-full border border-emerald-500/20">
                                                 <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse"></div>
                                                 <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Active Session</span>
@@ -398,7 +457,7 @@ export default function AdminLayout({
                                         </Link>
                                         <div className="h-[1px] bg-slate-50 mx-2 my-2"></div>
                                         <button
-                                            onClick={logout}
+                                            onClick={() => logout('ADMIN')}
                                             className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all group"
                                         >
                                             <div className="p-1.5 bg-rose-50 rounded-lg group-hover:bg-white transition-colors"><LogOut className="w-4 h-4" /></div>
@@ -411,7 +470,7 @@ export default function AdminLayout({
                     </div>
                 </header>
 
-                <main className="p-8">
+                <main className="p-4 lg:p-8 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     {children}
                 </main>
             </div>

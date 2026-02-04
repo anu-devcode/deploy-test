@@ -41,6 +41,10 @@ type CartContextType = {
   clearSelectedItems: () => void;
   toggleCart: () => void;
   isOpen: boolean;
+  promoCode: string | null;
+  discount: number;
+  applyPromoCode: (code: string) => Promise<void>;
+  removePromoCode: () => void;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -54,6 +58,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
 
   // Load products once
   useEffect(() => {
@@ -163,6 +169,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
     [selectedItems]
   );
+
+  const applyPromoCode = async (code: string) => {
+    try {
+      if (!selectedItems.length) throw new Error("Select items first");
+
+      const payload = selectedItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: Number(item.product.price),
+        categoryId: item.product.categoryId
+      }));
+
+      const businessType = (user as any)?.role === 'BULK_CUSTOMER' ? 'BULK' : 'RETAIL';
+      const result = await api.evaluatePromotion(code, payload, businessType);
+
+      setPromoCode(code);
+      setDiscount(result.totalDiscount);
+    } catch (e: any) {
+      setPromoCode(null);
+      setDiscount(0);
+      throw e;
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode(null);
+    setDiscount(0);
+  };
 
   const addToCart = async (productId: string, quantity: number) => {
     if (isAuthenticated && user) {
@@ -274,6 +308,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearSelectedItems,
         toggleCart,
         isOpen,
+        promoCode,
+        discount,
+        applyPromoCode,
+        removePromoCode,
       }}
     >
       {children}

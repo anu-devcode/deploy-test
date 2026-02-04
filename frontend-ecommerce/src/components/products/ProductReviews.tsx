@@ -42,6 +42,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
     const [loading, setLoading] = useState(true);
+    const [canReview, setCanReview] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
 
@@ -51,12 +52,14 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
     const fetchData = async () => {
         try {
-            const [reviewsData, statsData] = await Promise.all([
+            const [reviewsData, statsData, reviewStatus] = await Promise.all([
                 api.getProductReviews(productId),
-                api.getProductStats(productId)
+                api.getProductStats(productId),
+                api.canReview(productId)
             ]);
             setReviews(reviewsData);
             setStats(statsData);
+            setCanReview(reviewStatus);
         } catch (e) {
             console.error("Failed to fetch reviews", e);
         } finally {
@@ -100,12 +103,19 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => setShowForm(!showForm)}
-                        className="px-6 py-3 border border-slate-200 text-slate-700 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
-                    >
-                        {showForm ? 'Cancel Review' : 'Write a Review'}
-                    </button>
+                    {canReview && (
+                        <button
+                            onClick={() => setShowForm(!showForm)}
+                            className="px-6 py-3 border border-emerald-600 text-emerald-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm"
+                        >
+                            {showForm ? 'Cancel Review' : 'Write a Review'}
+                        </button>
+                    )}
+                    {!canReview && (
+                        <div className="px-6 py-3 bg-slate-100 text-slate-400 rounded-2xl font-bold text-[10px] uppercase tracking-widest cursor-not-allowed flex items-center gap-2">
+                            Verified Purchase Required
+                        </div>
+                    )}
                 </div>
             </div>
 

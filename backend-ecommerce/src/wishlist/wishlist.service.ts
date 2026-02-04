@@ -24,6 +24,27 @@ export class WishlistService {
         });
 
         if (!wishlist) {
+            // Ensure customer record exists (fixes P2003 if user registration was incomplete or for older users)
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId }
+            });
+
+            if (!customer) {
+                const user = await this.prisma.user.findUnique({ where: { id: customerId } });
+                if (user) {
+                    await this.prisma.customer.create({
+                        data: {
+                            id: user.id,
+                            email: user.email,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                        }
+                    });
+                } else {
+                    throw new NotFoundException('User not found');
+                }
+            }
+
             wishlist = await this.prisma.wishlist.create({
                 data: {
                     customerId,
@@ -61,6 +82,27 @@ export class WishlistService {
         });
 
         if (!wishlist) {
+            // Ensure customer record exists
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId }
+            });
+
+            if (!customer) {
+                const user = await this.prisma.user.findUnique({ where: { id: customerId } });
+                if (user) {
+                    await this.prisma.customer.create({
+                        data: {
+                            id: user.id,
+                            email: user.email,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                        }
+                    });
+                } else {
+                    throw new NotFoundException('User not found');
+                }
+            }
+
             wishlist = await this.prisma.wishlist.create({
                 data: { customerId },
             });

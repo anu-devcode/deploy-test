@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminLoginPage() {
-    const { login, setTenant, setIsAuthenticated, setUser } = useAuth();
+    const { login, setTenant, setIsAdminAuthenticated, setAdminUser } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -80,10 +80,10 @@ export default function AdminLoginPage() {
                 requiresPasswordChange: false
             };
 
-            setIsAuthenticated(true);
-            setUser(finalizedUser);
+            setIsAdminAuthenticated(true);
+            setAdminUser(finalizedUser);
             // Sync to localStorage as well (AuthContext will pick it up on mount)
-            localStorage.setItem('user', JSON.stringify(finalizedUser));
+            localStorage.setItem('admin_user', JSON.stringify(finalizedUser));
 
             router.push('/admin');
         } catch (err: any) {

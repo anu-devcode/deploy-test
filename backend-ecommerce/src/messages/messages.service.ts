@@ -47,6 +47,18 @@ export class MessagesService {
         });
     }
 
+    async findByGuestEmail(email: string) {
+        return this.prisma.helpMessage.findMany({
+            where: { guestEmail: email, parentId: null },
+            include: {
+                replies: {
+                    orderBy: { createdAt: 'asc' },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
     async findAllForAdmin() {
         return this.prisma.helpMessage.findMany({
             where: { parentId: null },
@@ -68,7 +80,9 @@ export class MessagesService {
     }
 
     async create(data: {
-        customerId: string;
+        customerId?: string;
+        guestName?: string;
+        guestEmail?: string;
         subject?: string;
         content: string;
         senderRole: MessageSenderRole;

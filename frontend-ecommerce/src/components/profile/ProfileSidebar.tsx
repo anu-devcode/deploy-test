@@ -13,7 +13,8 @@ import {
     CreditCard,
     Heart,
     MessageSquare,
-    Shield
+    Shield,
+    Ticket
 } from 'lucide-react';
 
 interface ProfileSidebarProps {
@@ -29,6 +30,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
         { id: 'orders', label: 'Orders', icon: ShoppingBag },
         { id: 'inbox', label: 'Activity Center', icon: MessageSquare },
         { id: 'wishlist', label: 'Wishlist', icon: Heart },
+        { id: 'promotions', label: 'Exclusive Offers', icon: Ticket },
         { id: 'addresses', label: 'Addresses', icon: MapPin },
         { id: 'billing', label: 'Payments and Billing', icon: CreditCard },
         { id: 'wallet', label: 'Wallet and Points', icon: Wallet },

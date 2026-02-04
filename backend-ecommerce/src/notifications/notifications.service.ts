@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
@@ -20,6 +20,34 @@ export class NotificationsService {
         });
     }
 
+    // Admin/Staff methods
+    async findAllForAdmin(role: Role, userId: string) {
+        return this.prisma.notification.findMany({
+            where: {
+                OR: [
+                    { targetRole: role },
+                    { targetUserId: userId },
+                    { targetRole: null, targetUserId: null, customerId: null } // System-wide for all staff
+                ]
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+        });
+    }
+
+    async getUnreadCountForAdmin(role: Role, userId: string) {
+        return this.prisma.notification.count({
+            where: {
+                isRead: false,
+                OR: [
+                    { targetRole: role },
+                    { targetUserId: userId },
+                    { targetRole: null, targetUserId: null, customerId: null }
+                ]
+            },
+        });
+    }
+
     async findRecent(customerId: string) {
         return this.prisma.notification.findMany({
             where: { customerId },
@@ -28,17 +56,37 @@ export class NotificationsService {
         });
     }
 
-    async markAsRead(id: string, customerId: string) {
-        const notification = await this.prisma.notification.findFirst({
-            where: { id, customerId },
-        });
-
-        if (!notification) {
-            throw new NotFoundException('Notification not found');
+    async markAsRead(id: string, customerId?: string) {
+        if (customerId) {
+            const notification = await this.prisma.notification.findFirst({
+                where: { id, customerId },
+            });
+            if (!notification) throw new NotFoundException('Notification not found');
         }
 
         return this.prisma.notification.update({
             where: { id },
+            data: { isRead: true },
+        });
+    }
+
+    async markAllAsRead(customerId: string) {
+        return this.prisma.notification.updateMany({
+            where: { customerId, isRead: false },
+            data: { isRead: true },
+        });
+    }
+
+    async markAllAsReadForAdmin(role: Role, userId: string) {
+        return this.prisma.notification.updateMany({
+            where: {
+                isRead: false,
+                OR: [
+                    { targetRole: role },
+                    { targetUserId: userId },
+                    { targetRole: null, targetUserId: null, customerId: null }
+                ]
+            },
             data: { isRead: true },
         });
     }
@@ -49,6 +97,8 @@ export class NotificationsService {
         title: string;
         message: string;
         link?: string;
+        targetRole?: Role;
+        targetUserId?: string;
     }) {
         return this.prisma.notification.create({
             data,

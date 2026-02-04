@@ -21,4 +21,8 @@ export type Product = {
   compareAtPrice?: number;
   avgRating?: number;
   reviewCount?: number;
+  isPublished?: boolean;
+  isFeatured?: boolean;
+  tags?: string[];
+  warehouseId?: string;
 };

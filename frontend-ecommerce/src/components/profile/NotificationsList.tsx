@@ -9,7 +9,13 @@ import {
     AlertCircle,
     CheckCircle2,
     Trash2,
-    Package
+    Package,
+    Shield,
+    User,
+    Truck,
+    Heart,
+    CreditCard,
+    Info
 } from 'lucide-react';
 import { useNotifications } from '@/context';
 
@@ -46,9 +52,25 @@ export function NotificationsList() {
     const getIcon = (type: string) => {
         switch (type) {
             case 'ORDER_STATUS': return <ShoppingBag className="w-5 h-5 text-emerald-500" />;
-            case 'PROMOTION': return <Star className="w-5 h-5 text-amber-500" />;
+            case 'PAYMENT_RECEIVED': return <CreditCard className="w-5 h-5 text-blue-500" />;
             case 'STOCK_ALERT': return <Package className="w-5 h-5 text-rose-500" />;
-            default: return <Bell className="w-5 h-5 text-blue-500" />;
+            case 'PROMOTION': return <Star className="w-5 h-5 text-amber-500" />;
+            case 'SYSTEM': return <Info className="w-5 h-5 text-slate-500" />;
+            case 'ACCOUNT': return <User className="w-5 h-5 text-indigo-500" />;
+            case 'SECURITY': return <Shield className="w-5 h-5 text-red-500" />;
+            case 'DELIVERY': return <Truck className="w-5 h-5 text-orange-500" />;
+            case 'ENGAGEMENT': return <Heart className="w-5 h-5 text-pink-500" />;
+            default: return <Bell className="w-5 h-5 text-slate-400" />;
+        }
+    };
+
+    const markAllAsRead = async () => {
+        try {
+            await api.markAllNotificationsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            refreshCount();
+        } catch (error) {
+            console.error('Failed to mark all as read', error);
         }
     };
 
@@ -58,8 +80,21 @@ export function NotificationsList() {
         </div>
     );
 
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
     return (
         <div className="space-y-4">
+            {notifications.length > 0 && unreadCount > 0 && (
+                <div className="flex justify-end mb-2">
+                    <button
+                        onClick={markAllAsRead}
+                        className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100"
+                    >
+                        <CheckCircle2 className="w-3 h-3" />
+                        Mark all as read
+                    </button>
+                </div>
+            )}
             {notifications.length === 0 ? (
                 <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 text-center flex flex-col items-center">
                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">

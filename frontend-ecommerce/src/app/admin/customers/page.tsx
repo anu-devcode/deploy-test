@@ -22,7 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Customer } from '@/lib/api';
 
 export default function CustomersPage() {
-    const { user: currentUser } = useAuth();
+    const { adminUser: currentUser } = useAuth();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,23 +52,23 @@ export default function CustomersPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Customer Relationship</h1>
                     <p className="text-sm text-slate-500">Manage your audience and track their purchase behavior.</p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20">
+                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-500/20">
                         <UserPlus className="w-4 h-4" /> Add Customer
                     </button>
                 </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {stats.map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                         <div className={`p-3 rounded-xl ${stat.bg}`}>

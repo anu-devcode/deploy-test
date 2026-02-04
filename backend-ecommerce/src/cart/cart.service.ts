@@ -20,6 +20,27 @@ export class CartService {
         });
 
         if (!cart) {
+            // Ensure customer record exists (fixes P2003 if user registration was incomplete or for older users)
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId }
+            });
+
+            if (!customer) {
+                const user = await this.prisma.user.findUnique({ where: { id: customerId } });
+                if (user) {
+                    await this.prisma.customer.create({
+                        data: {
+                            id: user.id,
+                            email: user.email,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                        }
+                    });
+                } else {
+                    throw new NotFoundException('User not found');
+                }
+            }
+
             cart = await this.prisma.cart.create({
                 data: {
                     customerId,
@@ -55,6 +76,27 @@ export class CartService {
         });
 
         if (!cart) {
+            // Ensure customer record exists
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId }
+            });
+
+            if (!customer) {
+                const user = await this.prisma.user.findUnique({ where: { id: customerId } });
+                if (user) {
+                    await this.prisma.customer.create({
+                        data: {
+                            id: user.id,
+                            email: user.email,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                        }
+                    });
+                } else {
+                    throw new NotFoundException('User not found');
+                }
+            }
+
             cart = await this.prisma.cart.create({
                 data: { customerId },
             });
@@ -225,7 +267,9 @@ export class CartService {
             });
 
             // Reduce stock
-            for (const item of cart.items) {
+            // Reduce stock (Sorted by ID to prevent deadlocks)
+            const sortedItems = [...cart.items].sort((a, b) => a.productId.localeCompare(b.productId));
+            for (const item of sortedItems) {
                 await tx.product.update({
                     where: { id: item.productId },
                     data: { stock: { decrement: item.quantity } },

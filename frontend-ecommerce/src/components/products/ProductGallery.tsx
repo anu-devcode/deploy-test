@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface ProductGalleryProps {
@@ -9,7 +9,21 @@ interface ProductGalleryProps {
 }
 
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
-    const [selectedImage, setSelectedImage] = useState(images[0] || '/placeholder.png');
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
+
+    const resolveImageUrl = (img: string) => {
+        if (!img) return '/placeholder.png';
+        if (img.startsWith('/uploads')) return `${backendUrl}${img}`;
+        return img;
+    };
+
+    const [selectedImage, setSelectedImage] = useState(resolveImageUrl(images[0]));
+
+    useEffect(() => {
+        if (images?.[0]) {
+            setSelectedImage(resolveImageUrl(images[0]));
+        }
+    }, [images]);
 
     if (!images || images.length === 0) {
         return (
@@ -43,15 +57,15 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                 {images.map((image, index) => (
                     <button
                         key={index}
-                        onClick={() => setSelectedImage(image)}
-                        className={`relative w-24 h-24 flex-shrink-0 rounded-2xl border transition-all duration-300 overflow-hidden snap-start ${selectedImage === image
+                        onClick={() => setSelectedImage(resolveImageUrl(image))}
+                        className={`relative w-24 h-24 flex-shrink-0 rounded-2xl border transition-all duration-300 overflow-hidden snap-start ${selectedImage === resolveImageUrl(image)
                             ? 'border-emerald-500 ring-4 ring-emerald-500/10 shadow-lg'
                             : 'border-slate-100 bg-white hover:border-emerald-200 opacity-60 hover:opacity-100'
                             }`}
                     >
                         <div className="w-full h-full relative p-2">
                             <Image
-                                src={image}
+                                src={resolveImageUrl(image)}
                                 alt={`${productName} view ${index + 1}`}
                                 fill
                                 className="object-contain"

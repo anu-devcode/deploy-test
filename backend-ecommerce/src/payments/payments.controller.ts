@@ -9,6 +9,11 @@ import { AuthGuard } from '@nestjs/passport';
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
+    @Get()
+    findAll() {
+        return this.paymentsService.findAll();
+    }
+
     @Post('initialize')
     initialize(@Body() dto: InitializePaymentDto) {
         return this.paymentsService.initialize(dto);

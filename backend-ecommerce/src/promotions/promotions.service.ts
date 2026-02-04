@@ -2,17 +2,43 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePromotionDto, UpdatePromotionDto, EvaluatePromotionDto } from './dto/promotion.dto';
 import { PromotionTarget, PromotionType, PromoBusinessType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PromotionsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private notificationsService: NotificationsService,
+    ) { }
 
     async create(dto: CreatePromotionDto) {
-        return this.prisma.promotion.create({
+        const promo = await this.prisma.promotion.create({
             data: {
                 ...dto,
             },
         });
+
+        // Trigger notification for general promotions
+        if (promo.isActive && promo.code) {
+            // Note: In a real app, you might want to filter who gets this,
+            // or send it to all active customers. For now, we'll assume it's a global notification.
+            const customers = await this.prisma.customer.findMany({
+                where: { email: { not: '' } },
+                take: 100 // Limit for performance in this naive implementation
+            });
+
+            for (const customer of customers) {
+                await this.notificationsService.create({
+                    customerId: customer.id,
+                    type: 'PROMOTION' as any,
+                    title: `New Promotion: ${promo.name}`,
+                    message: `Use code ${promo.code} to get a discount on your next order!`,
+                    link: '/shop'
+                });
+            }
+        }
+
+        return promo;
     }
 
     async findAll() {
@@ -119,5 +145,12 @@ export class PromotionsService {
             totalDiscount,
             itemDiscounts: promo?.target !== PromotionTarget.CART ? itemDiscounts : [],
         };
+    }
+
+    async recordUsage(id: string) {
+        return this.prisma.promotion.update({
+            where: { id },
+            data: { currentUsage: { increment: 1 } },
+        });
     }
 }

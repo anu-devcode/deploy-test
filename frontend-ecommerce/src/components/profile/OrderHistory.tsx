@@ -1,6 +1,6 @@
 'use client';
 
-import { Order } from '@/lib/api';
+import api, { Order } from '@/lib/api';
 import { Package, Search, Calendar, MapPin, ChevronDown, ChevronUp, Download, CreditCard, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -58,6 +58,19 @@ export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryPro
         // Mock download logic
         console.log(`Downloading invoice for order ${orderNumber}`);
         alert(`Your invoice for order ${orderNumber} is being prepared for download.`);
+    };
+
+    const handleCancelOrder = async (orderId: string) => {
+        if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
+
+        try {
+            await api.cancelOrder(orderId);
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
+            alert('Order cancelled successfully.');
+        } catch (error) {
+            console.error('Failed to cancel order:', error);
+            alert('Failed to cancel order. Please contact support.');
+        }
     };
 
     if (loading) {
@@ -231,15 +244,26 @@ export function OrderHistory({ orders: initialOrders, loading }: OrderHistoryPro
                                                     <Download className="w-4 h-4" />
                                                     Download Invoice
                                                 </button>
+
+                                                {order.status === 'PENDING' && (
+                                                    <button
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                        className="flex-1 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-center text-sm font-black hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        Cancel Order
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            )
+                            }
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </div >
     );
 }

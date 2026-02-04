@@ -79,14 +79,14 @@ export default function CategoriesPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Page Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
                     <p className="text-sm text-slate-500">Organize your products into logical groups for better structural control.</p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                 >
                     {showForm ? 'Cancel' : <><Plus className="w-4 h-4" /> Add Category</>}
                 </button>
@@ -216,13 +216,13 @@ export default function CategoriesPage() {
                             Organize your agricultural repository with surgical precision. Correct taxonomy ensures high discoverability and optimized logistics for every listed asset.
                         </p>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[160px]">
+                    <div className="flex flex-wrap justify-center md:justify-end gap-4 w-full md:w-auto">
+                        <div className="bg-white/5 backdrop-blur-xl p-6 lg:p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[140px] lg:min-w-[160px] flex-1 md:flex-none">
                             <LayoutGrid className="w-8 h-8 text-emerald-400 mx-auto mb-4" />
                             <p className="text-2xl font-black">{categories.length}</p>
                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mt-1">Hierarchies</p>
                         </div>
-                        <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[160px]">
+                        <div className="bg-white/5 backdrop-blur-xl p-6 lg:p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[140px] lg:min-w-[160px] flex-1 md:flex-none">
                             <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-4" />
                             <p className="text-2xl font-black">0</p>
                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mt-1">Unclassified</p>

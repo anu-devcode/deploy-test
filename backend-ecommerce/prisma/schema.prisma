@@ -15,6 +15,7 @@ model User {
   password       String
   role           Role     @default(CUSTOMER)
   isFirstLogin   Boolean  @default(true)
+  isEmailVerified Boolean @default(false)
   isSocialLoginEnabled Boolean @default(true) // Admin toggle
   deletedAt      DateTime? // Soft delete coverage
   
@@ -26,6 +27,7 @@ model User {
   
   permissions    UserPermission[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   refreshTokens  RefreshToken[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -81,6 +83,7 @@ model Product {
   stockMovements StockMovement[]
   reviews        Review[]
   wishlistItems  WishlistItem[]
+  marketingAssets MarketingAsset[]
 }
 
 model Category {
@@ -204,6 +207,8 @@ model Order {
   orderNumber     String?
   total           Decimal
   subtotal        Decimal?
+  discount        Decimal?
+  promoCode       String?
   shippingTotal   Decimal?      // Shipping cost
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
@@ -325,6 +330,7 @@ model AutomationRule {
   trigger     String   // e.g., "ORDER_CREATED", "PAYMENT_REFUNDED"
   condition   Json?    // e.g., { "minAmount": 5000 }
   action      String   // e.g., "NOTIFY_ADMIN", "AUTO_CONFIRM"
+  actionValue String?
   isActive    Boolean  @default(true)
   logs        AutomationLog[]
   createdAt   DateTime @default(now())
@@ -396,7 +402,8 @@ model Review {
   id          String       @id @default(uuid())
   rating      Int          // 1 to 5
   comment     String?
-  status      ReviewStatus @default(PENDING)
+  reply       String?      // Staff/Admin response
+  status      String       @default("PENDING") // PENDING, APPROVED, REJECTED
   productId   String
   product     Product      @relation(fields: [productId], references: [id])
   customerId  String
@@ -414,8 +421,14 @@ model Notification {
   message     String
   link        String?          // e.g., "/orders/123"
   isRead      Boolean          @default(false)
-  customerId  String?          // Null for broadcast/system alerts
+  
+  // Targeting
+  customerId  String?          // For customer-specific alerts
   customer    Customer?        @relation(fields: [customerId], references: [id])
+  
+  targetRole  Role?            // For staff/admin role-based alerts
+  targetUserId String?         // For specific staff/admin targeting
+  
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -428,13 +441,17 @@ model HelpMessage {
   senderRole  MessageSenderRole
   isRead      Boolean           @default(false)
   
+  // Guest Support
+  guestName   String?
+  guestEmail  String?
+  
   // Threading logic
   parentId    String?
   parent      HelpMessage?      @relation("MessageThread", fields: [parentId], references: [id])
   replies     HelpMessage[]     @relation("MessageThread")
 
-  customerId  String
-  customer    Customer          @relation(fields: [customerId], references: [id])
+  customerId  String?           // Optional for guests
+  customer    Customer?         @relation(fields: [customerId], references: [id])
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -445,6 +462,14 @@ enum NotificationType {
   STOCK_ALERT
   PROMOTION
   SYSTEM
+  ACCOUNT
+  SECURITY
+  DELIVERY
+  ENGAGEMENT
+  INVENTORY
+  FINANCE
+  MODERATION
+  LOGISTICS
 }
 
 enum HelpMessageStatus {
@@ -488,6 +513,7 @@ enum DeliveryStatus {
   IN_TRANSIT
   DELIVERED
   FAILED
+  COURIER_MISSED
 }
 
 enum PromotionType {
@@ -533,4 +559,83 @@ model StoreConfig {
   id                  String   @id @default("global")
   isSocialLoginEnabled Boolean  @default(true)
   updatedAt           DateTime @updatedAt
+}
+
+// Email Verification
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Marketing Email Campaigns
+model EmailCampaign {
+  id          String         @id @default(uuid())
+  name        String
+  subject     String
+  content     String         // HTML content
+  type        CampaignType   @default(PROMOTIONAL)
+  status      CampaignStatus @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  sentCount   Int            @default(0)
+  openCount   Int            @default(0)
+  clickCount  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum CampaignType {
+  PROMOTIONAL
+  PRODUCT_UPDATE
+  NEWSLETTER
+  ANNOUNCEMENT
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+// Email Preferences for Customers
+model EmailPreference {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  marketing       Boolean  @default(true)
+  orderUpdates    Boolean  @default(true)
+  productUpdates  Boolean  @default(true)
+  unsubscribeToken String  @unique @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Marketing Assets (Cards, Flyers, QR Codes)
+model MarketingAsset {
+  id          String   @id @default(uuid())
+  type        MarketingAssetType @default(FLYER)
+  name        String
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  title       String?
+  description String?
+  promoCode   String?
+  qrLink      String
+  template    String?  @default("modern") // modern, classic, vibrant
+  config      Json?    // { colors: { primary: "#...", secondary: "#..." }, layout: "..." }
+  imageUrl    String?  // URL to the generated/preview image
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum MarketingAssetType {
+  FLYER
+  BANNER
+  SOCIAL_POST
+  QR_ONLY
 }

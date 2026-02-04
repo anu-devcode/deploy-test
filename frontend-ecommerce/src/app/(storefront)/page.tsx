@@ -7,7 +7,6 @@ import type { Product } from "@/types";
 import { Hero } from '@/components/home/Hero';
 import { useSocket } from '@/context';
 
-import { PromotionBanner } from '@/components/storefront/PromotionBanner';
 
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -84,7 +83,6 @@ export default function Home() {
 
     return (
         <div className="bg-slate-50 transition-colors duration-500">
-            <PromotionBanner />
             <Hero
                 allProducts={allProducts}
                 tenants={[]}

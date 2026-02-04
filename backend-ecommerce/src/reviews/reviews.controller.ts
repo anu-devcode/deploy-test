@@ -36,9 +36,19 @@ export class ReviewsController {
     }
 
     @Get('product/:productId/stats')
-    @Get('product/:productId/stats')
     getStats(@Param('productId') productId: string) {
         return this.reviewsService.getProductStats(productId);
+    }
+
+    @Get('product/:productId/can-review')
+    @UseGuards(AuthGuard('jwt'))
+    async canReview(@Request() req: any, @Param('productId') productId: string) {
+        const user = req.user;
+        const customer = await this.prisma.customer.findFirst({ where: { email: user.email } });
+        if (!customer) return { canReview: false };
+
+        const canReview = await this.reviewsService.canReview(customer.id, productId);
+        return { canReview };
     }
 
     @Patch(':id')

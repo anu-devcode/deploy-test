@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
+import api from "@/lib/api";
+
 export default function ContactPage() {
     const socials = [
         { name: 'Facebook', icon: Facebook, href: '#' },
@@ -18,10 +20,21 @@ export default function ContactPage() {
         message: ''
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert('Thank you for your message! Our team will get back to you shortly.');
-        setFormState({ name: '', email: '', subject: '', message: '' });
+        try {
+            await api.sendGuestMessage({
+                name: formState.name,
+                email: formState.email,
+                subject: formState.subject,
+                content: formState.message
+            });
+            alert('Thank you for your message! Our team will get back to you shortly.');
+            setFormState({ name: '', email: '', subject: '', message: '' });
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            alert('Failed to send message. Please try again.');
+        }
     };
 
     return (

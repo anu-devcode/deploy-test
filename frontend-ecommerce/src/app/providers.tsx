@@ -1,4 +1,4 @@
-import { AuthProvider, CartProvider, TenantProvider, SocketProvider, BusinessProvider, WishlistProvider, NotificationProvider } from '@/context';
+import { AuthProvider, CartProvider, TenantProvider, SocketProvider, BusinessProvider, WishlistProvider, NotificationProvider, PromotionProvider } from '@/context';
 // Default tenant slug used for legacy context
 const DEFAULT_TENANT_SLUG = "adis-harvest";
 
@@ -10,9 +10,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <BusinessProvider>
                         <NotificationProvider>
                             <WishlistProvider>
-                                <CartProvider>
-                                    {children}
-                                </CartProvider>
+                                <PromotionProvider>
+                                    <CartProvider>
+                                        {children}
+                                    </CartProvider>
+                                </PromotionProvider>
                             </WishlistProvider>
                         </NotificationProvider>
                     </BusinessProvider>

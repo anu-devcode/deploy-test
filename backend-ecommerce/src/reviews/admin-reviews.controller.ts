@@ -27,7 +27,14 @@ export class AdminReviewsController {
         return this.reviewsService.moderateReview(id, status);
     }
 
-    @Delete(':id')
+    @Patch(':id/reply')
+    replyToReview(
+        @Param('id') id: string,
+        @Body('reply') reply: string,
+    ) {
+        return this.reviewsService.replyToReview(id, reply);
+    }
+
     @Delete(':id')
     deleteReview(@Param('id') id: string) {
         return this.reviewsService.adminDeleteReview(id);

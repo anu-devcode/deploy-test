@@ -4,8 +4,15 @@ import { ReviewsController } from './reviews.controller';
 import { AdminReviewsController } from './admin-reviews.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+import { EmailModule } from '../email/email.module';
+
 @Module({
-    imports: [PrismaModule],
+    imports: [
+        PrismaModule,
+        NotificationsModule,
+        EmailModule,
+    ],
     controllers: [ReviewsController, AdminReviewsController],
     providers: [ReviewsService],
     exports: [ReviewsService],

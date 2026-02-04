@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { api, Order } from '@/lib/api';
-import { Search, Loader2, Package, MapPin, Calendar, CheckCircle2, Clock, Truck, XCircle } from 'lucide-react';
+import { Search, Loader2, Package, MapPin, Calendar, ShoppingBag, HelpCircle } from 'lucide-react';
+import OrderTracker from '@/components/orders/OrderTracker';
 import Link from 'next/link';
 
 export default function TrackOrderPage() {
@@ -19,6 +20,7 @@ export default function TrackOrderPage() {
         setOrder(null);
 
         try {
+            // Include email in tracking call to support guest tracking
             const result = await api.trackOrder(orderNumber, email);
             setOrder(result);
         } catch (err) {
@@ -28,27 +30,6 @@ export default function TrackOrderPage() {
         }
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'PENDING': return 'bg-amber-100 text-amber-700';
-            case 'CONFIRMED': return 'bg-blue-100 text-blue-700';
-            case 'SHIPPED': return 'bg-purple-100 text-purple-700';
-            case 'DELIVERED': return 'bg-emerald-100 text-emerald-700';
-            case 'CANCELLED': return 'bg-rose-100 text-rose-700';
-            default: return 'bg-slate-100 text-slate-700';
-        }
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'PENDING': return <Clock className="w-5 h-5" />;
-            case 'CONFIRMED': return <CheckCircle2 className="w-5 h-5" />;
-            case 'SHIPPED': return <Truck className="w-5 h-5" />;
-            case 'DELIVERED': return <Package className="w-5 h-5" />;
-            case 'CANCELLED': return <XCircle className="w-5 h-5" />;
-            default: return <Clock className="w-5 h-5" />;
-        }
-    };
 
     return (
         <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -114,14 +95,20 @@ export default function TrackOrderPage() {
                                     <span>Placed on {new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
-                            <div className={`px-4 py-2 rounded-full flex items-center gap-2 font-black text-sm uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                                {getStatusIcon(order.status)}
+                            <div className={`px-4 py-2 rounded-full font-black text-sm uppercase tracking-wider ${order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
+                                    order.status === 'CANCELLED' ? 'bg-rose-100 text-rose-700' :
+                                        'bg-slate-100 text-slate-700'
+                                }`}>
                                 {order.status}
                             </div>
                         </div>
 
+                        <div className="p-8">
+                            <OrderTracker order={order} />
+                        </div>
+
                         {/* Customer & Shipping */}
-                        <div className="p-8 grid md:grid-cols-2 gap-8 border-b border-slate-100">
+                        <div className="px-8 pb-8 grid md:grid-cols-2 gap-8 border-b border-slate-100">
                             <div>
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Customer Details</h3>
                                 <div className="space-y-1 font-bold text-slate-700">
@@ -130,7 +117,7 @@ export default function TrackOrderPage() {
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Shipping Address</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Shipping Information</h3>
                                 <div className="flex items-start gap-3">
                                     <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
                                     <div className="space-y-1 font-bold text-slate-700">
@@ -163,9 +150,25 @@ export default function TrackOrderPage() {
                         </div>
 
                         {/* Footer Totals */}
-                        <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
-                            <span className="font-bold uppercase tracking-widest text-slate-400">Total Amount</span>
-                            <span className="text-2xl font-black">ETB {order.total.toLocaleString()}</span>
+                        {/* Footer Actions */}
+                        <div className="p-8 bg-slate-50 flex flex-wrap gap-4 items-center justify-between">
+                            <Link href="/contact" className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                                <HelpCircle className="w-4 h-4" />
+                                Need Help?
+                            </Link>
+
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">Total Amount</p>
+                                    <p className="text-xl font-black text-slate-900">ETB {order.total.toLocaleString()}</p>
+                                </div>
+                                <button
+                                    onClick={() => window.location.href = '/contact'}
+                                    className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 hover:bg-slate-50 transition-all shadow-sm"
+                                >
+                                    Contact Support
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

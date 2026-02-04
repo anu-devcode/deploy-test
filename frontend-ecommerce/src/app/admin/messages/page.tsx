@@ -76,7 +76,7 @@ export default function AdminMessagesPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] lg:flex-row gap-0 bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm m-4">
             {/* Thread List Sidebar */}
-            <div className="w-full lg:w-96 border-r border-slate-100 flex flex-col bg-slate-50/50">
+            <div className={`w-full lg:w-96 border-r border-slate-100 flex-col bg-slate-50/50 ${activeThread ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-6 border-b border-slate-100">
                     <h1 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-3">
                         <InboxIcon className="w-5 h-5 text-emerald-600" />
@@ -110,7 +110,7 @@ export default function AdminMessagesPage() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 className="text-sm font-black text-slate-900 truncate">
-                                            {thread.customer?.firstName} {thread.customer?.lastName}
+                                            {thread.customer ? `${thread.customer.firstName} ${thread.customer.lastName}` : (thread.guestName || thread.guestEmail)}
                                         </h4>
                                         <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(thread.createdAt).toLocaleDateString()}</span>
                                     </div>
@@ -131,7 +131,7 @@ export default function AdminMessagesPage() {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className={`flex-1 flex-col bg-white ${!activeThread ? 'hidden lg:flex' : 'flex'}`}>
                 {!activeThread ? (
                     <div className="flex-1 flex flex-col items-center justify-center opacity-30">
                         <MessageSquare className="w-16 h-16 text-slate-300 mb-6" />
@@ -140,14 +140,22 @@ export default function AdminMessagesPage() {
                 ) : (
                     <>
                         {/* Detail Header */}
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div className="p-4 lg:p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center">
-                                    <User className="w-6 h-6" />
+                                <button
+                                    onClick={() => setActiveThread(null)}
+                                    className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-slate-900"
+                                >
+                                    <ChevronRight className="w-5 h-5 rotate-180" />
+                                </button>
+                                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-slate-900 text-white flex items-center justify-center">
+                                    <User className="w-5 h-5 lg:w-6 lg:h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-900">{activeThread.customer?.firstName} {activeThread.customer?.lastName}</h3>
-                                    <p className="text-xs text-slate-500 font-medium">{activeThread.customer?.email}</p>
+                                    <h3 className="text-lg font-black text-slate-900">
+                                        {activeThread.customer ? `${activeThread.customer.firstName} ${activeThread.customer.lastName}` : (activeThread.guestName || 'Guest')}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-medium">{activeThread.customer?.email || activeThread.guestEmail}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -183,7 +191,9 @@ export default function AdminMessagesPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="mb-2 flex items-center justify-between">
-                                            <span className="text-xs font-black text-slate-900 uppercase">Customer</span>
+                                            <span className="text-xs font-black text-slate-900 uppercase">
+                                                {activeThread.customer ? 'Customer' : 'Guest'}
+                                            </span>
                                             <span className="text-[10px] font-bold text-slate-400">{new Date(activeThread.createdAt).toLocaleString()}</span>
                                         </div>
                                         <div className="p-6 bg-slate-100/50 rounded-2xl rounded-tl-none text-sm text-slate-700 leading-relaxed ring-1 ring-slate-100">
@@ -202,7 +212,7 @@ export default function AdminMessagesPage() {
                                         <div className={`flex-1 ${msg.senderRole === 'ADMIN' ? 'flex flex-col items-end' : ''}`}>
                                             <div className="mb-2 flex items-center gap-3">
                                                 <span className="text-xs font-black text-slate-900 uppercase">
-                                                    {msg.senderRole === 'ADMIN' ? 'Agent (You)' : 'Customer'}
+                                                    {msg.senderRole === 'ADMIN' ? 'Agent (You)' : (activeThread.customer ? 'Customer' : 'Guest')}
                                                 </span>
                                                 <span className="text-[10px] font-bold text-slate-400">{new Date(msg.createdAt).toLocaleString()}</span>
                                             </div>

@@ -88,7 +88,7 @@ export default function LoginForm({ onSubmit, loading, error, success }: LoginFo
                         onBlur={() => handleBlur('password')}
                         hasError={!!validation.password}
                         rightElement={
-                            <Link href="#" className="text-[10px] font-black text-emerald-100/20 hover:text-emerald-400 uppercase tracking-widest transition-colors">
+                            <Link href="/forgot-password" className="text-[10px] font-black text-emerald-100/20 hover:text-emerald-400 uppercase tracking-widest transition-colors">
                                 Forgot?
                             </Link>
                         }

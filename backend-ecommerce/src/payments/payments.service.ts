@@ -1,16 +1,20 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InitializePaymentDto, ConfirmPaymentDto } from './dto';
-import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, OrderStatus, NotificationType } from '@prisma/client';
 import { AutomationService } from '../automation/automation.service';
 import { EventsGateway } from '../events/events.gateway';
+import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
     constructor(
         private prisma: PrismaService,
         private automationService: AutomationService,
-        private eventsGateway: EventsGateway
+        private eventsGateway: EventsGateway,
+        private emailService: EmailService,
+        private notificationsService: NotificationsService,
     ) { }
 
     async initialize(dto: InitializePaymentDto) {
@@ -69,13 +73,22 @@ export class PaymentsService {
         // Emit WebSocket Event
         this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.PENDING_VERIFICATION);
 
+        // Notify Admins for Manual Verification
+        await this.notificationsService.create({
+            type: 'FINANCE' as any,
+            title: 'Manual Payment Submitted',
+            message: `A new receipt has been uploaded for Order #${payment.order.orderNumber}.`,
+            link: `/admin/orders/${payment.orderId}`,
+            targetRole: 'ADMIN'
+        });
+
         return updatedPayment;
     }
 
     async verify(paymentId: string, dto: any) {
         const payment = await this.prisma.payment.findUnique({
             where: { id: paymentId },
-            include: { order: true },
+            include: { order: { include: { customer: true } } },
         });
 
         if (!payment) {
@@ -100,6 +113,17 @@ export class PaymentsService {
             });
 
             this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.CONFIRMED);
+
+            // Send in-app notification for payment success
+            if (payment.order.customerId) {
+                await this.notificationsService.create({
+                    customerId: payment.order.customerId,
+                    type: 'PAYMENT_RECEIVED' as any,
+                    title: 'Payment Successful',
+                    message: `Your payment for order ${payment.order.orderNumber} has been successfully verified.`,
+                    link: `/account/orders/${payment.orderId}`
+                });
+            }
         } else {
             await this.prisma.payment.update({
                 where: { id: paymentId },
@@ -118,6 +142,39 @@ export class PaymentsService {
             });
 
             this.eventsGateway.notifyOrderStatusUpdate(payment.orderId, OrderStatus.PENDING);
+
+            // Send email and in-app notification for payment failure
+            const isGuest = payment.order.isGuest;
+            const recipientEmail = isGuest ? payment.order.guestEmail : payment.order.customer?.email;
+            const recipientName = isGuest ? payment.order.guestName : 'Customer';
+
+            if (recipientEmail) {
+                this.emailService.sendPaymentFailed(
+                    recipientEmail,
+                    recipientName || 'Customer',
+                    payment.order.orderNumber || 'UNKNOWN',
+                    dto.note || 'Manual verification failed'
+                );
+            }
+
+            if (payment.order.customerId) {
+                await this.notificationsService.create({
+                    customerId: payment.order.customerId,
+                    type: 'PAYMENT_RECEIVED' as any,
+                    title: 'Payment Failed',
+                    message: `Your payment verification for order ${payment.order.orderNumber} failed: ${dto.note || 'Review details'}.`,
+                    link: `/account/orders/${payment.orderId}`
+                });
+            }
+
+            // Notify Finance Staff of verification failure
+            await this.notificationsService.create({
+                type: 'FINANCE' as any,
+                title: 'Payment Verification Failed',
+                message: `Payment for Order #${payment.order.orderNumber} was rejected by ${dto.staffId || 'Admin'}.`,
+                link: `/admin/orders/${payment.orderId}`,
+                targetRole: 'ADMIN'
+            });
         }
 
         return { success: true };
@@ -126,7 +183,7 @@ export class PaymentsService {
     async confirm(paymentId: string, dto: ConfirmPaymentDto) {
         const payment = await this.prisma.payment.findUnique({
             where: { id: paymentId },
-            include: { order: true },
+            include: { order: { include: { customer: true } } },
         });
 
         if (!payment) {
@@ -166,6 +223,12 @@ export class PaymentsService {
             where: {
                 orderId,
             },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async findAll() {
+        return this.prisma.payment.findMany({
             orderBy: { createdAt: 'desc' },
         });
     }

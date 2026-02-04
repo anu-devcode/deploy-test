@@ -49,8 +49,21 @@ export default function InventoryPage() {
                 api.getAdminProducts(),
                 api.getStockAuditLogs()
             ]);
-            setProducts(pData);
-            setAuditLogs(lData);
+            setProducts(pData.map((p: any) => ({
+                ...p,
+                inventory: p.inventory || {
+                    available: p.stock || 0,
+                    reserved: 0,
+                    damaged: 0
+                }
+            })));
+            setAuditLogs(lData.map((log: any) => ({
+                ...log,
+                action: log.quantity > 0 ? 'STOCK_IN' : 'STOCK_OUT', // Derived from signed quantity
+                type: log.quantity > 0 ? 'ADDITION' : 'DEDUCTION',
+                quantity: Math.abs(log.quantity),
+                originalType: log.type // Keep original enum
+            })));
 
             // Collect all batches for the batches tab
             const allBatches = await Promise.all(pData.map((p: any) => api.getProductBatches(p.id)));
@@ -100,13 +113,13 @@ export default function InventoryPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header Section */}
-            <div className="flex flex-wrap items-center justify-between gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-white p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Logistical Integrity</h1>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Inventory & Stock Control Center</p>
+                    <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Logistical Integrity</h1>
+                    <p className="text-[10px] lg:text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Inventory & Stock Control Center</p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-2xl relative z-10 overflow-x-auto max-w-full">
+                <div className="w-full lg:w-auto flex items-center gap-2 lg:gap-3 bg-slate-50 p-1.5 rounded-2xl relative z-10 overflow-x-auto max-w-full scrollbar-hide">
                     {[
                         { id: 'OVERVIEW', label: 'Overview', icon: Database },
                         { id: 'BATCHES', label: 'Batch Lifecycle', icon: FileText },
@@ -116,7 +129,7 @@ export default function InventoryPage() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
+                            className={`flex-shrink-0 flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
                                 ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20'
                                 : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
                         >
@@ -128,7 +141,7 @@ export default function InventoryPage() {
             </div>
 
             {/* Quick KPI Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 {[
                     { label: 'Total Stock Strength', value: products.reduce((acc, p) => acc + p.stock, 0), unit: 'Units', icon: Layers, color: 'text-indigo-600', bg: 'bg-indigo-50' },
                     { label: 'Active Batches', value: '34 active', unit: '', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -146,7 +159,7 @@ export default function InventoryPage() {
             </div>
 
             {/* Search and Filters */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
@@ -392,8 +405,8 @@ export default function InventoryPage() {
                             </div>
                         </div>
 
-                        <form onSubmit={handleStockAction} className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
+                        <form onSubmit={handleStockAction} className="p-6 lg:p-8 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quantity</label>
                                     <input
@@ -421,7 +434,7 @@ export default function InventoryPage() {
                             </div>
 
                             {stockAction === 'STOCK_IN' && (
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Identity</label>
                                         <input

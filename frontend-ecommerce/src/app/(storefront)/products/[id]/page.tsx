@@ -16,19 +16,12 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
     const [product, setProduct] = useState<Product | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const { mode } = useBusiness();
-    const isBulk = mode === 'BULK'; // Derived state
-
-    // Moved here to access 'isBulk'
-    const [selectedColor, setSelectedColor] = useState('Midnight Black');
-    const [selectedConfig, setSelectedConfig] = useState('Standard');
-
-    // Derived state for price impact (Mocking logic)
-    const currentPrice = product && isBulk ? product.bulk?.price : product?.retail?.price;
-    const priceAdjustment = selectedConfig === 'Pro Bundle (+ETB 500)' ? 500 : selectedConfig === 'Enterprise (+ETB 1200)' ? 1200 : 0;
-    const finalDisplayPrice = (currentPrice || 0) + priceAdjustment;
-
     const [quantity, setQuantity] = useState(1);
+
+    const { mode } = useBusiness();
+    const isBulk = mode === 'BULK' && product?.bulk?.enabled;
+    const currentPrice = isBulk ? product?.bulk?.price : (product?.retail?.price || product?.price);
+    const finalDisplayPrice = currentPrice || 0;
     const { addToCart, updateQuantity, items } = useCart();
     const cartItem = product ? items.find(item => item.productId === product.id) : null;
     const minOrder = isBulk ? (product?.bulk?.minOrder || 1) : (product?.retail?.minOrder || 1);
@@ -98,46 +91,36 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                     <div className="lg:sticky lg:top-24 h-fit self-start transition-all duration-500">
                         <ProductGallery images={product.images || []} productName={product.name} />
 
-                        {/* Inventory Breakdown - Premium Feature */}
-                        <div className="mt-12 space-y-4">
+                        {/* Product Technical Specs - Replace Mock Inventory */}
+                        <div className="mt-12 space-y-6">
                             <div className="flex items-center justify-between px-2">
                                 <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                    <Warehouse className="w-3.5 h-3.5" />
-                                    Regional Availability
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    Technical Specifications
                                 </h4>
-                                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Live Stock</span>
                             </div>
-                            <div className="grid grid-cols-1 gap-2">
-                                {(product.warehouseStock || [
-                                    { warehouse: { name: 'Addis Ababa Central', city: 'Addis Ababa' }, stock: 450 },
-                                    { warehouse: { name: 'Nazreth Hub', city: 'Adama' }, stock: 120 },
-                                    { warehouse: { name: 'Mekelle Storage', city: 'Mekelle' }, stock: 0 },
-                                ]).map((wh: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
+                            <div className="grid grid-cols-1 gap-4">
+                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div className="grid grid-cols-2 gap-y-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{wh.warehouse.name}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{wh.warehouse.city}</span>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">SKU</span>
+                                            <span className="text-sm font-black text-slate-900">{product.sku || 'N/A'}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {wh.stock > 0 ? (
-                                                <>
-                                                    <span className="text-[10px] font-black text-slate-900">{wh.stock} <span className="text-[8px] text-slate-400">{displayUnit}s</span></span>
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Empty</span>
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                                </>
-                                            )}
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Standard Unit</span>
+                                            <span className="text-sm font-black text-slate-900">{product.retail?.unit || 'kg'}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Weight/Pack</span>
+                                            <span className="text-sm font-black text-slate-900">{product.retail?.unit || '1'}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Stock Status</span>
+                                            <span className="text-sm font-black text-emerald-600">{product.stock > 0 ? 'AVAILABLE' : 'OUT_OF_STOCK'}</span>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
-                            <p className="flex items-start gap-2 text-[9px] font-medium text-slate-400 px-2 leading-relaxed italic">
-                                <Info className="w-3 h-3 shrink-0 mt-0.5" />
-                                Inventory is updated every 15 minutes. For immediate bulk reservation, please contact our logistics desk.
-                            </p>
                         </div>
                     </div>
 
@@ -209,31 +192,6 @@ export default function ProductDetailPage({ params: paramsPromise }: { params: P
                                 {product.description}
                             </p>
 
-                            {/* MOCK VARIANTS (Simulating "Filtering") */}
-                            <div className="space-y-8 mb-12">
-                                {/* Color Variant */}
-                                <div className="space-y-3">
-                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Select Color</span>
-                                    <div className="flex flex-wrap gap-3">
-                                        {['Midnight Black', 'Emerald Green', 'Arctic White'].map((color, idx) => (
-                                            <button key={idx} className="group relative w-12 h-12 rounded-full border border-slate-200 hover:scale-110 transition-all focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                                                <div className={`absolute inset-1 rounded-full ${idx === 0 ? 'bg-slate-900' : idx === 1 ? 'bg-emerald-600' : 'bg-slate-100'}`} />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                {/* Size/Option Variant */}
-                                <div className="space-y-3">
-                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Configuration</span>
-                                    <div className="flex flex-wrap gap-3">
-                                        {['Standard', 'Pro Bundle (+ETB 500)', 'Enterprise'].map((opt, idx) => (
-                                            <button key={idx} className={`px-6 py-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all ${idx === 0 ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
 
                             {/* Trust Badges Grid */}
                             <div className="grid grid-cols-3 gap-4 mb-12">

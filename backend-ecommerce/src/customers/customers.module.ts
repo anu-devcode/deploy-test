@@ -3,8 +3,10 @@ import { CustomersService } from './customers.service';
 import { CustomersController } from './customers.controller';
 import { ProfileController } from './profile.controller';
 import { AddressesController } from './addresses.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
+    imports: [NotificationsModule],
     controllers: [CustomersController, ProfileController, AddressesController],
     providers: [CustomersService],
     exports: [CustomersService],

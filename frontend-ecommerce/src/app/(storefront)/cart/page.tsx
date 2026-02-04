@@ -17,7 +17,11 @@ export default function CartPage() {
         updateQuantity,
         toggleSelection,
         selectAll,
-        loading
+        loading,
+        promoCode,
+        discount,
+        applyPromoCode,
+        removePromoCode
     } = useCart();
     const router = useRouter();
 
@@ -196,10 +200,47 @@ export default function CartPage() {
                                         <span className="text-slate-500 italic">Logistics</span>
                                         <span className="text-emerald-400">Free Shipping</span>
                                     </div>
+
+                                    {discount > 0 && (
+                                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-emerald-400 animate-in fade-in slide-in-from-left duration-300">
+                                            <span className="italic flex items-center gap-2">
+                                                Promotion ({promoCode})
+                                                <button onClick={removePromoCode} className="text-rose-400 hover:text-rose-500">×</button>
+                                            </span>
+                                            <span>- ETB {discount.toLocaleString()}</span>
+                                        </div>
+                                    )}
+
+                                    {!promoCode ? (
+                                        <div className="pt-4">
+                                            <form
+                                                onSubmit={async (e) => {
+                                                    e.preventDefault();
+                                                    const code = (e.currentTarget.elements.namedItem('promoCode') as HTMLInputElement).value;
+                                                    try {
+                                                        await applyPromoCode(code);
+                                                    } catch (err: any) {
+                                                        alert(err.message || "Failed to apply code");
+                                                    }
+                                                }}
+                                                className="flex gap-2"
+                                            >
+                                                <input
+                                                    name="promoCode"
+                                                    placeholder="PROMO CODE"
+                                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black text-white uppercase tracking-widest focus:border-emerald-500/50 outline-none"
+                                                />
+                                                <button className="px-4 py-2 bg-white/10 text-white rounded-xl text-[10px] font-black uppercase hover:bg-white/20 transition-all">
+                                                    Apply
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ) : null}
+
                                     <div className="pt-6 border-t border-white/5 flex justify-between items-end">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Payload ({selectedCount} items)</span>
-                                            <span className="text-4xl font-black text-emerald-500">ETB {selectedSubtotal.toLocaleString()}</span>
+                                            <span className="text-4xl font-black text-emerald-500">ETB {(selectedSubtotal - discount).toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>

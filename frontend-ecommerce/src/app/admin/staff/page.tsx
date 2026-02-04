@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api, { StaffMember, Permission } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 import {
     UserCog,
     Plus,
@@ -36,7 +37,7 @@ const PERMISSIONS_LIST: { id: Permission; label: string; description: string }[]
 ];
 
 export default function StaffPage() {
-    const { user: currentUser } = useAuth();
+    const { adminUser: currentUser } = useAuth();
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -82,11 +83,13 @@ export default function StaffPage() {
             const { tempPassword } = await api.adminUpdateStaffPassword(newMember.id);
             setTempCredential(tempPassword);
 
-            setStaff([newMember, ...staff]);
             setForm({ name: '', email: '', role: 'STAFF', permissions: [] });
+            toast.success('Staff member created successfully');
             // Keep modal open to show credential
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to create staff:', error);
+            const message = error.response?.data?.message || error.message || 'Failed to create staff';
+            toast.error(message);
         }
     };
 
@@ -167,7 +170,7 @@ export default function StaffPage() {
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-900 font-black border border-slate-200">
-                                                {member.name.split(' ').map(n => n[0]).join('')}
+                                                {(member.name || 'Unknown').split(' ').map(n => n[0]).join('')}
                                             </div>
                                             <div>
                                                 <p className="text-sm font-black text-slate-900">{member.name}</p>
@@ -190,8 +193,10 @@ export default function StaffPage() {
                                             {member.permissions.includes('ALL') ? (
                                                 <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded text-[9px] font-black uppercase">FULL_AUTH</span>
                                             ) : (
-                                                member.permissions.map(p => (
-                                                    <span key={p} className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase">{p.split('_')[0]}</span>
+                                                member.permissions.map((p, index) => (
+                                                    <span key={`${member.id}-${p}-${index}`} className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase">
+                                                        {String(p).split('_')[0]}
+                                                    </span>
                                                 ))
                                             )}
                                         </div>
@@ -287,7 +292,7 @@ export default function StaffPage() {
                                 </div>
 
                                 <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                                    <div className="grid grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-3">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
                                             <input
@@ -312,7 +317,7 @@ export default function StaffPage() {
 
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Command Role</label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <button
                                                 type="button"
                                                 onClick={() => setForm({ ...form, role: 'STAFF' })}

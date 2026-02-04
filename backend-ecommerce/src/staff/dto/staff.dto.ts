@@ -6,7 +6,19 @@ export class CreateStaffDto {
     email: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
+    firstName?: string;
+
+    @IsString()
+    @IsOptional()
+    lastName?: string;
+
+    @IsString()
+    @IsOptional()
+    name?: string;
+
+    @IsString()
+    @IsOptional()
     password?: string;
 
     @IsEnum(Role)

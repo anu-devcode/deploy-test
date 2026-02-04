@@ -25,6 +25,8 @@ import { StaffModule } from './staff/staff.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
 import { EventsModule } from './events';
+import { EmailModule } from './email/email.module';
+import { MarketingModule } from './marketing/marketing.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { EventsModule } from './events';
     NotificationsModule,
     MessagesModule,
     EventsModule,
+    EmailModule,
+    MarketingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

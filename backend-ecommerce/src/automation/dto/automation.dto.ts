@@ -17,6 +17,10 @@ export class CreateAutomationRuleDto {
     action: string; // e.g., "NOTIFY_ADMIN"
 
     @IsOptional()
+    @IsString()
+    actionValue?: string;
+
+    @IsOptional()
     @IsBoolean()
     isActive?: boolean;
 }
@@ -36,6 +40,10 @@ export class UpdateAutomationRuleDto {
     @IsOptional()
     @IsString()
     action?: string;
+
+    @IsOptional()
+    @IsString()
+    actionValue?: string;
 
     @IsOptional()
     @IsBoolean()

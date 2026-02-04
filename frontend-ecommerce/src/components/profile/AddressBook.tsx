@@ -136,6 +136,17 @@ export function AddressBook() {
                             </div>
 
                             <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City</label>
+                                <input
+                                    placeholder="e.g. Addis Ababa"
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-slate-900 font-bold text-sm"
+                                    value={newAddress.city || ''}
+                                    onChange={e => setNewAddress({ ...newAddress, city: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Address / Directions</label>
                                 <textarea
                                     placeholder="Street, Building, Apartment..."

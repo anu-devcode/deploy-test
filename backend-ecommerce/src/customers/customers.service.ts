@@ -2,9 +2,14 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class CustomersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private notificationsService: NotificationsService,
+    ) { }
 
     async create(dto: CreateCustomerDto) {
         // Check if customer with same email exists
@@ -328,5 +333,28 @@ export class CustomersService {
             totalCustomers,
             customersThisMonth,
         };
+    }
+
+    async requestDataExport(customerId: string) {
+        const customer = await this.getProfile(customerId);
+
+        // Notify Admins
+        await this.notificationsService.create({
+            type: 'ACCOUNT' as any,
+            title: 'GDPR Data Export Requested',
+            message: `Customer ${customer.firstName} ${customer.lastName} (${customer.email}) has requested a full data export.`,
+            link: `/admin/customers/${customerId}`,
+            targetRole: 'ADMIN'
+        });
+
+        // Optionally create a task/flag in DB
+        await this.prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                flags: { push: 'DATA_EXPORT_REQUESTED' }
+            } as any
+        });
+
+        return { message: 'Data export request submitted successfully. Our team will contact you shortly.' };
     }
 }

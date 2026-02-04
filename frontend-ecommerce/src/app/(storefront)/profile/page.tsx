@@ -17,6 +17,7 @@ import { Wishlist } from '@/components/profile/Wishlist';
 import { ActivityCenter } from '@/components/profile/ActivityCenter';
 import SecuritySettings from '@/components/profile/SecuritySettings';
 import { MobileAccountHub } from '@/components/profile/MobileAccountHub';
+import { Promotions } from '@/components/profile/Promotions';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -27,7 +28,8 @@ import {
     Heart,
     MessageSquare,
     Shield,
-    ArrowLeft
+    ArrowLeft,
+    Ticket
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -120,6 +122,8 @@ export default function ProfilePage() {
                 return <Billing />;
             case 'wishlist':
                 return <Wishlist />;
+            case 'promotions':
+                return <Promotions />;
             case 'inbox':
                 return <ActivityCenter initialSection={activeSection} />;
             case 'menu':
@@ -157,6 +161,7 @@ export default function ProfilePage() {
                                     { id: 'orders', label: 'Orders', icon: ShoppingBag },
                                     { id: 'inbox', label: 'Activity Center', icon: MessageSquare },
                                     { id: 'wishlist', label: 'Wishlist', icon: Heart },
+                                    { id: 'promotions', label: 'Offers', icon: Ticket },
                                     { id: 'addresses', label: 'Addresses', icon: MapPin },
                                     { id: 'billing', label: 'Billing', icon: CreditCard },
                                     { id: 'wallet', label: 'Wallet', icon: WalletIcon },

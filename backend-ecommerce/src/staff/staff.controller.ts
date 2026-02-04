@@ -35,4 +35,9 @@ export class StaffController {
     remove(@Param('id') id: string) {
         return this.staffService.remove(id);
     }
+
+    @Patch(':id/reset-password')
+    resetPassword(@Param('id') id: string) {
+        return this.staffService.resetPassword(id);
+    }
 }

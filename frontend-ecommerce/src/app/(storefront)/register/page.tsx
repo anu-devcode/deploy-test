@@ -2,13 +2,14 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import AuthLayout from '@/components/auth/AuthLayout';
 import RegisterForm from '@/components/auth/RegisterForm';
 import { ShieldCheck, Zap, Globe } from 'lucide-react';
 
 function RegisterContent() {
     const router = useRouter();
+    const { register } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -22,8 +23,8 @@ function RegisterContent() {
 
         setLoading(true);
         try {
-            await api.register(data.email, data.password, data.firstName, data.lastName, data.role);
-            router.push('/login?registered=true');
+            await register(data.email, data.password, data.firstName, data.lastName, data.role);
+            router.push('/profile');
         } catch (err: any) {
             setError(err.message || 'Sign up failed. Try again.');
         } finally {

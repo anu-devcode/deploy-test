@@ -44,6 +44,10 @@ export interface Product {
     avgRating?: number;
     reviewCount?: number;
     compareAtPrice?: number;
+    isPublished?: boolean;
+    isFeatured?: boolean;
+    tags?: string[];
+    warehouseId?: string;
     createdAt?: string;
     updatedAt?: string;
     [key: string]: any;
@@ -63,6 +67,8 @@ export interface Order {
     shippingCity?: string;
     paymentMethod?: string;
     paymentStatus?: string;
+    delivery?: Delivery;
+    guestPhone?: string;
     items: any[];
     createdAt: string;
     updatedAt: string;
@@ -116,8 +122,11 @@ export interface Review {
     id: string;
     rating: number;
     comment?: string;
+    reply?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    productId: string;
     productName: string;
+    customerId: string;
     customerName: string;
     customer?: { firstName: string; lastName: string; email: string };
     createdAt: string;
@@ -215,14 +224,26 @@ class ApiClient {
                 if (error.response?.status === 401 && !originalRequest._retry) {
                     originalRequest._retry = true;
                     try {
-                        const response = await this.client.post('/auth/refresh');
-                        // Browser will update cookies automatically
+                        await this.client.post('/auth/refresh');
                         return this.client(originalRequest);
                     } catch (refreshError) {
-                        // Refresh token also failed, logout user
+                        // Refresh token failed -> Force Logout
+                        if (typeof window !== 'undefined') {
+                            const isAdmin = window.location.pathname.startsWith('/admin');
+                            window.location.href = isAdmin ? '/admin/login' : '/login';
+                        }
                         return Promise.reject(refreshError);
                     }
                 }
+
+                // If 401 persists after retry, force logout
+                if (error.response?.status === 401 && originalRequest._retry) {
+                    if (typeof window !== 'undefined') {
+                        const isAdmin = window.location.pathname.startsWith('/admin');
+                        window.location.href = isAdmin ? '/admin/login' : '/login';
+                    }
+                }
+
                 const message = error.response?.data?.message || error.message || 'An error occurred';
                 return Promise.reject(new Error(message));
             }
@@ -267,8 +288,8 @@ class ApiClient {
         return response.data;
     }
 
-    async logout() {
-        const response = await this.client.post('/auth/logout');
+    async logout(portal?: 'STOREFRONT' | 'ADMIN') {
+        const response = await this.client.post('/auth/logout', { portal });
         return response.data;
     }
 
@@ -447,15 +468,20 @@ class ApiClient {
     // --- CART ---
     // Note: If backend manages cart via token/session
     async getCart() { return this.client.get('/cart').then(r => r.data); }
+
     async addToCart(productId: string, quantity: number) {
         return this.client.post('/cart/items', { productId, quantity }).then(r => r.data);
     }
     // Need to check if CartService was fully implemented in backend in this flow
     // If not, we might fail here. Assuming standard CartModule exists.
 
-    // --- ORDERS ---
+
     async getOrders() {
         return this.client.get('/orders').then(r => r.data);
+    }
+
+    async getOrder(id: string) {
+        return this.client.get(`/orders/${id}`).then(r => r.data);
     }
 
     async trackOrder(orderNumber: string, email: string) {
@@ -464,6 +490,10 @@ class ApiClient {
 
     async updateOrderStatus(id: string, status: OrderStatus) {
         return this.client.patch(`/orders/${id}/status`, { status }).then(r => r.data);
+    }
+
+    async cancelOrder(id: string) {
+        return this.client.post(`/orders/${id}/cancel`).then(r => r.data);
     }
 
     async checkout(data: any) {
@@ -476,6 +506,10 @@ class ApiClient {
     }
 
     // --- PAYMENTS ---
+    async getPayments() {
+        return this.client.get('/payments').then(r => r.data);
+    }
+
     async initializePayment(data: { orderId: string; amount: number; method: string }) {
         return this.client.post('/payments/initialize', data).then(r => r.data);
     }
@@ -488,43 +522,81 @@ class ApiClient {
         return this.client.post(`/payments/${paymentId}/verify`, { approve, note }).then(r => r.data);
     }
 
-    // --- WISHLIST ---
-    async getWishlist() {
-        return this.client.get('/wishlist').then(r => r.data);
-    }
 
-    async addToWishlist(productId: string) {
-        return this.client.post('/wishlist/items', { productId }).then(r => r.data);
-    }
 
     async removeFromCart(productId: string) {
         return this.client.delete(`/cart/items/${productId}`).then(r => r.data);
     }
 
     // --- REVIEWS ---
-    async getProductReviews(productId: string) {
-        return this.client.get(`/products/${productId}/reviews`)
-            .then(r => r.data)
-            .catch(() => []);
+    async getProductReviews(productId: string): Promise<Review[]> {
+        return this.client.get(`/reviews/product/${productId}`).then(r => r.data);
     }
 
     async getProductStats(productId: string) {
-        // Could be part of product details
-        return { averageRating: 0, totalReviews: 0 };
+        return this.client.get(`/reviews/product/${productId}/stats`).then(r => r.data);
+    }
+
+    async canReview(productId: string): Promise<boolean> {
+        return this.client.get(`/reviews/product/${productId}/can-review`)
+            .then(r => r.data.canReview)
+            .catch(() => false);
     }
 
     async createReview(data: any) {
         return this.client.post('/reviews', data).then(r => r.data);
     }
 
+    // --- ADMIN REVIEWS ---
+    async getReviews(status?: string): Promise<Review[]> {
+        return this.client.get('/admin/reviews', { params: { status } }).then(r => {
+            const data = r.data || [];
+            return data.map((item: any) => ({
+                ...item,
+                productName: item.product?.name || 'Unknown Product',
+                customerName: item.customer ? `${item.customer.firstName} ${item.customer.lastName}` : 'Guest',
+            }));
+        });
+    }
+
+    async moderateReview(id: string, status: 'APPROVED' | 'REJECTED') {
+        return this.client.patch(`/admin/reviews/${id}/moderate`, { status }).then(r => r.data);
+    }
+
+    async replyToReview(id: string, reply: string) {
+        return this.client.patch(`/admin/reviews/${id}/reply`, { reply }).then(r => r.data);
+    }
+
+    async deleteAdminReview(id: string) {
+        return this.client.delete(`/admin/reviews/${id}`).then(r => r.data);
+    }
+
 
     // --- STAFF ---
-    async getStaff() {
-        return this.client.get('/staff').then(r => r.data);
+    private mapStaffMember(item: any): StaffMember {
+        return {
+            ...item,
+            requiresPasswordChange: item.isFirstLogin,
+            permissions: item.permissions?.map((p: any) => p.permission?.name || p.permissionName || p) || []
+        };
+    }
+
+    async getStaff(): Promise<StaffMember[]> {
+        return this.client.get('/staff').then(r => {
+            const data = r.data || [];
+            return data.map((item: any) => this.mapStaffMember(item));
+        });
     }
 
     async createStaff(data: Partial<StaffMember>) {
-        return this.client.post('/staff', data).then(r => r.data);
+        // Map frontend permissions to backend permissionNames
+        const payload = {
+            ...data,
+            permissionNames: data.permissions
+        };
+        delete payload.permissions;
+
+        return this.client.post('/staff', payload).then(r => this.mapStaffMember(r.data));
     }
 
     // --- CUSTOMERS ---
@@ -533,25 +605,29 @@ class ApiClient {
     }
 
     // --- CMS ---
-    async getPages() { return this.client.get('/cms/pages').then(r => r.data); }
-    async updatePage(id: string, data: any) { return this.client.patch(`/cms/pages/${id}`, data).then(r => r.data); }
-    async getPosts() { return this.client.get('/cms/posts').then(r => r.data); }
-    async createPost(data: any) { return this.client.post('/cms/posts', data).then(r => r.data); }
+    async getPages() { return this.client.get('/cms').then(r => r.data); }
+    async updatePage(id: string, data: any) { return this.client.patch(`/cms/${id}`, data).then(r => r.data); }
+    async getPosts() { return []; }
+    async createPost(data: any) { return {}; }
     async getBlocks() { return []; }
     async updateBlock(id: string, data: any) { return {}; }
 
     // --- NOTIFICATIONS & MESSAGES ---
     async getNotifications() { return this.client.get('/notifications').then(r => r.data); }
+    async getAdminNotifications() { return this.client.get('/notifications/admin').then(r => r.data); }
     async getRecentNotifications() { return this.client.get('/notifications/recent').then(r => r.data); }
     async getUnreadNotificationsCount() { return this.client.get('/notifications/unread-count').then(r => r.data); }
+    async getAdminUnreadNotificationsCount() { return this.client.get('/notifications/admin/unread-count').then(r => r.data); }
     async markNotificationAsRead(id: string) { return this.client.patch(`/notifications/${id}/read`).then(r => r.data); }
+    async markAllNotificationsRead() { return this.client.patch('/notifications/mark-all-read').then(r => r.data); }
 
     async getMessages() { return this.client.get('/messages').then(r => r.data); }
     async getUnreadMessagesCount() { return this.client.get('/messages/unread-count').then(r => r.data); }
     async getMessageThread(id: string) { return this.client.get(`/messages/${id}`).then(r => r.data); }
     async sendMessage(data: any) { return this.client.post('/messages', data).then(r => r.data); }
     async getAdminMessages() { return this.client.get('/messages/admin').then(r => r.data); }
-    async adminReplyToMessage(id: string, content: string) { return this.client.post(`/messages/${id}/reply`, { content }).then(r => r.data); }
+    async sendGuestMessage(data: { name: string; email: string; subject: string; content: string }) { return this.client.post('/messages/guest', data).then(r => r.data); }
+    async adminReplyToMessage(id: string, content: string) { return this.client.post(`/messages/admin/${id}/reply`, { content }).then(r => r.data); }
     async updateMessageStatus(id: string, status: string) { return this.client.patch(`/messages/${id}/status`, { status }).then(r => r.data); }
     async markMessageAsRead(id: string) { return this.client.patch(`/messages/${id}/read`).then(r => r.data); }
 
@@ -562,6 +638,14 @@ class ApiClient {
 
     async getInventorySummary() {
         return this.client.get('/admin/analytics/inventory-summary').then(r => r.data);
+    }
+
+    async uploadImage(file: File): Promise<{ url: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.client.post('/uploads', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(r => r.data);
     }
 
     async getOrdersSummary() {
@@ -584,9 +668,71 @@ class ApiClient {
         return this.client.get('/admin/analytics/cart-metrics').then(r => r.data);
     }
 
-    // --- AUTOMATION RULES ---
+
+    // --- EMAIL PREFERENCES ---
+    async getEmailPreferences(email: string) {
+        return this.client.get('/marketing/preferences', { params: { email } }).then(r => r.data);
+    }
+
+    async updateEmailPreferences(data: { email: string; marketing: boolean; orderUpdates: boolean; productUpdates: boolean }) {
+        return this.client.post('/marketing/preferences', data).then(r => r.data);
+    }
+
+    // --- AUTH EXTENSIONS ---
+    async requestPasswordReset(email: string) {
+        return this.client.post('/auth/request-reset', { email }).then(r => r.data);
+    }
+
+    async resetPassword(data: any) {
+        return this.client.post('/auth/reset-password', data).then(r => r.data);
+    }
+
+    async resendVerificationEmail() {
+        return this.client.post('/auth/resend-verification').then(r => r.data);
+    }
+
+    async verifyEmail(token: string) {
+        return this.client.get('/auth/verify-email', { params: { token } }).then(r => r.data);
+    }
+
+    // --- ADMIN MARKETING ---
+    async getCampaigns() {
+        return this.client.get('/marketing/campaigns').then(r => r.data);
+    }
+
+    async createCampaign(data: { name: string; subject: string; content: string; type: string; scheduledAt?: string }) {
+        return this.client.post('/marketing/campaigns', data).then(r => r.data);
+    }
+
+    async sendCampaign(id: string) {
+        return this.client.post(`/marketing/campaigns/${id}/send`).then(r => r.data);
+    }
+
+    // --- MARKETING ASSETS ---
+    async getMarketingAssets() {
+        return this.client.get('/marketing/assets').then(r => r.data);
+    }
+
+    async createMarketingAsset(data: any) {
+        return this.client.post('/marketing/assets', data).then(r => r.data);
+    }
+
+    async deleteMarketingAsset(id: string) {
+        return this.client.delete(`/marketing/assets/${id}`).then(r => r.data);
+    }
+
+    async getQRCode(url: string) {
+        return this.client.get('/marketing/qr', { params: { url } }).then(r => r.data);
+    }
+
     async getAutomationRules(): Promise<AutomationRule[]> {
-        return this.client.get('/automations/rules').then(r => r.data).catch(() => []);
+        return this.client.get('/automations/rules').then(r => {
+            const data = r.data || [];
+            return data.map((item: any) => ({
+                ...item,
+                enabled: item.isActive
+            }));
+        });
     }
 
     async getAutomationLogs(): Promise<AutomationLog[]> {
@@ -594,11 +740,27 @@ class ApiClient {
     }
 
     async createAutomationRule(data: Partial<AutomationRule>): Promise<AutomationRule> {
-        return this.client.post('/automations/rules', data).then(r => r.data);
+        const payload = {
+            ...data,
+            isActive: data.enabled
+        };
+        delete payload.enabled;
+        return this.client.post('/automations/rules', payload).then(r => ({
+            ...r.data,
+            enabled: r.data.isActive
+        }));
     }
 
     async updateAutomationRule(id: string, data: Partial<AutomationRule>): Promise<AutomationRule> {
-        return this.client.patch(`/automations/rules/${id}`, data).then(r => r.data);
+        const payload: any = { ...data };
+        if (data.enabled !== undefined) {
+            payload.isActive = data.enabled;
+            delete payload.enabled;
+        }
+        return this.client.patch(`/automations/rules/${id}`, payload).then(r => ({
+            ...r.data,
+            enabled: r.data.isActive
+        }));
     }
 
     async deleteAutomationRule(id: string): Promise<void> {
@@ -606,12 +768,75 @@ class ApiClient {
     }
 
     // --- PROMOTIONS ---
-    async calculateDiscounts(code: string, items: any[], type: string) {
-        return this.client.post('/promotions/calculate', { code, items, type }).then(r => r.data);
-    }
-
     async getPromotions(): Promise<Promotion[]> {
         return this.client.get('/storefront/promotions').then(r => r.data);
+    }
+
+    async getAdminPromotions(): Promise<Promotion[]> {
+        return this.client.get('/promotions').then(r => r.data);
+    }
+
+    async createPromotion(data: Partial<Promotion>) {
+        return this.client.post('/promotions', data).then(r => r.data);
+    }
+
+    async updatePromotion(id: string, data: Partial<Promotion>) {
+        return this.client.patch(`/promotions/${id}`, data).then(r => r.data);
+    }
+
+    async deletePromotion(id: string) {
+        return this.client.delete(`/promotions/${id}`).then(r => r.data);
+    }
+
+    async evaluatePromotion(code: string, items: any[], businessType: string) {
+        return this.client.post('/promotions/evaluate', { code, items, businessType }).then(r => r.data);
+    }
+
+    // --- WISHLIST ---
+    async getWishlist(customerId: string) {
+        return this.client.get(`/wishlist/${customerId}`).then(r => r.data);
+    }
+
+    async addToWishlist(customerId: string, productId: string) {
+        return this.client.post(`/wishlist/${customerId}/items`, { productId }).then(r => r.data);
+    }
+
+    async removeFromWishlist(customerId: string, productId: string) {
+        return this.client.delete(`/wishlist/${customerId}/items/${productId}`).then(r => r.data);
+    }
+
+    async clearWishlist(customerId: string) {
+        return this.client.delete(`/wishlist/${customerId}`).then(r => r.data);
+    }
+
+    // --- WAREHOUSES ---
+    async getWarehouses() {
+        return this.client.get('/warehouses').then(r => r.data);
+    }
+
+    // --- DELIVERIES ---
+    async getDeliveries() {
+        return this.client.get('/admin/deliveries').then(r => r.data);
+    }
+
+    async getDelivery(id: string) {
+        return this.client.get(`/admin/deliveries/${id}`).then(r => r.data);
+    }
+
+    async getDeliveryByOrder(orderId: string) {
+        return this.client.get(`/admin/deliveries/order/${orderId}`).then(r => r.data);
+    }
+
+    async createDelivery(data: any) {
+        return this.client.post('/admin/deliveries', data).then(r => r.data);
+    }
+
+    async updateDelivery(id: string, data: any) {
+        return this.client.patch(`/admin/deliveries/${id}`, data).then(r => r.data);
+    }
+
+    async updateDeliveryStatus(id: string, status: string) {
+        return this.client.patch(`/admin/deliveries/${id}/status`, { status }).then(r => r.data);
     }
 }
 

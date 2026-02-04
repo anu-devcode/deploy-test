@@ -1,21 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, ShoppingCart, Menu, X, User, Zap, Store, ChevronDown } from 'lucide-react';
-import { useCart, useBusiness, useNotifications } from '@/context';
+import { useCart, useBusiness, useNotifications, usePromotions } from '@/context';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { SearchComponent } from '../shared/SearchComponent';
+import { PromotionBanner } from '../storefront/PromotionBanner';
 
 export function Navbar() {
     const { mode, toggleMode } = useBusiness();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSearchActive, setIsSearchActive] = useState(false);
+    const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { itemCount, toggleCart } = useCart();
     const { unreadCount } = useNotifications();
+    const { promotions, isBannerVisible } = usePromotions();
     const { isAuthenticated, user, logout } = useAuth();
+
+    const hasActiveBanner = promotions.length > 0 && isBannerVisible;
     const pathname = usePathname();
     const isLandingPage = pathname === '/';
 
@@ -45,12 +51,13 @@ export function Navbar() {
     return (
         <>
             <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 px-4 md:px-6 ${showPill ? 'py-2 md:py-4' : 'py-4 md:py-10'
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${showPill ? (hasActiveBanner ? 'py-0' : 'py-2 md:py-3') : 'py-0'
                     }`}
             >
+                <PromotionBanner />
                 <div className={`max-w-[1400px] mx-auto transition-all duration-700 ${showPill
-                    ? 'px-4 md:px-8 py-2 md:py-4 rounded-2xl md:rounded-[2.5rem] bg-white/80 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(2,44,34,0.15)] border border-emerald-100/50 scale-[0.98]'
-                    : 'px-4 md:px-6 py-0 bg-transparent border-transparent scale-100'
+                    ? `px-4 md:px-8 ${hasActiveBanner ? 'pt-0 pb-4' : 'py-2 md:py-4'} ${hasActiveBanner ? 'mt-0 rounded-t-none' : 'mt-2 md:mt-4'} rounded-2xl md:rounded-[2.5rem] bg-white/80 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(2,44,34,0.15)] border border-emerald-100/50 scale-[0.98]`
+                    : `px-4 md:px-6 ${hasActiveBanner ? 'pt-0 pb-4 md:pb-8' : 'py-4 md:py-10'} bg-transparent border-transparent scale-100`
                     }`}>
                     <div className="flex items-center justify-between">
                         {/* Master Logo Logic - Always Rendered, Covered by Search on Mobile */}
@@ -97,16 +104,27 @@ export function Navbar() {
 
                             {/* Notifications / Profile */}
 
-                            {/* Account - Improved Visibility with Hover Dropdown */}
-                            <div className="relative group">
+                            {/* Account - Improved Visibility with Hover with Timeout Logic */}
+                            <div
+                                className="relative group"
+                                onMouseEnter={() => {
+                                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                                    setIsAccountOpen(true);
+                                }}
+                                onMouseLeave={() => {
+                                    timeoutRef.current = setTimeout(() => {
+                                        setIsAccountOpen(false);
+                                    }, 300); // 300ms delay to prevent accidental closing
+                                }}
+                            >
                                 <Link
                                     href={isAuthenticated ? '/profile' : '/login'}
-                                    className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-4 md:py-2 rounded-full transition-all duration-700 group-hover:bg-emerald-100/10 ${isDarkText
+                                    className={`flex items-center md:gap-3 p-1 md:pl-2 md:pr-4 md:py-2 rounded-full transition-all duration-700 ${isDarkText
                                         ? 'bg-emerald-50 text-emerald-800'
                                         : 'bg-white/5 text-white'
-                                        }`}
+                                        } ${isAccountOpen ? 'bg-emerald-100/20' : ''}`}
                                 >
-                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 group-hover:scale-110 transition-transform relative">
+                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 flex items-center justify-center text-white overflow-hidden shadow-md ring-2 ring-white/20 relative">
                                         {user?.avatar ? (
                                             <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
                                         ) : (
@@ -124,11 +142,17 @@ export function Navbar() {
                                             {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Member'}
                                         </span>
                                     </div>
-                                    <ChevronDown className={`w-3 h-3 transition-transform duration-500 group-hover:rotate-180 opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-white'}`} />
+                                    <ChevronDown className={`w-3 h-3 transition-transform duration-500 ${isAccountOpen ? 'rotate-180' : ''} opacity-50 ${isDarkText ? 'text-emerald-800' : 'text-white'}`} />
                                 </Link>
 
                                 {/* Dropdown Menu */}
-                                <div className="absolute top-full right-0 mt-2 w-64 pt-2 opacity-0 translate-y-4 scale-95 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 z-50">
+                                <div className={`absolute top-full right-0 pt-2 w-64 transition-all duration-300 z-50 ${isAccountOpen
+                                    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+                                    : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
+                                    }`}>
+                                    {/* Invisible bridge to help cursor travel */}
+                                    <div className="absolute -top-2 left-0 w-full h-4 bg-transparent" />
+
                                     <div className="bg-white/95 backdrop-blur-3xl rounded-[2.5rem] border border-emerald-100/50 shadow-[0_30px_70px_-15px_rgba(2,44,34,0.2)] overflow-hidden">
                                         <div className="p-6 bg-gradient-to-br from-emerald-50/50 to-white/50 border-b border-emerald-100/30">
                                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Account Info</p>
@@ -137,7 +161,11 @@ export function Navbar() {
                                         <div className="p-3">
                                             {isAuthenticated ? (
                                                 <>
-                                                    <Link href="/profile" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                    <Link
+                                                        href="/profile"
+                                                        onClick={() => setIsAccountOpen(false)}
+                                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none"
+                                                    >
                                                         <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white group-hover/item:scale-110 transition-transform">
                                                             <User className="w-5 h-5" />
                                                         </div>
@@ -146,7 +174,11 @@ export function Navbar() {
                                                             <span className="text-[10px] font-bold text-slate-500">View Dashboard</span>
                                                         </div>
                                                     </Link>
-                                                    <Link href="/track-order" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                    <Link
+                                                        href="/track-order"
+                                                        onClick={() => setIsAccountOpen(false)}
+                                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none"
+                                                    >
                                                         <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover/item:scale-110 transition-transform">
                                                             <ShoppingCart className="w-5 h-5" />
                                                         </div>
@@ -156,7 +188,11 @@ export function Navbar() {
                                                         </div>
                                                     </Link>
                                                     {(user?.role === 'ADMIN' || user?.role === 'SUPERADMIN' || user?.role === 'STAFF') && (
-                                                        <Link href="/admin" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-amber-50 transition-all group/item outline-none">
+                                                        <Link
+                                                            href="/admin"
+                                                            onClick={() => setIsAccountOpen(false)}
+                                                            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-amber-50 transition-all group/item outline-none"
+                                                        >
                                                             <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center group-hover/item:scale-110 transition-transform">
                                                                 <Store className="w-5 h-5" />
                                                             </div>
@@ -168,7 +204,10 @@ export function Navbar() {
                                                     )}
                                                     <div className="h-px bg-emerald-100/50 my-2 mx-4" />
                                                     <button
-                                                        onClick={() => logout()}
+                                                        onClick={() => {
+                                                            logout();
+                                                            setIsAccountOpen(false);
+                                                        }}
                                                         className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-rose-50 transition-all group/item text-rose-600 outline-none"
                                                     >
                                                         <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center group-hover/item:scale-110 transition-transform">
@@ -182,7 +221,11 @@ export function Navbar() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Link href="/login" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                    <Link
+                                                        href="/login"
+                                                        onClick={() => setIsAccountOpen(false)}
+                                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none"
+                                                    >
                                                         <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white group-hover/item:scale-110 transition-transform">
                                                             <User className="w-5 h-5" />
                                                         </div>
@@ -191,7 +234,11 @@ export function Navbar() {
                                                             <span className="text-[10px] font-bold text-slate-500">Welcome Back</span>
                                                         </div>
                                                     </Link>
-                                                    <Link href="/register" className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none">
+                                                    <Link
+                                                        href="/register"
+                                                        onClick={() => setIsAccountOpen(false)}
+                                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-emerald-50 transition-all group/item outline-none"
+                                                    >
                                                         <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center group-hover/item:scale-110 transition-transform shadow-lg shadow-emerald-200">
                                                             <Zap className="w-5 h-5" />
                                                         </div>
@@ -285,8 +332,9 @@ export function Navbar() {
                 )}
             </header>
 
-            {/* Navbar Spacer for Internal Pages */}
-            {!isLandingPage && <div className="h-20 md:h-28 w-full" />}
+            {/* Navbar Spacer for Internal Pages - Increased to accommodate optional banner */}
+            {/* Navbar Spacer for Internal Pages - Dynamic height to prevent jumpy layout */}
+            {!isLandingPage && <div className={`${hasActiveBanner ? 'h-36 md:h-52' : 'h-28 md:h-40'} w-full transition-all duration-500`} />}
         </>
     );
 }

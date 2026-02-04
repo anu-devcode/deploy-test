@@ -1,19 +1,31 @@
-import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto, ResetPasswordDto, AuthPortal } from './dto';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Role } from '@prisma/client';
+import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
+        private emailService: EmailService,
+        private notificationsService: NotificationsService,
     ) { }
 
     async register(dto: RegisterDto, userAgent?: string, ipAddress?: string) {
+        const existingUser = await this.prisma.user.findUnique({
+            where: { email: dto.email }
+        });
+
+        if (existingUser) {
+            throw new ConflictException('An account with this email already exists');
+        }
+
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
         const user = await this.prisma.user.create({
@@ -23,6 +35,7 @@ export class AuthService {
                 firstName: dto.firstName,
                 lastName: dto.lastName,
                 role: (dto.role || Role.CUSTOMER) as any,
+                isEmailVerified: false,
             },
         });
 
@@ -36,9 +49,43 @@ export class AuthService {
                     lastName: dto.lastName,
                 }
             });
+
+            // Create email preference for marketing emails
+            await this.prisma.emailPreference.upsert({
+                where: { email: user.email },
+                create: { email: user.email },
+                update: {},
+            });
         }
 
+        // Notify Admin of new registration
         const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+        if (user.role === Role.CUSTOMER) {
+            await this.notificationsService.create({
+                type: 'ACCOUNT' as any,
+                title: 'New Customer Registered',
+                message: `A new customer ${fullName} (${user.email}) has registered.`,
+                link: `/admin/customers/${user.id}`,
+                targetRole: 'ADMIN'
+            });
+        }
+
+        // Create email verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour expiry
+
+        await this.prisma.emailVerificationToken.create({
+            data: {
+                token: verificationToken,
+                userId: user.id,
+                expiresAt,
+            }
+        });
+
+        // Send verification email
+        await this.emailService.sendVerificationEmail(user.email, verificationToken, fullName);
+
         return this.generateTokens(user.id, user.email, user.role, [], fullName, userAgent, ipAddress);
     }
 
@@ -72,6 +119,21 @@ export class AuthService {
 
         if (!passwordValid) {
             throw new UnauthorizedException('Invalid credentials');
+        }
+
+        // Ensure customer record exists (for existing users or broken registrations)
+        if (user.role === Role.CUSTOMER) {
+            const customer = await this.prisma.customer.findUnique({ where: { id: user.id } });
+            if (!customer) {
+                await this.prisma.customer.create({
+                    data: {
+                        id: user.id,
+                        email: user.email,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                    }
+                });
+            }
         }
 
         const permissionNames = (user as any).permissions.map((p: any) => p.permission.name);
@@ -123,8 +185,8 @@ export class AuthService {
         });
 
         if (!user) {
-            // Silently fail or throw to avoid email enumeration
-            throw new NotFoundException('User not found');
+            // Return success message to avoid email enumeration
+            return { message: 'If an account exists with this email, a password reset link has been sent.' };
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -139,8 +201,97 @@ export class AuthService {
             }
         });
 
-        // In a real app, send email here. For now, returning token for simulation/testing.
-        return { message: 'Reset token generated', token };
+        // Send password reset email
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'there';
+        await this.emailService.sendPasswordResetEmail(user.email, token, fullName);
+
+        // Notify Admins if staff requests reset
+        if (user.role !== Role.CUSTOMER) {
+            await this.notificationsService.create({
+                type: 'SECURITY' as any,
+                title: 'Staff Password Reset Requested',
+                message: `Staff member ${fullName} (${user.email}) has requested a password reset.`,
+                link: `/admin/staff-management`, // Assuming this exists
+                targetRole: 'ADMIN' // Only admins see this
+            });
+        }
+
+        return { message: 'If an account exists with this email, a password reset link has been sent.' };
+    }
+
+    async verifyEmail(token: string) {
+        const verificationToken = await this.prisma.emailVerificationToken.findUnique({
+            where: { token },
+            include: { user: true }
+        });
+
+        if (!verificationToken || verificationToken.expiresAt < new Date()) {
+            throw new BadRequestException('Invalid or expired verification token');
+        }
+
+        // Mark user as verified
+        await this.prisma.user.update({
+            where: { id: verificationToken.userId },
+            data: { isEmailVerified: true }
+        });
+
+        // Delete all verification tokens for this user
+        await this.prisma.emailVerificationToken.deleteMany({
+            where: { userId: verificationToken.userId }
+        });
+
+        // Send welcome email and in-app notification
+        const user = verificationToken.user;
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'there';
+        await this.emailService.sendWelcomeEmail(user.email, fullName);
+
+        // Fetch customer profile to get ID
+        const customer = await this.prisma.customer.findUnique({ where: { id: user.id } });
+        if (customer) {
+            await this.notificationsService.create({
+                customerId: customer.id,
+                type: 'ACCOUNT' as any,
+                title: 'Email Verified',
+                message: 'Your email has been successfully verified! Welcome to Adis Harvest.',
+                link: '/profile/settings'
+            });
+        }
+
+        return { message: 'Email verified successfully! Welcome to Adis Harvest.' };
+    }
+
+    async resendVerificationEmail(email: string) {
+        const user = await this.prisma.user.findFirst({
+            where: { email, isEmailVerified: false }
+        });
+
+        if (!user) {
+            throw new BadRequestException('No unverified account found with this email');
+        }
+
+        // Delete old verification tokens
+        await this.prisma.emailVerificationToken.deleteMany({
+            where: { userId: user.id }
+        });
+
+        // Create new verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        await this.prisma.emailVerificationToken.create({
+            data: {
+                token: verificationToken,
+                userId: user.id,
+                expiresAt,
+            }
+        });
+
+        // Send verification email
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'there';
+        await this.emailService.sendVerificationEmail(user.email, verificationToken, fullName);
+
+        return { message: 'Verification email sent successfully' };
     }
 
     async resetPassword(dto: ResetPasswordDto) {
@@ -305,6 +456,30 @@ export class AuthService {
         });
 
         const isPrimary = !activePrimary;
+
+        if (isPrimary) {
+            // New primary session - could be a clean login or first time on device
+            // But if there WAS an activePrimary that expired or something, we might still want to notify
+        }
+
+        if (!activePrimary && userAgent) {
+            // Send security notification for new device
+            // We do this asynchronously to not block token generation
+            this.emailService.sendSecurityAlert(email, name, {
+                userAgent,
+                ipAddress: ipAddress || 'Unknown',
+                time: new Date().toLocaleString()
+            }).catch(err => console.error('Failed to send security alert', err));
+
+            // Also create in-app notification
+            await this.notificationsService.create({
+                ...(role === Role.CUSTOMER ? { customerId: userId } : { targetUserId: userId }),
+                type: 'SECURITY' as any,
+                title: 'New Device Login',
+                message: `Your account was accessed from a new device: ${userAgent}`,
+                link: role === Role.CUSTOMER ? '/profile/settings?section=security' : '/admin/settings'
+            }).catch(err => console.error('Failed to create security notification', err));
+        }
 
         await (this.prisma as any).refreshToken.create({
             data: {

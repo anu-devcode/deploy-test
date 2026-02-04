@@ -57,26 +57,26 @@ export default function AdminCMSPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Content Workspace</h1>
                     <p className="text-sm text-slate-500">Orchestrate your storefront's narrative and static assets.</p>
                 </div>
-                <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
                     <Plus className="w-4 h-4" />
                     New {activeTab === 'PAGES' ? 'Page' : activeTab === 'BLOG' ? 'Post' : 'Block'}
                 </button>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-full sm:w-fit overflow-x-auto">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
-                                ? 'bg-white text-emerald-600 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
+                            ? 'bg-white text-emerald-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                             }`}
                     >
                         <tab.icon className="w-4 h-4" />
@@ -102,14 +102,14 @@ export default function AdminCMSPage() {
                 {activeTab === 'PAGES' && (
                     <div className="divide-y divide-slate-50">
                         {pages.map((page) => (
-                            <div key={page.id} className="p-6 hover:bg-slate-50/50 transition-colors group flex items-center justify-between">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <div key={page.id} className="p-6 hover:bg-slate-50/50 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-5 w-full">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
                                         <FileText className="w-6 h-6" />
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-900">{page.title}</h3>
-                                        <p className="text-xs text-slate-400 mt-1 font-mono">/{page.slug}</p>
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-slate-900 truncate">{page.title}</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-mono truncate">/{page.slug}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">
@@ -134,14 +134,14 @@ export default function AdminCMSPage() {
                 {activeTab === 'BLOG' && (
                     <div className="divide-y divide-slate-50">
                         {posts.map((post) => (
-                            <div key={post.id} className="p-6 hover:bg-slate-50/50 transition-colors group flex items-center justify-between">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <div key={post.id} className="p-6 hover:bg-slate-50/50 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="flex items-center gap-5 w-full">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                                         <BookOpen className="w-6 h-6" />
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-900">{post.title}</h3>
-                                        <div className="flex items-center gap-3 mt-1">
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-slate-900 truncate">{post.title}</h3>
+                                        <div className="flex flex-wrap items-center gap-3 mt-1">
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{post.category}</span>
                                             <span className="text-[10px] text-slate-300">•</span>
                                             <span className="text-[10px] font-bold text-slate-400">{post.author}</span>

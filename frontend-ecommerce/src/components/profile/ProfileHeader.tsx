@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { UserCircle, LogOut } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export function ProfileHeader() {
     const { user } = useAuth();
@@ -28,9 +29,19 @@ export function ProfileHeader() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold text-[10px] uppercase">
                             {user?.role || 'Customer'}
                         </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase">
-                            Verified
-                        </span>
+                        {user?.isEmailVerified ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[10px] uppercase">
+                                Verified
+                            </span>
+                        ) : (
+                            <button
+                                onClick={() => api.resendVerificationEmail()}
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-bold text-[10px] uppercase hover:bg-amber-200 transition-colors"
+                                title="Click to resend verification email"
+                            >
+                                Unverified - Verify Now
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

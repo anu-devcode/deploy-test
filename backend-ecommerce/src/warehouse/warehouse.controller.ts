@@ -23,32 +23,6 @@ export class WarehouseController {
         return this.warehouseService.getInventorySummary();
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.warehouseService.findOne(id);
-    }
-
-    @Patch(':id')
-    update(
-        @Param('id') id: string,
-        @Body() dto: UpdateWarehouseDto,
-    ) {
-        return this.warehouseService.update(id, dto);
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.warehouseService.remove(id);
-    }
-
-    @Post(':id/adjust')
-    adjustStock(
-        @Param('id') id: string,
-        @Body() dto: StockAdjustmentDto,
-    ) {
-        return this.warehouseService.adjustStock(id, dto);
-    }
-
     @Get('stock-logs')
     getStockAuditLogs() {
         return this.warehouseService.getAllStockMovements();
@@ -78,5 +52,31 @@ export class WarehouseController {
         // We'll need a default warehouse if not provided, or frontend should send it.
         // Assuming default warehouse for now if not specified.
         return this.warehouseService.processMovement(dto);
+    }
+
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.warehouseService.findOne(id);
+    }
+
+    @Patch(':id')
+    update(
+        @Param('id') id: string,
+        @Body() dto: UpdateWarehouseDto,
+    ) {
+        return this.warehouseService.update(id, dto);
+    }
+
+    @Delete(':id')
+    remove(@Param('id') id: string) {
+        return this.warehouseService.remove(id);
+    }
+
+    @Post(':id/adjust')
+    adjustStock(
+        @Param('id') id: string,
+        @Body() dto: StockAdjustmentDto,
+    ) {
+        return this.warehouseService.adjustStock(id, dto);
     }
 }

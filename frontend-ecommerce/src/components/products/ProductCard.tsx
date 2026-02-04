@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Product } from '@/lib/api';
 import { Heart, Eye, ShoppingCart, Star, Plus, Minus, Zap, Store } from 'lucide-react';
-import { useCart, useBusiness, useWishlist } from '@/context';
+import { useCart, useBusiness, useWishlist, usePromotions } from '@/context';
 
 interface ProductCardProps {
   product: Product;
@@ -11,6 +11,17 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, updateQuantity, items } = useCart();
   const { mode } = useBusiness();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { promotions } = usePromotions();
+
+  // Find applicable auto-promotions (those without a code, or just show that one is available)
+  const applicablePromo = promotions.find(p =>
+    !p.code && // Public/Auto-applied
+    p.isActive &&
+    (
+      (p.target === 'PRODUCT' && p.targetIds.includes(product.id)) ||
+      (p.target === 'CATEGORY' && (typeof product.category === 'string' ? p.targetIds.includes(product.category) : p.targetIds.includes(product.category?.id || '')))
+    )
+  );
 
   // Use safe defaults for branding
   const primaryColor = '#10b981';
@@ -21,21 +32,16 @@ export function ProductCard({ product }: ProductCardProps) {
 
   // Determine display price and unit based on mode
   const isBulk = mode === 'BULK' && product.bulk?.enabled;
-  const displayPrice = isBulk ? product.bulk.price : (product.retail?.price || product.price);
-  const displayUnit = isBulk ? (product.bulk.unit || 'Bulk') : (product.retail?.unit || 'ea');
-  const minOrder = isBulk ? (product.bulk.minOrder || 1) : (product.retail?.minOrder || 1);
+  const displayPrice = isBulk ? (product.bulk?.price || 0) : (product.retail?.price || product.price);
+  const displayUnit = isBulk ? (product.bulk?.unit || 'Bulk') : (product.retail?.unit || 'ea');
+  const minOrder = isBulk ? (product.bulk?.minOrder || 1) : (product.retail?.minOrder || 1);
 
   // Link to slug if available, fallback to id
   const productUrl = `/products/${product.slug || product.id}`;
 
-  // Map product images - fallback if no images array
-  const productImages: { [key: string]: string } = {
-    'p_ag_001': '/lentils.png',
-    'p_ag_002': '/wheat.png',
-    'p_ag_003': '/sesame.png',
-  };
-
-  const imageUrl = product.images?.[0] || productImages[product.id] || null;
+  const rawImageUrl = product.images?.[0] || null;
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
+  const imageUrl = rawImageUrl?.startsWith('/uploads') ? `${backendUrl}${rawImageUrl}` : rawImageUrl;
 
   return (
     <div className="group relative bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-500 hover:-translate-y-1.5 border border-slate-100 flex flex-col h-full">
@@ -71,9 +77,14 @@ export function ProductCard({ product }: ProductCardProps) {
               Wholesale
             </span>
           )}
-          {product.compareAtPrice && !isBulk && (
+          {product.compareAtPrice && product.compareAtPrice > product.price && !isBulk && (
             <span className="px-2.5 py-1 rounded-full bg-rose-500 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm">
               Sale
+            </span>
+          )}
+          {applicablePromo && (
+            <span className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-[9px] font-black uppercase tracking-wider shadow-md animate-pulse">
+              {applicablePromo.type === 'PERCENTAGE' ? `${applicablePromo.value}% OFF` : `${applicablePromo.value} ETB OFF`}
             </span>
           )}
         </div>

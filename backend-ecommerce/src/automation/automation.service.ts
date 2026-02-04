@@ -18,7 +18,8 @@ export class AutomationService {
 
     async findAllRules() {
         return this.prisma.automationRule.findMany({
-            include: { _count: { select: { logs: true } } }
+            include: { _count: { select: { logs: true } } },
+            orderBy: { createdAt: 'desc' }
         });
     }
 
@@ -29,6 +30,17 @@ export class AutomationService {
         });
         if (!rule) throw new NotFoundException('Rule not found');
         return rule;
+    }
+
+    async findAllLogs() {
+        return this.prisma.automationLog.findMany({
+            include: { rule: { select: { name: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: 100
+        }).then(logs => logs.map(log => ({
+            ...log,
+            ruleName: log.rule?.name || 'Deleted Rule'
+        })));
     }
 
     async updateRule(id: string, dto: UpdateAutomationRuleDto) {

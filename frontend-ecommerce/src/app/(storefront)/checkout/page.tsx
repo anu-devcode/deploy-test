@@ -15,7 +15,9 @@ export default function CheckoutPage() {
         selectedItems: items,
         selectedSubtotal: subtotal,
         selectedCount: itemCount,
-        clearSelectedItems
+        clearSelectedItems,
+        promoCode,
+        discount
     } = useCart();
     const { isAuthenticated, user } = useAuth();
     const [step, setStep] = useState<Step>('account');
@@ -57,27 +59,37 @@ export default function CheckoutPage() {
                     setSavedAddresses(addresses);
                     setSavedPaymentMethods(billingInfo.savedMethods);
 
-                    // Pre-fill from profile/default address
-                    const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
-                    if (defaultAddr) {
-                        setSelectedAddressId(defaultAddr.id);
+                    // Only pre-fill name and email from profile
+                    // Don't auto-populate address fields - let user select from saved addresses
+                    setFormData(prev => ({
+                        ...prev,
+                        name: profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : (profile.name || prev.name),
+                        email: profile.email || prev.email,
+                    }));
+
+                    // If user has saved addresses, show selector by default
+                    if (addresses.length > 0) {
                         setShowAddressForm(false);
-                        setFormData(prev => ({
-                            ...prev,
-                            name: profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : (profile.name || prev.name),
-                            email: profile.email || prev.email,
-                            phone: defaultAddr.phone || profile.phone || prev.phone,
-                            address: defaultAddr.street,
-                            city: defaultAddr.city,
-                        }));
+                        const defaultAddr = addresses.find((a: any) => a.isDefault) || addresses[0];
+                        if (defaultAddr) {
+                            setSelectedAddressId(defaultAddr.id);
+                            // Only populate when explicitly selected
+                            setFormData(prev => ({
+                                ...prev,
+                                address: defaultAddr.street,
+                                city: defaultAddr.city,
+                                phone: defaultAddr.phone || profile.phone || prev.phone,
+                            }));
+                        }
                     } else {
+                        // No saved addresses - show form with only name/email pre-filled
+                        setShowAddressForm(true);
                         setFormData(prev => ({
                             ...prev,
-                            name: profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : (profile.name || prev.name),
-                            email: profile.email || prev.email,
                             phone: profile.phone || prev.phone,
                         }));
                     }
+
                     // Pre-fill payment method if default exists
                     const defaultPay = billingInfo.savedMethods.find((m: any) => m.isDefault);
                     if (defaultPay) {
@@ -121,6 +133,12 @@ export default function CheckoutPage() {
     const handleCompleteOrder = async () => {
         if (formData.paymentMethod === 'online') return;
 
+        // Validate required fields
+        if (!formData.name || !formData.email || !formData.address || !formData.city || !formData.phone) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
         setProcessing(true);
         try {
             // 1. Create Order
@@ -136,7 +154,9 @@ export default function CheckoutPage() {
                 saveAddressToProfile: isAuthenticated && saveToProfile,
                 savedPaymentMethodId: selectedPaymentMethodId,
                 savePaymentMethodToProfile: isAuthenticated && savePaymentToProfile,
-                items: items.map(i => ({ productId: i.productId, quantity: i.quantity }))
+                items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+                promoCode: promoCode || undefined,
+                discount: discount || 0
             };
 
             const order = await api.checkout(payload);
@@ -158,9 +178,10 @@ export default function CheckoutPage() {
             // 4. Finalize
             setStep('success');
             clearSelectedItems();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Order completion failed', err);
-            alert('Order processing failed. Please check your connection and try again.');
+            const errorMessage = err?.message || 'Order processing failed. Please check your connection and try again.';
+            alert(`Error: ${errorMessage}`);
         } finally {
             setProcessing(false);
         }
@@ -307,121 +328,132 @@ export default function CheckoutPage() {
                                 <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tight italic">Address</h2>
                                 {isAuthenticated && savedAddresses.length > 0 && (
                                     <button
-                                        onClick={() => setShowAddressForm(!showAddressForm)}
+                                        onClick={() => {
+                                            setShowAddressForm(!showAddressForm);
+                                            if (!showAddressForm) {
+                                                // Switching to form - clear selected address
+                                                setSelectedAddressId(null);
+                                            }
+                                        }}
                                         className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-700 underline underline-offset-4 decoration-2"
                                     >
-                                        {showAddressForm ? 'Use Saved Address' : 'Use Different Address'}
+                                        {showAddressForm ? 'Use Saved Address' : 'Add New Address'}
                                     </button>
                                 )}
                             </div>
 
+                            {/* Saved Address Selector */}
                             {isAuthenticated && !showAddressForm && savedAddresses.length > 0 && (
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {savedAddresses.map((addr: any) => (
-                                        <button
-                                            key={addr.id}
-                                            onClick={() => handleAddressSelect(addr)}
-                                            className={`p-6 rounded-[2.5rem] border-2 text-left transition-all relative group ${selectedAddressId === addr.id ? 'border-emerald-600 bg-emerald-50/30' : 'border-slate-50 bg-white hover:border-slate-200'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className={`p-2 rounded-xl ${selectedAddressId === addr.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                                    <MapPin className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-900">{addr.type}</span>
-                                                    {addr.isDefault && (
-                                                        <span className="ml-2 text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Default</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <p className="text-sm font-black text-slate-900 mb-1">{addr.street}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{addr.city}</p>
-                                            {selectedAddressId === addr.id && (
-                                                <div className="absolute top-6 right-6 w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center">
-                                                    <Check className="w-3 h-3 text-white" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
-                            {(showAddressForm || !isAuthenticated) && (
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {[
-                                        { label: 'Name', key: 'name', placeholder: 'Full Name', type: 'text' },
-                                        { label: 'Email', key: 'email', placeholder: 'Email Address', type: 'email' },
-                                        { label: 'City', key: 'city', placeholder: 'City', type: 'text' },
-                                        { label: 'Phone', key: 'phone', placeholder: 'Phone Number', type: 'tel' }
-                                    ].map(field => {
-                                        const value = (formData as any)[field.key];
-                                        const isEditing = editFields[field.key];
-                                        const showSummary = isAuthenticated && value && !isEditing;
-
-                                        if (showSummary) {
-                                            return (
-                                                <div key={field.key} className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-slate-200 transition-all">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">{field.label}</label>
-                                                        <p className="font-black text-slate-900 text-sm ml-1">{value}</p>
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Delivery Address</h3>
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        {savedAddresses.map((addr: any) => (
+                                            <button
+                                                key={addr.id}
+                                                onClick={() => handleAddressSelect(addr)}
+                                                className={`p-6 rounded-[2.5rem] border-2 text-left transition-all relative group ${selectedAddressId === addr.id ? 'border-emerald-600 bg-emerald-50/30 shadow-lg shadow-emerald-500/5' : 'border-slate-100 bg-white hover:border-emerald-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className={`p-2 rounded-xl ${selectedAddressId === addr.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                        <MapPin className="w-4 h-4" />
                                                     </div>
-                                                    <button
-                                                        onClick={() => setEditFields(prev => ({ ...prev, [field.key]: true }))}
-                                                        className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-700 underline underline-offset-4 decoration-2"
-                                                    >
-                                                        Change
-                                                    </button>
+                                                    <div>
+                                                        <span className="text-[10px] font-black uppercase tracking-tight text-slate-900">{addr.type || 'Address'}</span>
+                                                        {addr.isDefault && (
+                                                            <span className="ml-2 text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Default</span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            );
-                                        }
-
-                                        return (
-                                            <div key={field.key} className="space-y-2">
-                                                <div className="flex justify-between items-center ml-1">
-                                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{field.label}</label>
-                                                    {isEditing && (
-                                                        <button
-                                                            onClick={() => setEditFields(prev => ({ ...prev, [field.key]: false }))}
-                                                            className="text-[8px] font-bold text-slate-300 uppercase tracking-widest hover:text-slate-900"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <input
-                                                    type={field.type}
-                                                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
-                                                    placeholder={field.placeholder}
-                                                    value={value}
-                                                    onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                                                    autoFocus={isEditing}
-                                                />
-                                            </div>
-                                        );
-                                    })}
-                                    <div className="space-y-2 md:col-span-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Location</label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
-                                            placeholder="House number and street"
-                                            value={formData.address}
-                                            onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                        />
+                                                <p className="text-sm font-black text-slate-900 mb-1">{addr.street}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{addr.city}</p>
+                                                {addr.phone && <p className="text-[10px] font-bold text-slate-500 mt-1">{addr.phone}</p>}
+                                                {selectedAddressId === addr.id && (
+                                                    <div className="absolute top-6 right-6 w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center">
+                                                        <Check className="w-3 h-3 text-white" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )}
 
-                            {isAuthenticated && showAddressForm && (
-                                <div className="flex items-center gap-3 p-6 rounded-[2rem] bg-slate-50 border border-slate-100 mt-6 group cursor-pointer hover:border-emerald-200 transition-all" onClick={() => setSaveToProfile(!saveToProfile)}>
-                                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${saveToProfile ? 'bg-slate-900 border-slate-900 shadow-lg' : 'border-slate-200 group-hover:border-slate-400'}`}>
-                                        {saveToProfile && <Check className="w-4 h-4 text-white" />}
+                            {/* Address Form - Always editable inputs */}
+                            {(showAddressForm || !isAuthenticated) && (
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+                                        {isAuthenticated && savedAddresses.length > 0 ? 'New Delivery Address' : 'Delivery Information'}
+                                    </h3>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Full Name</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
+                                                placeholder="Full Name"
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email Address</label>
+                                            <input
+                                                type="email"
+                                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
+                                                placeholder="your@email.com"
+                                                value={formData.email}
+                                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">City</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
+                                                placeholder="City"
+                                                value={formData.city}
+                                                onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Phone Number</label>
+                                            <input
+                                                type="tel"
+                                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
+                                                placeholder="+251 --- --- ---"
+                                                value={formData.phone}
+                                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Street Address</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition-all font-bold text-slate-900 text-sm"
+                                                placeholder="House number and street name"
+                                                value={formData.address}
+                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">Save to my profile</p>
-                                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Use this address for future orders</p>
-                                    </div>
+
+                                    {isAuthenticated && (
+                                        <div className="flex items-center gap-3 p-6 rounded-[2rem] bg-slate-50 border border-slate-100 group cursor-pointer hover:border-emerald-200 transition-all" onClick={() => setSaveToProfile(!saveToProfile)}>
+                                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${saveToProfile ? 'bg-slate-900 border-slate-900 shadow-lg' : 'border-slate-200 group-hover:border-slate-400'}`}>
+                                                {saveToProfile && <Check className="w-4 h-4 text-white" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">Save to my profile</p>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Use this address for future orders</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -611,9 +643,17 @@ export default function CheckoutPage() {
                                             ))}
                                             {itemCount > 3 && <p className="text-[9px] font-bold text-slate-400 uppercase">+ {itemCount - 3} more</p>}
                                         </div>
+
+                                        {discount > 0 && (
+                                            <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest text-emerald-600 animate-in fade-in slide-in-from-left duration-300">
+                                                <span className="italic">Promotion ({promoCode})</span>
+                                                <span>- ETB {discount.toLocaleString()}</span>
+                                            </div>
+                                        )}
+
                                         <div className="pt-6 border-t border-slate-50 flex justify-between items-end">
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</span>
-                                            <span className="text-3xl font-black text-emerald-600">ETB {subtotal.toLocaleString()}</span>
+                                            <span className="text-3xl font-black text-emerald-600">ETB {(subtotal - discount).toLocaleString()}</span>
                                         </div>
 
                                         <button
@@ -656,7 +696,7 @@ export default function CheckoutPage() {
                         {step !== 'payment' && (
                             <button
                                 onClick={handleNext}
-                                disabled={step === 'address' && (!formData.name || !formData.address || !formData.phone)}
+                                disabled={step === 'address' && (!formData.name || !formData.email || !formData.address || !formData.city || !formData.phone)}
                                 className="px-10 py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-black transition-all shadow-xl shadow-slate-900/40 disabled:opacity-50 flex items-center gap-3 uppercase tracking-widest text-xs"
                             >
                                 Next
@@ -683,10 +723,16 @@ export default function CheckoutPage() {
                                         <span>Shipping</span>
                                         <span className="text-emerald-600 italic">Free</span>
                                     </div>
+                                    {discount > 0 && (
+                                        <div className="flex justify-between text-[11px] font-black text-emerald-600 uppercase tracking-widest animate-in fade-in slide-in-from-left duration-300">
+                                            <span>Promotion</span>
+                                            <span>- ETB {discount.toLocaleString()}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="pt-6 border-t-2 border-dashed border-slate-100 flex justify-between items-center">
                                     <span className="text-xs font-black text-slate-900 uppercase tracking-widest">Total</span>
-                                    <span className="text-3xl font-black text-emerald-600">ETB {subtotal.toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-emerald-600">ETB {(subtotal - discount).toLocaleString()}</span>
                                 </div>
                             </CardBody>
                         </Card>

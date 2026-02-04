@@ -3,9 +3,10 @@ import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 
 import { EventsModule } from '../events/events.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-    imports: [EventsModule],
+    imports: [EventsModule, NotificationsModule],
     controllers: [ProductsController],
     providers: [ProductsService],
     exports: [ProductsService],

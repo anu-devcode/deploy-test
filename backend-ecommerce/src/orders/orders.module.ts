@@ -4,8 +4,15 @@ import { OrdersController } from './orders.controller';
 
 import { AutomationModule } from '../automation/automation.module';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PromotionsModule } from '../promotions/promotions.module';
+
 @Module({
-    imports: [AutomationModule],
+    imports: [
+        AutomationModule,
+        NotificationsModule,
+        PromotionsModule
+    ],
     controllers: [OrdersController],
     providers: [OrdersService],
     exports: [OrdersService],

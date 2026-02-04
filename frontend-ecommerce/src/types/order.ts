@@ -1,4 +1,4 @@
-export type OrderStatus = "pending" | "PENDING_VERIFICATION" | "paid" | "confirmed" | "fulfilled" | "cancelled" | "PENDING" | "CONFIRMED" | "DELIVERED";
+export type OrderStatus = "pending" | "PENDING_VERIFICATION" | "paid" | "confirmed" | "PROCESSING" | "PACKED" | "SHIPPED" | "fulfilled" | "cancelled" | "PENDING" | "CONFIRMED" | "DELIVERED";
 
 export type OrderLine = {
   id: string;
@@ -20,6 +20,7 @@ export type Order = {
   paymentId?: string; // For manual verification
   receiptUrl?: string; // For manual verification
   manualVerificationNote?: string;
+  payments?: any[];
   customer: {
     name: string;
     email: string;
