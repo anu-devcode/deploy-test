@@ -199,7 +199,7 @@ export class CancellationRequestsService {
             // Send approval email
             if (customerEmail) {
                 try {
-                    await this.emailService.sendEmail({
+                    await this.emailService.send({
                         to: customerEmail,
                         subject: `Order Cancellation Approved - ${request.order.orderNumber}`,
                         template: 'order-cancelled',
@@ -228,7 +228,7 @@ export class CancellationRequestsService {
             // Send rejection email
             if (customerEmail) {
                 try {
-                    await this.emailService.sendEmail({
+                    await this.emailService.send({
                         to: customerEmail,
                         subject: `Order Cancellation Request Declined - ${request.order.orderNumber}`,
                         template: 'cancellation-rejected',

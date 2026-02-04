@@ -75,7 +75,7 @@ export class PromotionsService {
         const now = new Date();
 
         // 1. Find the applicable promotion
-        let promo = null;
+        let promo: any = null;
         if (code) {
             promo = await this.prisma.promotion.findFirst({
                 where: {

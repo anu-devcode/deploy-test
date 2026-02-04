@@ -177,7 +177,7 @@ export class AnalyticsService {
     }
 
     async getOperationalAlerts() {
-        const alerts = [];
+        const alerts: any[] = [];
 
         const lowStock = await this.prisma.product.findMany({
             where: { stock: { lte: 5 } },
