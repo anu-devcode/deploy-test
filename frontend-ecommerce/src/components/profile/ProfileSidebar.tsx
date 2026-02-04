@@ -93,7 +93,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
             {/* Logout - Always at bottom */}
             <div className="p-4 border-t border-slate-100 shrink-0 bg-slate-50/50">
                 <button
-                    onClick={logout}
+                    onClick={() => logout()}
                     className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-rose-500 font-bold hover:bg-rose-50 transition-colors group"
                 >
                     <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />

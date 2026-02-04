@@ -18,14 +18,12 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001'
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const { token, user } = useAuth();
+    const { isAuthenticated } = useAuth();
 
     useEffect(() => {
         // Initialize socket connection
         const newSocket = io(SOCKET_URL, {
-            auth: {
-                token: token ? `Bearer ${token}` : undefined
-            },
+            withCredentials: true,
             transports: ['websocket'], // Prefer websockets
             autoConnect: true,
             reconnection: true,
@@ -53,7 +51,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             newSocket.disconnect();
         };
-    }, [token]);
+    }, [isAuthenticated]);
 
     const emit = (event: string, data: any) => {
         if (socket && isConnected) {
