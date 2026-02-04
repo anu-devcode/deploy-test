@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Package, Search, Check, X, Clock, MessageSquare, AlertCircle, Filter, ChevronDown, User, Calendar, Ban, CheckCircle2 } from 'lucide-react';
+import { Package, Search, X, Clock, MessageSquare, AlertCircle, ChevronDown, User, Calendar, Ban, CheckCircle2 } from 'lucide-react';
 
 interface CancellationRequest {
     id: string;

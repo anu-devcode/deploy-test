@@ -1,7 +1,7 @@
 'use client';
 
 import api, { Order } from '@/lib/api';
-import { Package, Search, Calendar, MapPin, ChevronDown, ChevronUp, Download, CreditCard, CheckCircle2, Clock, AlertCircle, X, MessageSquare } from 'lucide-react';
+import { Package, Search, Calendar, MapPin, ChevronDown, ChevronUp, Download, CheckCircle2, Clock, AlertCircle, X, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSocket } from '@/context';

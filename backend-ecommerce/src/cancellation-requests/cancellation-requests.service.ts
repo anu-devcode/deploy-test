@@ -64,7 +64,7 @@ export class CancellationRequestsService {
             await this.notificationsService.create({
                 title: 'New Cancellation Request',
                 message: `Order ${order.orderNumber} - Customer requests cancellation`,
-                type: 'ORDER_UPDATE',
+                type: 'ORDER_STATUS',
                 targetRole: 'ADMIN',
             });
         } catch (error) {
@@ -191,7 +191,7 @@ export class CancellationRequestsService {
                 await this.notificationsService.create({
                     title: 'Cancellation Approved',
                     message: `Your cancellation request for order ${request.order.orderNumber} has been approved. The order has been cancelled.`,
-                    type: 'ORDER_UPDATE',
+                    type: 'ORDER_STATUS',
                     customerId: request.customerId,
                 });
             }
@@ -220,7 +220,7 @@ export class CancellationRequestsService {
                 await this.notificationsService.create({
                     title: 'Cancellation Request Declined',
                     message: `Your cancellation request for order ${request.order.orderNumber} has been declined. ${feedback || ''}`,
-                    type: 'ORDER_UPDATE',
+                    type: 'ORDER_STATUS',
                     customerId: request.customerId,
                 });
             }

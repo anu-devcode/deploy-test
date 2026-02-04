@@ -259,7 +259,6 @@ export class OrdersService {
                 customer: true,
                 payments: true,
                 delivery: true,
-                delivery: true,
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -276,7 +275,6 @@ export class OrdersService {
                 },
                 customer: true,
                 payments: true,
-                delivery: true,
                 delivery: true,
             },
         });
