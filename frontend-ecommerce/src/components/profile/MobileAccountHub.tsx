@@ -62,7 +62,7 @@ export function MobileAccountHub({ onTabChange }: MobileAccountHubProps) {
 
             {/* Logout Action */}
             <button
-                onClick={logout}
+                onClick={() => logout()}
                 className="mt-6 w-full flex items-center justify-center gap-3 p-5 bg-white rounded-3xl border border-rose-100 text-rose-500 font-black uppercase tracking-widest text-xs hover:bg-rose-50 active:scale-[0.98] transition-all shadow-sm shadow-rose-500/5 group"
             >
                 <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
