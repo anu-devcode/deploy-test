@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install dependencies (including dev deps)
 RUN npm ci
 
 # Generate Prisma Client
@@ -19,6 +19,9 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Remove development dependencies
+RUN npm prune --production
+
 # Stage 2: Production
 FROM node:20 AS production
 
@@ -28,14 +31,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Copy built assets from builder stage
+# Copy built assets and production node_modules from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules ./node_modules
 
 # Expose port (default NestJS port)
 EXPOSE 3001
