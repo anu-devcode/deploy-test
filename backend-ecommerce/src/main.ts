@@ -1,17 +1,33 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import { join } from 'path';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable CORS for frontend - Permissive Mode
+  // Trust proxy for Railway/Vercel (X-Forwarded-For, etc.)
+  app.set('trust proxy', 1);
+
+  // Enable CORS for frontend - Strict Whitelist Mode
+  const allowedOrigins = [
+    'https://frontend-ecommerce-red.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+
   app.enableCors({
-    origin: true, // Reflects the request origin, effectively allowing all
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',

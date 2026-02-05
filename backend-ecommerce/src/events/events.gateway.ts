@@ -16,7 +16,11 @@ import { Public } from '../common/decorators/public.decorator';
 @Public()
 @WebSocketGateway({
     cors: {
-        origin: true, // Allow all origins dynamically (reflects request origin)
+        origin: [
+            'https://frontend-ecommerce-red.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:3001'
+        ],
         credentials: true,
         methods: ['GET', 'POST'],
     },
