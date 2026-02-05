@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { SocketIoAdapter } from './common/adapters/socket-io.adapter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
