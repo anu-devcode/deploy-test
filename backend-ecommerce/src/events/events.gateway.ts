@@ -16,8 +16,9 @@ import { Public } from '../common/decorators/public.decorator';
 @Public()
 @WebSocketGateway({
     cors: {
-        origin: '*', // Cors is handled by main.ts, this is for socket.io specific
+        origin: true, // Allow all origins dynamically (reflects request origin)
         credentials: true,
+        methods: ['GET', 'POST'],
     },
 })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {

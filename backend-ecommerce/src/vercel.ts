@@ -10,11 +10,12 @@ export default async function handler(req: any, res: any) {
     if (!cachedServer) {
         const app = await NestFactory.create(AppModule);
 
-        // Enable CORS - Safe default for credentials
-        const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+        // Enable CORS - Permissive Mode for requests
         app.enableCors({
-            origin: allowedOrigin,
+            origin: true, // Reflects the request origin, effectively allowing all
             credentials: true,
+            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+            allowedHeaders: 'Content-Type, Accept, Authorization',
         });
 
         app.useGlobalPipes(

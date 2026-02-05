@@ -10,6 +10,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     canActivate(context: ExecutionContext) {
+        // Special handling for Socket.IO polling requests which are treated as HTTP
+        // but might not map to a controller method with @Public() metadata context correctly
+        if (context.getType() === 'http') {
+            const request = context.switchToHttp().getRequest();
+            if (request.url && request.url.includes('/socket.io/')) {
+                return true;
+            }
+        }
+
         const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass(),
