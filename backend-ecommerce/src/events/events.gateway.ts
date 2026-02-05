@@ -11,9 +11,13 @@ import { Server, Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
+import { Public } from '../common/decorators/public.decorator';
+
+@Public()
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: '*', // Cors is handled by main.ts, this is for socket.io specific
+        credentials: true,
     },
 })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
