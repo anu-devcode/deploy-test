@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         // Initialize socket connection
         const newSocket = io(SOCKET_URL, {
             withCredentials: true,
-            transports: ['websocket'], // Prefer websockets
+            transports: ['polling', 'websocket'], // Allow polling for Vercel serverless checks
             autoConnect: true,
             reconnection: true,
             reconnectionAttempts: 5,
