@@ -14,12 +14,7 @@ export class SocketIoAdapter extends IoAdapter {
     createIOServer(port: number, options?: ServerOptions): any {
         const clientUrl = this.configService.get<string>('FRONTEND_URL') || 'https://frontend-ecommerce-red.vercel.app';
         const cors = {
-            origin: [
-                clientUrl,
-                'https://frontend-ecommerce-red.vercel.app',
-                'http://localhost:3000',
-                'http://localhost:3001',
-            ],
+            origin: true,
             methods: ['GET', 'POST'],
             credentials: true,
         };
