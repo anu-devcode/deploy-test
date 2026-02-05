@@ -22,7 +22,7 @@ export class SocketIoAdapter extends IoAdapter {
         const optionsWithCors: ServerOptions = {
             ...options,
             cors,
-        };
+        } as ServerOptions;
 
         // Create the server with merged options
         return super.createIOServer(port, optionsWithCors);
