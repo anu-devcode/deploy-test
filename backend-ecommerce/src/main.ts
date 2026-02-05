@@ -10,18 +10,19 @@ import { join } from 'path';
 import * as express from 'express';
 
 async function bootstrap() {
+  console.log('🚀 Starting bootstrap process...');
   try {
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
-    const configService = app.get(ConfigService);
-    const port = process.env.PORT ?? 3001;
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug'],
+    });
 
-    console.log(`Starting application on port ${port}...`);
-    console.log(`DATABASE_URL defined: ${!!process.env.DATABASE_URL}`);
+    const port = process.env.PORT ?? 3001;
+    console.log(`📡 Port resolved to: ${port}`);
 
     // Trust proxy for Railway/Vercel (X-Forwarded-For, etc.)
     app.set('trust proxy', 1);
 
-    // Enable CORS for frontend - Strict Whitelist Mode
+    // Enable CORS for frontend
     app.enableCors({
       origin: true,
       credentials: true,
@@ -50,8 +51,11 @@ async function bootstrap() {
       exclude: ['/'], // Keep root route accessible for health checks
     });
 
+    // CRITICAL: Listen first so Railway health check passes immediately
     await app.listen(port, '0.0.0.0');
-    console.log(`🚀 Application successfully started and listening on 0.0.0.0:${port}`);
+    console.log(`✅ API SERVER LISTENING ON 0.0.0.0:${port}`);
+
+    console.log('✨ Bootstrap sequence completed successfully.');
   } catch (error) {
     console.error('❌ FATAL ERROR DURING BOOTSTRAP:');
     console.error(error);

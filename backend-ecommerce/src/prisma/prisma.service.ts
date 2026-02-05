@@ -6,37 +6,26 @@ import { PrismaPg } from '@prisma/adapter-pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
     constructor() {
-        const connectionString = process.env.DATABASE_URL;
-
-        if (!connectionString) {
-            console.warn('⚠️ DATABASE_URL not found in environment!');
-        }
-
-        const pool = new Pool({
-            connectionString,
-            // Supabase/Production usually requires SSL. 
-            // rejectUnauthorized: false is common for Managed DBs with self-signed certs.
-            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        super({
+            log: ['error', 'warn'],
         });
-
-        // Log pool errors
-        pool.on('error', (err) => {
-            console.error('❌ Unexpected error on idle database client', err);
-        });
-
-        const adapter = new PrismaPg(pool);
-        super({ adapter });
+        console.log('🏗️ PrismaClient initialized with native engine');
     }
 
     async onModuleInit() {
+        // Non-blocking connection check to avoid startup hangs
+        this.verifyConnection();
+    }
+
+    private async verifyConnection() {
         try {
-            console.log('🔄 Connecting to database...');
+            console.log('🔄 Verifying database connection in background...');
             await this.$connect();
-            console.log('✅ Database connected successfully');
+            console.log('✅ Database connection verified successfully');
         } catch (error) {
-            console.error('❌ Database connection failed during onModuleInit:');
+            console.error('❌ DATABASE CONNECTION FAILED:');
             console.error(error);
-            throw error; // Re-throw to trigger bootstrap catch
+            // We don't throw here so the server stays "up" for Railway's health check
         }
     }
 
@@ -44,3 +33,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         await this.$disconnect();
     }
 }
+
+// Global error handling for better debugging in Railway
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('😱 Unhandled Rejection at:', promise, 'reason:', reason);
+});

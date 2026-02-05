@@ -1,5 +1,8 @@
 # Stage 1: Builder
-FROM node:20 AS builder
+FROM node:20-slim AS builder
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -7,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies (including dev deps)
+# Install ALL dependencies
 RUN npm install --no-audit --no-fund
 
 # Generate Prisma Client
@@ -23,20 +26,24 @@ RUN npm run build
 RUN npm prune --production
 
 # Stage 2: Production
-FROM node:20 AS production
+FROM node:20-slim AS production
+
+# Install OpenSSL for Prisma runtime
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
 
 # Copy built assets and production node_modules from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
 
-# Expose port (default NestJS port)
+# Expose port (Internal port for NestJS)
 EXPOSE 3001
 
 # Start command
 CMD ["npm", "run", "start:prod"]
+
