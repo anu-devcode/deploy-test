@@ -14,13 +14,13 @@ import { JwtService } from '@nestjs/jwt';
 import { Public } from '../common/decorators/public.decorator';
 
 @Public()
-@WebSocketGateway({
-    cors: {
-        origin: 'https://frontend-ecommerce-red.vercel.app',
-        methods: ['GET', 'POST'],
-        credentials: true,
-    },
-})
+// @WebSocketGateway({
+//     cors: {
+//         origin: 'https://frontend-ecommerce-red.vercel.app',
+//         methods: ['GET', 'POST'],
+//         credentials: true,
+//     },
+// })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;

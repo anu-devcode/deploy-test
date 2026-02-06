@@ -33,8 +33,8 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
     });
 
-    // 🔥 Socket.IO CORS (MANDATORY)
-    app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
+    // 🔥 Socket.IO CORS (TEMPORARILY DISABLED FOR ISOLATION)
+    // app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
 
     // Global validation pipe
     app.useGlobalPipes(
@@ -54,7 +54,7 @@ async function bootstrap() {
 
     // Global prefix
     app.setGlobalPrefix('api', {
-      exclude: ['/'], // Keep root route accessible for health checks
+      exclude: ['/', '/socket.io'], // Exclude socket.io from global prefix
     });
 
     // CRITICAL: Listen first so Railway health check passes immediately
