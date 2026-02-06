@@ -28,6 +28,8 @@ async function bootstrap() {
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'Origin'],
       credentials: true,
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
     });
 
     // Global validation pipe
