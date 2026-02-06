@@ -29,7 +29,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleConnection(client: Socket) {
         try {
-            const token = client.handshake.headers.authorization?.split(' ')[1];
+            const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1];
             if (token) {
                 const payload = this.jwtService.verify(token);
                 // Join user room

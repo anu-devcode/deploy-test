@@ -23,6 +23,7 @@ async function bootstrap() {
     app.set('trust proxy', 1);
 
     // Enable CORS for frontend
+    const configService = app.get(ConfigService);
     app.enableCors({
       origin: 'https://frontend-ecommerce-red.vercel.app',
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -31,6 +32,9 @@ async function bootstrap() {
       preflightContinue: false,
       optionsSuccessStatus: 204,
     });
+
+    // 🔥 Socket.IO CORS (MANDATORY)
+    app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
 
     // Global validation pipe
     app.useGlobalPipes(

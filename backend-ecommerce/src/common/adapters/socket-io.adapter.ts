@@ -12,19 +12,15 @@ export class SocketIoAdapter extends IoAdapter {
     }
 
     createIOServer(port: number, options?: ServerOptions): any {
-        const clientUrl = this.configService.get<string>('FRONTEND_URL') || 'https://frontend-ecommerce-red.vercel.app';
-        const cors = {
-            origin: true,
-            methods: ['GET', 'POST'],
-            credentials: true,
-        };
-
-        const optionsWithCors: ServerOptions = {
+        const server = super.createIOServer(port, {
             ...options,
-            cors,
-        } as ServerOptions;
+            cors: {
+                origin: 'https://frontend-ecommerce-red.vercel.app',
+                credentials: true,
+                methods: ['GET', 'POST'],
+            },
+        });
 
-        // Create the server with merged options
-        return super.createIOServer(port, optionsWithCors);
+        return server;
     }
 }
