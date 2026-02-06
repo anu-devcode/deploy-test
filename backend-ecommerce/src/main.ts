@@ -23,11 +23,32 @@ async function bootstrap() {
     app.set('trust proxy', 1);
 
     // Enable CORS for frontend
+    const configService = app.get(ConfigService);
+    const frontendUrl = configService.get<string>('FRONTEND_URL');
+
     app.enableCors({
-      origin: true,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'https://frontend-ecommerce-red.vercel.app',
+        ];
+
+        if (frontendUrl) allowedOrigins.push(frontendUrl);
+
+        // Check if origin is allowed or is a Vercel deployment
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-      allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+      allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Origin',
     });
 
     // Global validation pipe

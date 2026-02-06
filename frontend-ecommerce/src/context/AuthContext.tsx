@@ -8,12 +8,10 @@ interface AuthContextType {
     isAdminAuthenticated: boolean;
     user: User | null;
     adminUser: User | null;
-    tenantId: string | null;
     login: (email: string, password: string, portal?: 'STOREFRONT' | 'ADMIN') => Promise<any>;
     register: (email: string, password: string, firstName?: string, lastName?: string, role?: string) => Promise<any>;
     logout: (portal?: 'STOREFRONT' | 'ADMIN') => Promise<void>;
     deleteAccount: () => Promise<void>;
-    setTenant: (tenantId: string) => void;
     setIsAuthenticated: (val: boolean) => void;
     setIsAdminAuthenticated: (val: boolean) => void;
     setUser: (user: User | null) => void;
@@ -44,17 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [adminUser, setAdminUser] = useState<User | null>(null);
-    const [tenantId, setTenantId] = useState<string | null>(null);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         const storedAdminUser = localStorage.getItem('admin_user');
-        const storedTenantId = localStorage.getItem('tenantId');
 
-        if (storedTenantId) {
-            api.setTenantId(storedTenantId);
-            setTenantId(storedTenantId);
-        }
 
         if (storedUser) {
             try {
@@ -134,11 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
-    const setTenant = (id: string) => {
-        localStorage.setItem('tenantId', id);
-        api.setTenantId(id);
-        setTenantId(id);
-    };
 
     return (
         <AuthContext.Provider value={{
@@ -146,12 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAdminAuthenticated,
             user,
             adminUser,
-            tenantId,
             login,
             register,
             logout,
             deleteAccount,
-            setTenant,
             setIsAuthenticated,
             setIsAdminAuthenticated,
             setUser,

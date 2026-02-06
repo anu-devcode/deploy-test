@@ -201,7 +201,6 @@ export interface ContentBlock {
 
 class ApiClient {
     private client: AxiosInstance;
-    private tenantId: string | null = null; // Deprecated but kept for compatibility
 
     constructor() {
         this.client = axios.create({
@@ -256,9 +255,6 @@ class ApiClient {
         // Deprecated: browser handles HttpOnly cookies
     }
 
-    setTenantId(tenantId: string) {
-        this.tenantId = tenantId; // No-op in single tenant, but kept for interface compatibility
-    }
 
     // Helper to keep the existing calling pattern if needed, or we can use direct axios methods
     async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
