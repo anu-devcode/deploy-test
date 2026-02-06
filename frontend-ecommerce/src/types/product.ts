@@ -2,7 +2,6 @@ export type ProductStatus = "active" | "archived" | "unknown";
 
 export type Product = {
   id: string;
-  tenantId?: string;
   name: string;
   slug: string;
   description?: string;

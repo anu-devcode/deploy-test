@@ -10,7 +10,6 @@ export type OrderLine = {
 
 export type Order = {
   id: string;
-  tenantId: string;
   orderNumber: string;
   createdAt: string; // ISO string
   updatedAt?: string;

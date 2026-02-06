@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminLoginPage() {
-    const { login, setTenant, setIsAdminAuthenticated, setAdminUser } = useAuth();
+    const { login, setIsAdminAuthenticated, setAdminUser } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -38,8 +38,6 @@ export default function AdminLoginPage() {
         setLoading(true);
 
         try {
-            // Setup default tenant for admin
-            setTenant('brolf-main');
 
             const userData = await login(email, password, 'ADMIN');
 
