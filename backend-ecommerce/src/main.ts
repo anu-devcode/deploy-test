@@ -33,8 +33,8 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
     });
 
-    // 🔥 Socket.IO CORS (TEMPORARILY DISABLED FOR ISOLATION)
-    // app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
+    // 🔥 Socket.IO CORS (Re-enabled with WebSocket only transport)
+    app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
 
     // Global validation pipe
     app.useGlobalPipes(
